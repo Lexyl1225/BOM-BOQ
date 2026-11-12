@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Cost Estimate</title>
+    <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5; padding: 20px; font-size: 13px; color: #263238; }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .page-header .title-area h1 { font-size: 26px; color: #1565C0; margin-bottom: 4px; }
+        .page-header .title-area p { color: #666; font-size: 13px; }
+        .user-badge {
+            background: linear-gradient(135deg, #1565C0, #1976D2);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: right;
+            line-height: 1.5;
+        }
+        .user-badge strong { font-size: 13px; }
+
+        /* Nav buttons */
+        .button-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-button {
+            padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;
+            font-size: 13px; font-weight: bold; transition: background-color 0.3s ease, transform 0.1s;
+            color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .nav-button:hover { transform: translateY(-1px); }
+        .btn-back    { background-color: #666; }
+        .btn-back:hover    { background-color: #444; }
+        .btn-refresh { background-color: #1976D2; }
+        .btn-refresh:hover { background-color: #1565C0; }
+        .btn-print   { background-color: #6A1B9A; }
+        .btn-print:hover   { background-color: #4A148C; }
+        .btn-logout  { background-color: #c62828; }
+        .btn-logout:hover  { background-color: #a31f1f; }
+
+        /* Sections */
+        .section { margin-bottom: 25px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .section-title {
+            background: linear-gradient(135deg, #43A047, #2E7D32);
+            color: #fff; padding: 14px 18px; font-weight: bold; font-size: 14px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+        }
+        .section-title .hint { font-weight: normal; font-size: 11px; opacity: 0.9; }
+        .section-body { padding: 20px; }
+        .recent-section { margin-top: 45px; }
+        .recent-section .section-title { background: linear-gradient(135deg, #5E35B1, #4527A0); }
+        .recent-section .grand-total-cell { font-weight: 700; color: #0D47A1; }
+        .recent-section .materials-cell { color: #2E7D32; font-weight: 600; }
+
+        /* Source documents table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        table th {
+            padding: 12px; text-align: left; background-color: #f5f5f5;
+            border-bottom: 2px solid #ddd; font-weight: bold; color: #333; font-size: 12px; white-space: nowrap;
+        }
+        table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        table tbody tr:hover { background-color: #f0f7ff; }
+        table tbody tr:nth-child(even) { background-color: #fafafa; }
+        .no-documents { text-align: center; padding: 40px; color: #999; font-size: 13px; }
+
+        .btn {
+            display: inline-flex; padding: 7px 10px; border: none; border-radius: 4px; cursor: pointer;
+            font-size: 11px; font-weight: bold; transition: all 0.2s; color: white; white-space: nowrap; align-items: center; gap: 4px;
+        }
+        .btn-view  { background-color: #4CAF50; }
+        .btn-view:hover  { background-color: #388E3C; }
+        .btn-print-row { background-color: #6A1B9A; }
+        .btn-print-row:hover { background-color: #4A148C; }
+        .btn-edit  { background-color: #1976D2; }
+        .btn-edit:hover  { background-color: #1565C0; }
+        .btn-delete { background-color: #E53935; }
+        .btn-delete:hover { background-color: #C62828; }
+        .button-cell { display: flex; gap: 6px; flex-wrap: nowrap; align-items: center; }
+
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-bom { background: #E3F2FD; color: #1565C0; }
+        .badge-boq { background: #FFF3E0; color: #E65100; }
+        .badge-selected { background: #E8F5E9; color: #2E7D32; }
+
+        /* Source document selector */
+        .doc-select-row { margin-bottom: 16px; }
+        .doc-select-row label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .doc-select-row select {
+            width: 100%; max-width: 480px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 5px;
+            font-size: 14px; background-color: white;
+        }
+        .doc-select-row select:focus { outline: none; border-color: #1976D2; box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
+        table tbody tr.selected-doc-row { background-color: #E8F5E9 !important; }
+        table tbody tr.selected-doc-row:hover { background-color: #DCEDC8 !important; }
+
+        /* Cost breakdown */
+        .edit-banner {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+            background-color: #FFF3E0; border: 1px solid #FFCC80; border-left: 4px solid #FB8C00;
+            color: #5D4037; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; margin-bottom: 20px;
+        }
+        .edit-banner button {
+            background-color: #FB8C00; color: white; border: none; padding: 7px 14px; border-radius: 4px;
+            cursor: pointer; font-size: 11.5px; font-weight: bold; white-space: nowrap;
+        }
+        .edit-banner button:hover { background-color: #EF6C00; }
+        .estimate-name-row { margin-bottom: 20px; }
+        .estimate-name-row label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .estimate-name-row input[type="text"] {
+            width: 100%; max-width: 480px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px;
+        }
+        .estimate-name-row input[type="text"]:focus { outline: none; border-color: #1976D2; box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
+
+        .cost-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 15px;
+            padding: 14px 0; border-bottom: 1px solid #eee;
+        }
+        .cost-row:last-of-type { border-bottom: none; }
+        .cost-label { flex: 1; min-width: 200px; }
+        .cost-label .name { font-weight: 600; font-size: 13.5px; color: #263238; }
+        .cost-label .hint { display: block; font-size: 11px; color: #888; margin-top: 2px; }
+        .cost-input-wrap { position: relative; width: 220px; flex-shrink: 0; }
+        .cost-input-wrap .currency-prefix {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: #666; font-weight: bold; font-size: 13px; pointer-events: none;
+        }
+        .cost-input-wrap input[type="number"], .cost-input-wrap input[type="text"] {
+            width: 100%; padding: 10px 12px 10px 28px; border: 1px solid #ccc; border-radius: 5px;
+            font-size: 14px; text-align: right; font-weight: 600;
+        }
+        .cost-input-wrap input:focus { outline: none; border-color: #1976D2; box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
+        .cost-input-wrap input[readonly] { background-color: #F1F8E9; border-color: #AED581; color: #33691E; cursor: not-allowed; }
+
+        /* Custom items */
+        .custom-items-section { margin-top: 10px; padding-top: 15px; border-top: 2px dashed #ddd; }
+        .custom-items-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .custom-items-header .name { font-weight: 600; font-size: 13.5px; }
+        .add-item-btn {
+            background-color: #1976D2; color: white; border: none; padding: 8px 16px; border-radius: 5px;
+            cursor: pointer; font-size: 12px; font-weight: bold;
+        }
+        .add-item-btn:hover { background-color: #1565C0; }
+        #customItemsBody .custom-item-row {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+        }
+        #customItemsBody .custom-item-row input[type="text"] {
+            flex: 1; padding: 9px 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;
+        }
+        #customItemsBody .custom-item-row .cost-input-wrap { width: 180px; }
+        #customItemsBody .custom-item-row input:focus { outline: none; border-color: #1976D2; box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
+        .remove-item-btn {
+            background-color: #E53935; color: white; border: none; width: 32px; height: 32px; border-radius: 5px;
+            cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; line-height: 1;
+        }
+        .remove-item-btn:hover { background-color: #C62828; }
+        .no-custom-items { color: #999; font-size: 12px; padding: 10px 0; font-style: italic; }
+
+        /* Grand total */
+        .grand-total-bar {
+            margin-top: 10px; padding: 22px 25px; border-radius: 8px;
+            background: linear-gradient(135deg, #1565C0, #0D47A1);
+            color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+            box-shadow: 0 4px 14px rgba(13,71,161,0.35);
+        }
+        .grand-total-bar .label { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+        .grand-total-bar .amount { font-size: 32px; font-weight: 800; }
+
+        /* Actions */
+        .action-bar { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; justify-content: flex-end; }
+        .action-btn {
+            padding: 13px 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;
+            color: white; transition: transform 0.1s, background-color 0.2s;
+        }
+        .action-btn:hover { transform: translateY(-1px); }
+        .save-btn { background: linear-gradient(135deg, #43A047, #2E7D32); }
+        .save-btn:hover { background: linear-gradient(135deg, #388E3C, #1B5E20); }
+        .save-btn:disabled { background: #bbb; cursor: not-allowed; transform: none; }
+
+        @media (max-width: 700px) {
+            body { padding: 10px; }
+            .container { padding: 18px; }
+            .cost-row { flex-direction: column; align-items: stretch; }
+            .cost-input-wrap { width: 100%; }
+            #customItemsBody .custom-item-row { flex-wrap: wrap; }
+            #customItemsBody .custom-item-row .cost-input-wrap { width: 100%; }
+            .grand-total-bar { flex-direction: column; align-items: flex-start; }
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .button-container, .action-bar, .btn-view, th:last-child, td:last-child.actions-cell { display: none !important; }
+        }
+    </style>
+
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <script src="/static/js/app.js"></script>
+
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="main-navbar" style="position: sticky; top: 0; z-index: 9999; margin-bottom: 20px;">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-logo">B</div>
+            <div>BOM / BOQ <span style="font-weight: 400; font-size: 14px; color: var(--primary);">Studio</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+            <li><a href="/bom" class="nav-link">📝 Create BOM</a></li>
+            <li><a href="/boq" class="nav-link">📋 Create BOQ</a></li>
+            <li><a href="/estimate" class="nav-link active">💰 Cost Estimates</a></li>
+            <li><a href="/save_bomboq" class="nav-link">📁 Saved Documents</a></li>
+            <li><a href="/price_edit_bomboq" class="nav-link">🏷️ MCE Pricing</a></li>
+            {% if user and user.role in ["department_admin", "admin"] %}
+            <li><a href="/approver" class="nav-link">✅ Approvals</a></li>
+            {% endif %}
+            {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
+            <li><a href="/approved_for_po" class="nav-link">📦 Purchase Orders</a></li>
+            {% endif %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
+            {% if user and user.role == "admin" %}
+            <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
+            {% endif %}
+        </ul>
+        <div class="nav-right">
+            <button class="btn btn-secondary btn-sm" onclick="BomThemes.open()">🎨 Themes</button>
+            {% if user %}
+            <div class="user-badge-capsule">
+                <strong>{{ user.username }}</strong>
+                <span class="badge-role {{ user.role }}">{{ user.role.replace("_", " ") }}</span>
+                {% if user.department %}
+                <span class="badge-dept">{{ user.department }}</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="App.logout()">🚪 Logout</button>
+            {% endif %}
+        </div>
+    </nav>
+
+<div class="container">
+    <div class="page-header">
+        <div class="title-area">
+            <h1>&#128176; Project Cost Estimate</h1>
+            <p>Combine material costs from posted documents with labor and other allowances into one total.</p>
+        </div>
+        <div class="user-badge">
+            <strong>{{ user.username if user else "" }}</strong><br>
+            {{ user.role if user else "" }} {% if user and user.department %}&bull; {{ user.department }}{% endif %}
+        </div>
+    </div>
+
+    <div class="button-container">
+        <a href="/save_bomboq" class="nav-button btn-back">&#8592; Saved Documents</a>
+        <button class="nav-button btn-refresh" onclick="loadSourceDocuments()">&#8635; Refresh Source Documents</button>
+        <button class="nav-button btn-print" onclick="printEstimate()">&#128424; Print / Export</button>
+        <a href="estimate.php/login" class="nav-button btn-logout" style="margin-left:auto;">Logout</a>
+    </div>
+
+    <!-- Source Documents -->
+    <div class="section">
+        <div class="section-title">
+            <span>Source Documents (Posted, Read-Only)</span>
+            <span class="hint" id="sourceDocsCount">Loading&hellip;</span>
+        </div>
+        <div class="section-body">
+            <div class="doc-select-row">
+                <label for="sourceDocumentSelect">Select the document to include in this estimate</label>
+                <select id="sourceDocumentSelect" onchange="onSourceDocumentSelected()">
+                    <option value="">-- None selected --</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:24%">Document Name</th>
+                            <th style="width:11%">Ref No.</th>
+                            <th style="width:8%">Type</th>
+                            <th style="width:15%">Department</th>
+                            <th style="width:11%">Date</th>
+                            <th style="width:13%">Total</th>
+                            <th style="width:9%">Selected</th>
+                            <th style="width:9%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sourceDocsBody">
+                        <tr><td colspan="8" class="no-documents">Loading posted documents&hellip;</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Breakdown -->
+    <div class="section">
+        <div class="section-title"><span>Cost Breakdown</span></div>
+        <div class="section-body">
+            <div class="edit-banner" id="editEstimateBanner" style="display:none;">
+                <span>&#9998; Editing saved estimate <strong id="editEstimateNameLabel"></strong> — saving will update it instead of creating a new one.</span>
+                <button type="button" onclick="cancelEditEstimate()">Cancel Edit</button>
+            </div>
+            <div class="estimate-name-row">
+                <label for="estimateName">Estimate / Project Name</label>
+                <input type="text" id="estimateName" placeholder="e.g., Main Building Electrical Cost Estimate">
+            </div>
+
+            <div class="cost-row">
+                <div class="cost-label">
+                    <div class="name">Total Materials Cost Estimate</div>
+                    <span class="hint">Auto-calculated from posted documents above (read-only)</span>
+                </div>
+                <div class="cost-input-wrap">
+                    <span class="currency-prefix">&#8369;</span>
+                    <input type="text" id="materialsTotalDisplay" value="0.00" readonly>
+                </div>
+            </div>
+
+            <div class="cost-row">
+                <div class="cost-label">
+                    <div class="name">Total Labor Cost Estimate</div>
+                    <span class="hint">Manual entry</span>
+                </div>
+                <div class="cost-input-wrap">
+                    <span class="currency-prefix">&#8369;</span>
+                    <input type="number" id="laborTotal" min="0" step="0.01" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <div class="cost-row">
+                <div class="cost-label">
+                    <div class="name">Meal Allowance</div>
+                    <span class="hint">Manual entry</span>
+                </div>
+                <div class="cost-input-wrap">
+                    <span class="currency-prefix">&#8369;</span>
+                    <input type="number" id="mealAllowance" min="0" step="0.01" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <div class="cost-row">
+                <div class="cost-label">
+                    <div class="name">Transportation Allowance</div>
+                    <span class="hint">Manual entry</span>
+                </div>
+                <div class="cost-input-wrap">
+                    <span class="currency-prefix">&#8369;</span>
+                    <input type="number" id="transportationAllowance" min="0" step="0.01" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <div class="cost-row">
+                <div class="cost-label">
+                    <div class="name">Mobilization / Demobilization</div>
+                    <span class="hint">Manual entry</span>
+                </div>
+                <div class="cost-input-wrap">
+                    <span class="currency-prefix">&#8369;</span>
+                    <input type="number" id="mobilizationDemobilization" min="0" step="0.01" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <div class="custom-items-section">
+                <div class="custom-items-header">
+                    <span class="name">Additional / Custom Items</span>
+                    <button type="button" class="add-item-btn" onclick="addCustomItem()">&#65291; Add Item</button>
+                </div>
+                <div id="customItemsBody">
+                    <div class="no-custom-items" id="noCustomItemsMsg">No additional items added.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grand-total-bar">
+        <span class="label">Grand Total Cost Estimate</span>
+        <span class="amount" id="grandTotalDisplay">&#8369;0.00</span>
+    </div>
+
+    <div class="action-bar">
+        <button type="button" class="action-btn save-btn" id="saveEstimateBtn" onclick="saveEstimate()" {% if user and user.role == "guest" %}disabled title="Guests cannot save estimates"{% endif %}>&#128190; Save Estimate</button>
+    </div>
+
+    <!-- Recent Estimates -->
+    <div class="section recent-section">
+        <div class="section-title">
+            <span>&#128338; Recent Estimates</span>
+            <span class="hint" id="recentEstimatesCount">Loading&hellip;</span>
+        </div>
+        <div class="section-body table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:20%">Estimate Name</th>
+                        <th style="width:12%">Department</th>
+                        <th style="width:10%">Materials</th>
+                        <th style="width:12%">Grand Total</th>
+                        <th style="width:9%">Saved By</th>
+                        <th style="width:7%">Date</th>
+                        <th style="width:30%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recentEstimatesBody">
+                    <tr><td colspan="7" class="no-documents">Loading recent estimates&hellip;</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const userRole = '{{ user.role if user else "guest" }}';
+const userDepartment = '{{ user.department if user else "" }}';
+const CURRENCY = '₱';
+
+let sourceDocuments = [];
+let selectedSourceDocIndex = -1;
+let materialsTotal = 0;
+let customItemCounter = 0;
+let editingEstimateId = null;
+
+function parseNum(val) {
+    const n = parseFloat(String(val == null ? '' : val).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+}
+
+function formatCurrency(num) {
+    num = parseNum(num);
+    return CURRENCY + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Extract the document's grand total from its saved HTML content
+function extractDocumentTotal(html) {
+    if (!html) return 0;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const cell = tempDiv.querySelector('#grandTotal');
+    if (!cell) return 0;
+    return parseNum(cell.textContent);
+}
+
+// Shared print/view stylesheet, matching the layout used elsewhere in the app
+const DOCUMENT_DISPLAY_CSS =
+    'body { font-family: "Segoe UI", Calibri, Arial, sans-serif; margin:0; padding:30px 25px; }' +
+    '.header-info { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; background-color: #f5f7fa; padding: 15px 20px; border-radius: 4px; margin-bottom: 25px; border-left: 4px solid #1f5a96; }' +
+    '.info-label { font-size: 11px; color: #000; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }' +
+    '.info-value { font-size: 13px; color: #1f5a96; font-weight: 600; }' +
+    'textarea { display: block !important; width: 100% !important; min-height: auto !important; max-width: 100% !important; border: none !important; background: transparent !important; color: #222 !important; font-size: 11px; padding: 0 !important; margin: 0 !important; white-space: pre-wrap !important; overflow: visible !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; line-height: 1.3; opacity: 1 !important; visibility: visible !important; resize: none !important; height: auto !important; font-weight: 600; }' +
+    'input[type="text"], input[type="number"], input[type="date"] { display: block !important; width: 100% !important; border: none !important; background: transparent !important; color: #222 !important; font-size: 11px; padding: 0 !important; margin: 0 !important; opacity: 1 !important; visibility: visible !important; font-weight: 600; overflow: visible !important; max-width: 100% !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }' +
+    'table tbody tr td:first-child * { max-width: 100% !important; overflow: visible !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; white-space: pre-wrap !important; }' +
+    '.signatures { margin-top: 30px; font-size: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 30px; row-gap: 30px; }' +
+    '.signature-row { display: contents; }' +
+    '.signature-block { text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 140px; justify-content: flex-start; }' +
+    '.signature-label { font-weight: 700; color: #000; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; line-height: 1.4; }' +
+    '.signature-line { border-top: 1.5px solid #000; width: 140px; margin: 0 auto 5px auto; }' +
+    '.signature-name { font-weight: 700; margin-top: 8px; color: #000; font-size: 11px; }' +
+    '.signature-title { font-size: 9px; margin-top: 2px; color: #000; font-weight: 500; }' +
+    '@media print { .signatures { margin-top: 40px; } }';
+
+function buildDocumentBody(doc) {
+    const html = doc.htmlContent || '';
+    if (!html) return '<p>No content available</p>';
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    tempDiv.querySelectorAll('.project-info').forEach(function(el) { el.remove(); });
+
+    const headerInfo =
+        '<div class="header-info">' +
+            '<div class="info-item"><div class="info-label">Department</div><div class="info-value">' + escHtml(doc.department || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Project</div><div class="info-value">' + escHtml(doc.projectName || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Location</div><div class="info-value">' + escHtml(doc.location || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Date</div><div class="info-value">' + escHtml(doc.dateValue || doc.date || 'N/A') + '</div></div>' +
+        '</div>';
+
+    return headerInfo + tempDiv.innerHTML;
+}
+
+function viewSourceDocument(idx) {
+    const doc = sourceDocuments[idx];
+    if (!doc) return;
+    const body = buildDocumentBody(doc);
+    const win = window.open('', '_blank');
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escHtml(doc.name || 'Document') + '</title><style>' + DOCUMENT_DISPLAY_CSS + '</style></head><body>' + body + '</body></html>');
+    win.document.close();
+}
+
+async function loadSourceDocuments() {
+    const tbody = document.getElementById('sourceDocsBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="no-documents">Loading posted documents&hellip;</td></tr>';
+
+    // Remember the currently selected document (by name) so a Refresh doesn't silently drop the selection
+    const previouslySelectedName = (selectedSourceDocIndex >= 0 && sourceDocuments[selectedSourceDocIndex])
+        ? sourceDocuments[selectedSourceDocIndex].name
+        : null;
+
+    try {
+        const response = await fetch('api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list' })
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-documents">' + escHtml(result.message || 'Error loading documents') + '</td></tr>';
+            document.getElementById('sourceDocsCount').textContent = 'Error';
+            return;
+        }
+
+        sourceDocuments = (result.documents || [])
+            .filter(function(doc) { return doc.status === 'posted'; })
+            .map(function(doc) {
+                const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
+                const htmlContent = item.htmlContent || doc.html_content || '';
+                return {
+                    name: doc.name,
+                    refNo: item.refNo || doc.ref_no || '',
+                    type: doc.type,
+                    department: item.department || doc.department || '',
+                    projectName: item.projectName || doc.project_name || '',
+                    location: item.location || doc.location || '',
+                    floorArea: item.floorArea || '',
+                    dateValue: item.dateValue || doc.date_value || '',
+                    date: item.date || (doc.created_at ? new Date(doc.created_at).toLocaleDateString() : ''),
+                    htmlContent: htmlContent,
+                    total: extractDocumentTotal(htmlContent)
+                };
+            });
+
+        selectedSourceDocIndex = previouslySelectedName
+            ? sourceDocuments.findIndex(function(doc) { return doc.name === previouslySelectedName; })
+            : -1;
+
+        renderSourceDocuments();
+        applySelectedSourceDocument();
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-documents">Error: ' + escHtml(error.message) + '</td></tr>';
+        document.getElementById('sourceDocsCount').textContent = 'Error';
+    }
+}
+
+function renderSourceDocuments() {
+    const tbody = document.getElementById('sourceDocsBody');
+    const countLabel = document.getElementById('sourceDocsCount');
+    const select = document.getElementById('sourceDocumentSelect');
+
+    if (sourceDocuments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-documents">No posted documents found. Post a document from Price Edit to include it here.</td></tr>';
+        countLabel.textContent = '0 documents';
+        select.innerHTML = '<option value="">-- None selected --</option>';
+        return;
+    }
+
+    tbody.innerHTML = sourceDocuments.map(function(doc, idx) {
+        const typeBadge = (doc.type || '').toLowerCase() === 'bom'
+            ? '<span class="badge badge-bom">BOM</span>'
+            : '<span class="badge badge-boq">BOQ</span>';
+        return '<tr id="sourceDocRow_' + idx + '">' +
+            '<td><strong>' + escHtml(doc.name) + '</strong></td>' +
+            '<td>' + escHtml(doc.refNo) + '</td>' +
+            '<td>' + typeBadge + '</td>' +
+            '<td>' + escHtml(doc.department || '-') + '</td>' +
+            '<td>' + escHtml(doc.date || '-') + '</td>' +
+            '<td>' + formatCurrency(doc.total) + '</td>' +
+            '<td class="selected-cell" id="sourceDocSelectedCell_' + idx + '"></td>' +
+            '<td class="actions-cell"><button type="button" class="btn btn-view" onclick="viewSourceDocument(' + idx + ')">&#128065; View</button></td>' +
+        '</tr>';
+    }).join('');
+
+    select.innerHTML = '<option value="">-- None selected --</option>' + sourceDocuments.map(function(doc, idx) {
+        return '<option value="' + idx + '">' + escHtml(doc.name) + ' (' + escHtml(doc.refNo) + ') — ' + formatCurrency(doc.total) + '</option>';
+    }).join('');
+
+    countLabel.textContent = sourceDocuments.length + ' document' + (sourceDocuments.length === 1 ? '' : 's');
+}
+
+// Applies selectedSourceDocIndex to the dropdown, table highlighting, and the
+// Materials Cost total, so only the chosen document counts toward the estimate.
+function applySelectedSourceDocument() {
+    const select = document.getElementById('sourceDocumentSelect');
+    select.value = selectedSourceDocIndex >= 0 ? String(selectedSourceDocIndex) : '';
+
+    sourceDocuments.forEach(function(doc, idx) {
+        const row = document.getElementById('sourceDocRow_' + idx);
+        const cell = document.getElementById('sourceDocSelectedCell_' + idx);
+        if (!row || !cell) return;
+        const isSelected = idx === selectedSourceDocIndex;
+        row.classList.toggle('selected-doc-row', isSelected);
+        cell.innerHTML = isSelected ? '<span class="badge badge-selected">&#10003; Selected</span>' : '';
+    });
+
+    const selectedDoc = sourceDocuments[selectedSourceDocIndex];
+    materialsTotal = selectedDoc ? selectedDoc.total : 0;
+
+    recalc();
+}
+
+function onSourceDocumentSelected() {
+    const select = document.getElementById('sourceDocumentSelect');
+    const idx = select.value === '' ? -1 : parseInt(select.value, 10);
+    selectedSourceDocIndex = isNaN(idx) ? -1 : idx;
+    applySelectedSourceDocument();
+}
+
+function addCustomItem() {
+    const container = document.getElementById('customItemsBody');
+    const noItemsMsg = document.getElementById('noCustomItemsMsg');
+    if (noItemsMsg) noItemsMsg.remove();
+
+    customItemCounter++;
+    const row = document.createElement('div');
+    row.className = 'custom-item-row';
+    row.id = 'customItem_' + customItemCounter;
+    row.innerHTML =
+        '<input type="text" class="custom-item-desc" placeholder="Item description (e.g., Permits & Fees)">' +
+        '<div class="cost-input-wrap">' +
+            '<span class="currency-prefix">' + CURRENCY + '</span>' +
+            '<input type="number" class="custom-item-amount" min="0" step="0.01" value="0" inputmode="decimal">' +
+        '</div>' +
+        '<button type="button" class="remove-item-btn" title="Remove item">&#10005;</button>';
+
+    row.querySelector('.remove-item-btn').addEventListener('click', function() {
+        row.remove();
+        if (!document.querySelector('#customItemsBody .custom-item-row')) {
+            container.innerHTML = '<div class="no-custom-items" id="noCustomItemsMsg">No additional items added.</div>';
+        }
+        recalc();
+    });
+    row.querySelector('.custom-item-amount').addEventListener('input', recalc);
+
+    container.appendChild(row);
+}
+
+function getCustomItems() {
+    const items = [];
+    document.querySelectorAll('#customItemsBody .custom-item-row').forEach(function(row) {
+        const desc = row.querySelector('.custom-item-desc').value.trim();
+        const amount = parseNum(row.querySelector('.custom-item-amount').value);
+        if (desc || amount) items.push({ description: desc || '(Unnamed item)', amount: amount });
+    });
+    return items;
+}
+
+function recalc() {
+    document.getElementById('materialsTotalDisplay').value = materialsTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    const laborTotal = parseNum(document.getElementById('laborTotal').value);
+    const mealAllowance = parseNum(document.getElementById('mealAllowance').value);
+    const transportationAllowance = parseNum(document.getElementById('transportationAllowance').value);
+    const mobilizationDemobilization = parseNum(document.getElementById('mobilizationDemobilization').value);
+    const customTotal = getCustomItems().reduce(function(sum, item) { return sum + item.amount; }, 0);
+
+    const grandTotal = materialsTotal + laborTotal + mealAllowance + transportationAllowance + mobilizationDemobilization + customTotal;
+    document.getElementById('grandTotalDisplay').textContent = formatCurrency(grandTotal);
+    return grandTotal;
+}
+
+function logActivityToServer(action, details) {
+    const formData = new FormData();
+    formData.append('log_action', action);
+    formData.append('log_details', details);
+    formData.append('log_page', 'estimate.php');
+    fetch('estimate.php', { method: 'POST', body: formData }).catch(function() {});
+}
+
+async function saveEstimate() {
+    if (userRole === 'guest') {
+        alert('Guests are not allowed to save estimates.');
+        return;
+    }
+
+    const estimateName = document.getElementById('estimateName').value.trim();
+    if (!estimateName) {
+        alert('Please enter an Estimate / Project Name before saving.');
+        document.getElementById('estimateName').focus();
+        return;
+    }
+
+    const grandTotal = recalc();
+    const isEditing = !!editingEstimateId;
+    const confirmMsg = isEditing
+        ? 'Update the saved estimate "' + estimateName + '" with a Grand Total of ' + formatCurrency(grandTotal) + '?'
+        : 'Save this cost estimate "' + estimateName + '" with a Grand Total of ' + formatCurrency(grandTotal) + '?';
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    const payload = {
+        action: isEditing ? 'update' : 'save',
+        id: editingEstimateId,
+        estimateName: estimateName,
+        department: userDepartment,
+        materialsTotal: materialsTotal,
+        laborTotal: parseNum(document.getElementById('laborTotal').value),
+        mealAllowance: parseNum(document.getElementById('mealAllowance').value),
+        transportationAllowance: parseNum(document.getElementById('transportationAllowance').value),
+        mobilizationDemobilization: parseNum(document.getElementById('mobilizationDemobilization').value),
+        customItems: getCustomItems(),
+        sourceDocuments: sourceDocuments[selectedSourceDocIndex]
+            ? [{
+                name: sourceDocuments[selectedSourceDocIndex].name,
+                refNo: sourceDocuments[selectedSourceDocIndex].refNo,
+                type: sourceDocuments[selectedSourceDocIndex].type,
+                total: sourceDocuments[selectedSourceDocIndex].total,
+                department: sourceDocuments[selectedSourceDocIndex].department,
+                projectName: sourceDocuments[selectedSourceDocIndex].projectName,
+                location: sourceDocuments[selectedSourceDocIndex].location,
+                floorArea: sourceDocuments[selectedSourceDocIndex].floorArea
+            }]
+            : [],
+        grandTotal: grandTotal
+    };
+
+    const saveBtn = document.getElementById('saveEstimateBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEditing ? 'Updating…' : 'Saving…';
+
+    try {
+        const response = await fetch('api/estimate_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            const actionWord = isEditing ? 'update_estimate' : 'save_estimate';
+            const actionLabel = isEditing ? 'Updated' : 'Saved';
+            logActivityToServer(actionWord, actionLabel + ' cost estimate: ' + estimateName + ' (Grand Total: ' + formatCurrency(grandTotal) + ')');
+            alert('Estimate "' + estimateName + '" has been ' + (isEditing ? 'updated' : 'saved') + ' successfully!');
+            if (isEditing) cancelEditEstimate();
+            loadRecentEstimates();
+        } else {
+            alert('Error ' + (isEditing ? 'updating' : 'saving') + ' estimate: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error ' + (isEditing ? 'updating' : 'saving') + ' estimate: ' + error.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = editingEstimateId ? '&#128190; Update Estimate' : '&#128190; Save Estimate';
+    }
+}
+
+// Professional, self-contained print/export layout for the estimate report
+const ESTIMATE_PRINT_CSS =
+    '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+    'body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #263238; background: white; padding: 35px 40px; }' +
+    '.report-header { border-bottom: 3px solid #1565C0; padding-bottom: 18px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; }' +
+    '.report-header h1 { font-size: 24px; color: #0D47A1; letter-spacing: 0.5px; margin-bottom: 4px; }' +
+    '.report-header .estimate-name { font-size: 14px; color: #333; font-weight: 600; }' +
+    '.report-header .report-meta { text-align: right; font-size: 11px; color: #666; line-height: 1.6; }' +
+    '.section-heading { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1565C0; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #dde3ea; }' +
+    '.project-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; background-color: #f5f7fa; padding: 16px 20px; border-radius: 6px; border-left: 4px solid #1565C0; }' +
+    '.project-info-grid .info-label { font-size: 10.5px; color: #555; text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; margin-bottom: 4px; }' +
+    '.project-info-grid .info-value { font-size: 13.5px; color: #0D47A1; font-weight: 600; word-wrap: break-word; }' +
+    '.source-doc-note { margin-top: 10px; font-size: 11.5px; color: #666; font-style: italic; }' +
+    'table.breakdown-table { width: 100%; border-collapse: collapse; margin-top: 4px; }' +
+    'table.breakdown-table th { background-color: #1565C0; color: white; text-align: left; padding: 10px 14px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.4px; }' +
+    'table.breakdown-table th.amount-col, table.breakdown-table td.amount-col { text-align: right; }' +
+    'table.breakdown-table td { padding: 10px 14px; border-bottom: 1px solid #e7ebef; font-size: 13px; }' +
+    'table.breakdown-table tbody tr:nth-child(even) { background-color: #fafbfc; }' +
+    'table.breakdown-table tr.materials-row td { color: #2E7D32; font-weight: 600; }' +
+    'table.breakdown-table tr.custom-item-row td { color: #444; }' +
+    'table.breakdown-table tfoot tr.grand-total-row td { background-color: #0D47A1; color: white; font-size: 16px; font-weight: 800; padding: 14px; border-bottom: none; text-transform: uppercase; letter-spacing: 0.4px; }' +
+    '.report-footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid #e7ebef; font-size: 10.5px; color: #888; display: flex; justify-content: space-between; }' +
+    '.report-print-btn { display: block; margin: 0 0 10px auto; padding: 8px 18px; background-color: #1565C0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; }' +
+    '.report-print-btn:hover { background-color: #0D47A1; }' +
+    '@media print { body { padding: 15px 20px; } .no-print { display: none !important; } }';
+
+// Builds the shared report body used by both the live Print/Export action and
+// the read-only "View" of a saved Recent Estimate, so both always look identical.
+function buildEstimateReportBody(data) {
+    const projectInfoGrid =
+        '<div class="project-info-grid">' +
+            '<div class="info-item"><div class="info-label">Department</div><div class="info-value">' + escHtml(data.department || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Project Name</div><div class="info-value">' + escHtml(data.projectName || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Location</div><div class="info-value">' + escHtml(data.location || 'N/A') + '</div></div>' +
+            '<div class="info-item"><div class="info-label">Total Floor Area</div><div class="info-value">' + escHtml(data.floorArea || 'N/A') + '</div></div>' +
+        '</div>';
+
+    const sourceDocNote = data.sourceDocName
+        ? 'Source Document: <strong>' + escHtml(data.sourceDocName) + '</strong> (Ref: ' + escHtml(data.sourceDocRefNo || 'N/A') + ')'
+        : 'No source document selected — Total Materials Cost Estimate is ' + formatCurrency(0) + '.';
+
+    const customRowsHtml = (data.customItems || []).map(function(item) {
+        return '<tr class="custom-item-row"><td>' + escHtml(item.description) + '</td><td class="amount-col">' + formatCurrency(item.amount) + '</td></tr>';
+    }).join('');
+
+    const breakdownTable =
+        '<table class="breakdown-table">' +
+            '<thead><tr><th>Cost Item</th><th class="amount-col">Amount</th></tr></thead>' +
+            '<tbody>' +
+                '<tr class="materials-row"><td>Total Materials Cost Estimate</td><td class="amount-col">' + formatCurrency(data.materialsTotal) + '</td></tr>' +
+                '<tr><td>Total Labor Cost Estimate</td><td class="amount-col">' + formatCurrency(data.laborTotal) + '</td></tr>' +
+                '<tr><td>Meal Allowance</td><td class="amount-col">' + formatCurrency(data.mealAllowance) + '</td></tr>' +
+                '<tr><td>Transportation Allowance</td><td class="amount-col">' + formatCurrency(data.transportationAllowance) + '</td></tr>' +
+                '<tr><td>Mobilization / Demobilization</td><td class="amount-col">' + formatCurrency(data.mobilizationDemobilization) + '</td></tr>' +
+                customRowsHtml +
+            '</tbody>' +
+            '<tfoot><tr class="grand-total-row"><td>Grand Total Cost Estimate</td><td class="amount-col">' + formatCurrency(data.grandTotal) + '</td></tr></tfoot>' +
+        '</table>';
+
+    const reportHeader =
+        '<div class="report-header">' +
+            '<div>' +
+                '<h1>Project Cost Estimate</h1>' +
+                '<div class="estimate-name">' + escHtml(data.estimateName) + '</div>' +
+            '</div>' +
+            '<div class="report-meta">' +
+                'Prepared by: <strong>' + escHtml(data.preparedBy || 'N/A') + '</strong><br>' +
+                'Date: ' + escHtml(data.dateLabel) +
+            '</div>' +
+        '</div>';
+
+    return '<button type="button" class="report-print-btn no-print" onclick="window.print()">&#128424; Print This Report</button>' +
+        reportHeader +
+        '<div class="section-heading">Project Information</div>' +
+        projectInfoGrid +
+        '<div class="source-doc-note">' + sourceDocNote + '</div>' +
+        '<div class="section-heading">Cost Breakdown</div>' +
+        breakdownTable +
+        '<div class="report-footer"><span>Generated by the BOM/BOQ Project Cost Estimate system</span><span>' + new Date().toLocaleString() + '</span></div>';
+}
+
+function openEstimateReportWindow(title, body, autoPrint) {
+    const win = window.open('', '_blank');
+    const printScript = autoPrint ? '<scr' + 'ipt>window.onload=function(){window.print();};</scr' + 'ipt>' : '';
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escHtml(title) + '</title><style>' + ESTIMATE_PRINT_CSS + '</style></head><body>' + body + printScript + '</body></html>');
+    win.document.close();
+}
+
+function printEstimate() {
+    const estimateName = document.getElementById('estimateName').value.trim() || 'Untitled Estimate';
+    const doc = sourceDocuments[selectedSourceDocIndex] || null;
+    const grandTotal = recalc();
+
+    const body = buildEstimateReportBody({
+        estimateName: estimateName,
+        preparedBy: '{{ user.username if user else "" }}',
+        dateLabel: new Date().toLocaleDateString(),
+        department: doc ? doc.department : '',
+        projectName: doc ? doc.projectName : '',
+        location: doc ? doc.location : '',
+        floorArea: doc ? doc.floorArea : '',
+        sourceDocName: doc ? doc.name : '',
+        sourceDocRefNo: doc ? doc.refNo : '',
+        materialsTotal: materialsTotal,
+        laborTotal: document.getElementById('laborTotal').value,
+        mealAllowance: document.getElementById('mealAllowance').value,
+        transportationAllowance: document.getElementById('transportationAllowance').value,
+        mobilizationDemobilization: document.getElementById('mobilizationDemobilization').value,
+        customItems: getCustomItems(),
+        grandTotal: grandTotal
+    });
+
+    openEstimateReportWindow(estimateName, body, true);
+}
+
+let recentEstimates = [];
+
+async function loadRecentEstimates() {
+    const tbody = document.getElementById('recentEstimatesBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="no-documents">Loading recent estimates&hellip;</td></tr>';
+
+    try {
+        const response = await fetch('api/estimate_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list' })
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-documents">' + escHtml(result.message || 'Error loading recent estimates') + '</td></tr>';
+            document.getElementById('recentEstimatesCount').textContent = 'Error';
+            return;
+        }
+
+        recentEstimates = result.estimates || [];
+        renderRecentEstimates();
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-documents">Error: ' + escHtml(error.message) + '</td></tr>';
+        document.getElementById('recentEstimatesCount').textContent = 'Error';
+    }
+}
+
+function renderRecentEstimates() {
+    const tbody = document.getElementById('recentEstimatesBody');
+    const countLabel = document.getElementById('recentEstimatesCount');
+
+    if (recentEstimates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-documents">No estimates saved yet. Saved estimates will appear here.</td></tr>';
+        countLabel.textContent = '0 estimates';
+        return;
+    }
+
+    tbody.innerHTML = recentEstimates.map(function(est, idx) {
+        const savedDate = est.created_at ? new Date(est.created_at.replace(' ', 'T')).toLocaleDateString() : '-';
+        return '<tr>' +
+            '<td><strong>' + escHtml(est.estimate_name) + '</strong></td>' +
+            '<td>' + escHtml(est.department || '-') + '</td>' +
+            '<td class="materials-cell">' + formatCurrency(est.materials_total) + '</td>' +
+            '<td class="grand-total-cell">' + formatCurrency(est.grand_total) + '</td>' +
+            '<td>' + escHtml(est.created_by_username || '-') + '</td>' +
+            '<td>' + escHtml(savedDate) + '</td>' +
+            '<td class="actions-cell"><div class="button-cell">' +
+                '<button type="button" class="btn btn-view" onclick="viewRecentEstimate(' + idx + ')">&#128065; View</button>' +
+                '<button type="button" class="btn btn-print-row" onclick="printRecentEstimate(' + idx + ')">&#128424; Print</button>' +
+                (userRole === 'guest' ? '' :
+                    '<button type="button" class="btn btn-edit" onclick="editRecentEstimate(' + idx + ')">&#9998; Edit</button>' +
+                    '<button type="button" class="btn btn-delete" onclick="deleteRecentEstimate(' + idx + ')">&#128465; Delete</button>'
+                ) +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+
+    countLabel.textContent = recentEstimates.length + ' estimate' + (recentEstimates.length === 1 ? '' : 's');
+}
+
+// Normalizes a saved (DB) estimate row into the data shape buildEstimateReportBody expects
+function buildRecentEstimateReportData(est) {
+    const sourceDoc = (est.source_documents && est.source_documents.length > 0) ? est.source_documents[0] : null;
+
+    return {
+        estimateName: est.estimate_name,
+        preparedBy: est.created_by_username || 'N/A',
+        dateLabel: est.created_at ? new Date(est.created_at.replace(' ', 'T')).toLocaleDateString() : 'N/A',
+        department: sourceDoc ? sourceDoc.department : (est.department || ''),
+        projectName: sourceDoc ? sourceDoc.projectName : '',
+        location: sourceDoc ? sourceDoc.location : '',
+        floorArea: sourceDoc ? sourceDoc.floorArea : '',
+        sourceDocName: sourceDoc ? sourceDoc.name : '',
+        sourceDocRefNo: sourceDoc ? sourceDoc.refNo : '',
+        materialsTotal: est.materials_total,
+        laborTotal: est.labor_total,
+        mealAllowance: est.meal_allowance,
+        transportationAllowance: est.transportation_allowance,
+        mobilizationDemobilization: est.mobilization_demobilization,
+        customItems: est.custom_items || [],
+        grandTotal: est.grand_total
+    };
+}
+
+function viewRecentEstimate(idx) {
+    const est = recentEstimates[idx];
+    if (!est) return;
+
+    const body = buildEstimateReportBody(buildRecentEstimateReportData(est));
+    openEstimateReportWindow(est.estimate_name, body, false);
+}
+
+function printRecentEstimate(idx) {
+    const est = recentEstimates[idx];
+    if (!est) return;
+
+    const body = buildEstimateReportBody(buildRecentEstimateReportData(est));
+    openEstimateReportWindow(est.estimate_name, body, true);
+}
+
+function editRecentEstimate(idx) {
+    if (userRole === 'guest') {
+        alert('Guests are not allowed to edit estimates.');
+        return;
+    }
+
+    const est = recentEstimates[idx];
+    if (!est) return;
+
+    editingEstimateId = est.id;
+
+    document.getElementById('estimateName').value = est.estimate_name;
+    document.getElementById('laborTotal').value = parseNum(est.labor_total);
+    document.getElementById('mealAllowance').value = parseNum(est.meal_allowance);
+    document.getElementById('transportationAllowance').value = parseNum(est.transportation_allowance);
+    document.getElementById('mobilizationDemobilization').value = parseNum(est.mobilization_demobilization);
+
+    // Rebuild the custom items list from the saved estimate
+    document.getElementById('customItemsBody').innerHTML = '<div class="no-custom-items" id="noCustomItemsMsg">No additional items added.</div>';
+    (est.custom_items || []).forEach(function(item) {
+        addCustomItem();
+        const rows = document.querySelectorAll('#customItemsBody .custom-item-row');
+        const row = rows[rows.length - 1];
+        row.querySelector('.custom-item-desc').value = item.description;
+        row.querySelector('.custom-item-amount').value = item.amount;
+    });
+
+    // Try to re-select the original source document if it's still posted;
+    // otherwise fall back to the historical materials total that was saved.
+    const savedDoc = (est.source_documents && est.source_documents.length > 0) ? est.source_documents[0] : null;
+    const matchIdx = savedDoc ? sourceDocuments.findIndex(function(d) { return d.name === savedDoc.name; }) : -1;
+    if (matchIdx >= 0) {
+        selectedSourceDocIndex = matchIdx;
+        applySelectedSourceDocument();
+    } else {
+        selectedSourceDocIndex = -1;
+        document.getElementById('sourceDocumentSelect').value = '';
+        materialsTotal = parseNum(est.materials_total);
+        recalc();
+    }
+
+    const banner = document.getElementById('editEstimateBanner');
+    document.getElementById('editEstimateNameLabel').textContent = '"' + est.estimate_name + '"';
+    banner.style.display = 'flex';
+
+    document.getElementById('saveEstimateBtn').innerHTML = '&#128190; Update Estimate';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEditEstimate() {
+    editingEstimateId = null;
+    document.getElementById('editEstimateBanner').style.display = 'none';
+    document.getElementById('saveEstimateBtn').innerHTML = '&#128190; Save Estimate';
+}
+
+async function deleteRecentEstimate(idx) {
+    if (userRole === 'guest') {
+        alert('Guests are not allowed to delete estimates.');
+        return;
+    }
+
+    const est = recentEstimates[idx];
+    if (!est) return;
+
+    if (!confirm('Delete the saved estimate "' + est.estimate_name + '"? This cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('api/estimate_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id: est.id })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            logActivityToServer('delete_estimate', 'Deleted cost estimate: ' + est.estimate_name);
+            if (editingEstimateId === est.id) cancelEditEstimate();
+            loadRecentEstimates();
+        } else {
+            alert('Error deleting estimate: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error deleting estimate: ' + error.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['laborTotal', 'mealAllowance', 'transportationAllowance', 'mobilizationDemobilization'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', recalc);
+    });
+
+    const dept = userDepartment ? userDepartment + ' - ' : '';
+    document.getElementById('estimateName').value = dept + 'Cost Estimate - ' + new Date().toLocaleDateString();
+
+    loadSourceDocuments();
+    loadRecentEstimates();
+});
+</script>
+<script src="themes.js"></script>
+</body>
+</html>

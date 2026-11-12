@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BOM / BOQ Studio Pro{% endblock %}</title>
+    <!-- Prevent theme flicker -->
+    <script>
+        try {
+            var t = localStorage.getItem('bom_theme');
+            if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t);
+        } catch(e) {}
+    </script>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if not hide_nav %}
+    <nav class="main-navbar">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-logo">B</div>
+            <div>BOM / BOQ <span style="font-weight: 400; font-size: 14px; color: var(--primary);">Studio</span></div>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">📊 Dashboard</a></li>
+            <!-- Temporarily Disable this in the Header -->
+            <!-- <li><a href="/bom" class="nav-link {% if active_page == 'bom' %}active{% endif %}">📝 Create BOM</a></li> -->
+            <!-- <li><a href="/boq" class="nav-link {% if active_page == 'boq' %}active{% endif %}">📋 Create BOQ</a></li> -->
+            <!-- <li><a href="/estimate" class="nav-link {% if active_page == 'estimate' %}active{% endif %}">💰 Cost Estimates</a></li> -->
+            <!-- <li><a href="/save_bomboq" class="nav-link {% if active_page == 'save_bomboq' %}active{% endif %}">📁 Saved Documents</a></li> -->
+            <!-- <li><a href="/price_edit_bomboq" class="nav-link {% if active_page == 'price_edit' %}active{% endif %}">🏷️ MCE Pricing</a></li> -->
+            <!-- <li><a href="/price_edit_bomboq" class="nav-link {% if active_page == 'price_edit' %}active{% endif %}">🏷️ MCE Pricing</a></li> -->
+            
+            {% if user and (user.role in ['department_admin', 'admin']) %}
+            <li><a href="/approver" class="nav-link {% if active_page == 'approver' %}active{% endif %}">✅ Approvals</a></li>
+            {% endif %}
+
+            {% if user and (user.role == 'admin' or (user.department and user.department.lower() == 'purchasing')) %}
+            <li><a href="/approved_for_po" class="nav-link {% if active_page == 'po' %}active{% endif %}">📦 Purchase Orders</a></li>
+            {% endif %}
+
+            <li><a href="/user_logs" class="nav-link {% if active_page == 'logs' %}active{% endif %}">📜 Audit Logs</a></li>
+
+            {% if user and user.role == 'admin' %}
+            <li><a href="/users_admin" class="nav-link {% if active_page == 'users_admin' %}active{% endif %}">👥 Users</a></li>
+            {% endif %}
+        </ul>
+
+        <div class="nav-right">
+            <button class="btn btn-secondary btn-sm" onclick="BomThemes.open()" title="Switch Color Themes">
+                🎨 Themes
+            </button>
+
+            {% if user %}
+            <div class="user-badge-capsule">
+                <strong>{{ user.username }}</strong>
+                <span class="badge-role {{ user.role }}">{{ user.role.replace('_', ' ') }}</span>
+                {% if user.department %}
+                <span class="badge-dept">{{ user.department }}</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="App.logout()" title="Log out">
+                🚪 Logout
+            </button>
+            {% else %}
+            <a href="/login" class="btn btn-primary btn-sm">Sign In</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-wrapper">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="app-footer">
+        <p>BOM / BOQ Studio Pro &copy; 2026 &bull; Developed by Engr. Alex &bull; Powered by FastAPI Framework</p>
+    </footer>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/themes.js"></script>
+    <script src="/static/js/document_sync.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block head %}
+<style>
+    .auth-container {
+        display: flex;
+        min-height: calc(100vh - var(--nav-height) - 100px);
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+    }
+
+    .auth-card {
+        display: flex;
+        width: 100%;
+        max-width: 960px;
+        background: #ffffff;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+
+    .auth-hero {
+        flex: 1;
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #4f46e5 100%);
+        color: white;
+        padding: 48px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .auth-hero-title {
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 12px;
+    }
+
+    .auth-hero-features {
+        margin-top: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 13px;
+        color: #e2e8f0;
+    }
+
+    .feature-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .auth-form-side {
+        width: 480px;
+        padding: 48px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .auth-tabs {
+        display: flex;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .auth-tab {
+        padding-bottom: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-muted);
+        background: none;
+        border: none;
+        cursor: pointer;
+        position: relative;
+    }
+    .auth-tab.active {
+        color: var(--primary);
+    }
+    .auth-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+    }
+
+    .demo-users-box {
+        margin-top: 24px;
+        padding: 16px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-subtle);
+        border: 1px dashed var(--border);
+    }
+
+    .demo-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        margin: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .demo-pill:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+    }
+
+    @media (max-width: 860px) {
+        .auth-hero { display: none; }
+        .auth-form-side { width: 100%; padding: 32px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Hero Left Side -->
+        <div class="auth-hero">
+            <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom: 24px;">
+                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px;">
+                        B
+                    </div>
+                    <span style="font-weight:800; font-size:18px; letter-spacing:1px;">BOM / BOQ STUDIO</span>
+                </div>
+                <h2 class="auth-hero-title">Next-Gen Engineering Bill of Materials & Quantities</h2>
+                <p style="color:#cbd5e1; font-size:14px;">FastAPI Architecture &bull; Instant Calculations &bull; Department Approval Flow</p>
+
+                <div class="auth-hero-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <div>
+                            <strong>Real-Time Calculations</strong>
+                            <p style="font-size:12px; color:#94a3b8;">Automatic labor, materials, allowances, and grand total calculations.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔐</div>
+                        <div>
+                            <strong>Role & Department Security</strong>
+                            <p style="font-size:12px; color:#94a3b8;">Admin, Department Admin, User, and Purchasing access controls.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📦</div>
+                        <div>
+                            <strong>PO & Attachment Management</strong>
+                            <p style="font-size:12px; color:#94a3b8;">Upload PDF/Image orders, view attachment history, and print documents.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:11px; color:#94a3b8;">
+                Engineered with FastAPI & SQLite / MySQL &bull; Version 2.1.0
+            </div>
+        </div>
+
+        <!-- Form Right Side -->
+        <div class="auth-form-side">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Sign In</button>
+                <button class="auth-tab" id="tab-register-btn" onclick="switchAuthTab('register')">Create Account</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Username</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Enter your username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="login-submit-btn">
+                    Sign In to Dashboard &rarr;
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" style="display: none;" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label" for="reg-username">Desired Username</label>
+                    <input type="text" id="reg-username" class="form-control" placeholder="e.g. Alex_Engineer" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-password">Password (min 6 chars)</label>
+                    <input type="password" id="reg-password" class="form-control" placeholder="Create strong password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-confirm-password">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" class="form-control" placeholder="Re-enter password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-role">Account Role</label>
+                    <select id="reg-role" class="form-control" onchange="toggleAuthFields(this.value)">
+                        <option value="guest">Guest (Read-Only)</option>
+                        <option value="user" selected>User (Department Member)</option>
+                        <option value="department_admin">Department Admin</option>
+                        <option value="admin">System Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group" id="reg-dept-group">
+                    <label class="form-label" for="reg-department">Department</label>
+                    <select id="reg-department" class="form-control">
+                        <option value="Design and Construction Department">Design and Construction Department</option>
+                        <option value="Purchasing">Purchasing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- Admin Auth Verification fields for privileged accounts -->
+                <div id="admin-auth-section" style="display: none; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 8px;">
+                        ⚠️ Authorizing Credentials Required
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <input type="text" id="reg-auth-user" class="form-control" style="font-size: 12px;" placeholder="Authorizing Username (e.g. Admin)">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="password" id="reg-auth-pass" class="form-control" style="font-size: 12px;" placeholder="Authorizing Password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 8px;" id="reg-submit-btn">
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Quick Demo Testing Logins -->
+            <div class="demo-users-box">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+                    ⚡ Quick Demo Test Logins:
+                </div>
+                <span class="demo-pill" onclick="quickFill('Testguest', 'guest123')">👀 Guest</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchAuthTab(tab) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const tabLogin = document.getElementById('tab-login-btn');
+    const tabRegister = document.getElementById('tab-register-btn');
+
+    if (tab === 'login') {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+    } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
+        toggleAuthFields(document.getElementById('reg-role').value);
+    }
+}
+
+function toggleAuthFields(role) {
+    const authSec = document.getElementById('admin-auth-section');
+    if (role === 'admin' || role === 'department_admin' || role === 'user') {
+        authSec.style.display = 'block';
+    } else {
+        authSec.style.display = 'none';
+    }
+}
+
+function quickFill(u, p) {
+    switchAuthTab('login');
+    document.getElementById('login-username').value = u;
+    document.getElementById('login-password').value = p;
+    App.toast(`Filled credentials for ${u}`, 'info', 2000);
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-submit-btn');
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            App.toast('Login successful! Redirecting...', 'success', 2000);
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
+        } else {
+            App.toast(data.detail || data.message || 'Invalid username or password', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Sign In to Dashboard →';
+        }
+    } catch (err) {
+        App.toast('Connection error: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Dashboard →';
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reg-submit-btn');
+    const new_username = document.getElementById('reg-username').value.trim();
+    const new_password = document.getElementById('reg-password').value;
+    const confirm_password = document.getElementById('reg-confirm-password').value;
+    const role = document.getElementById('reg-role').value;
+    const department = document.getElementById('reg-department').value;
+    const admin_auth_username = document.getElementById('reg-auth-user').value.trim();
+    const admin_auth_password = document.getElementById('reg-auth-pass').value;
+
+    if (new_password !== confirm_password) {
+        App.toast('Passwords do not match', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating Account...';
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                new_username,
+                new_password,
+                confirm_password,
+                role,
+                department,
+                admin_auth_username,
+                admin_auth_password
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            App.toast(data.message || 'Account created successfully! You can now sign in.', 'success');
+            switchAuthTab('login');
+            document.getElementById('login-username').value = new_username;
+            document.getElementById('login-password').value = new_password;
+        } else {
+            App.toast(data.detail || data.message || 'Registration failed', 'error');
+        }
+    } catch (err) {
+        App.toast('Connection error: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,2897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill of Materials</title>
+    <style>
+        :root {
+            --top-banner-offset: 0px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            font-size: 11px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .header-section {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .header-section div {
+            margin: 3px 0;
+        }
+
+        .header-section strong {
+            text-decoration: underline;
+        }
+
+        .perimeter-section {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+        }
+        .project-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .project-info select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .project-info select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        .section-title {
+            background-color: #FFFF00;
+            font-weight: bold;
+            padding: 6px 10px;
+            margin-top: 10px;
+            margin-bottom: 0;
+            border: 1px solid #000;
+            font-size: 11px;
+            color: #000;
+            opacity: 1;
+            visibility: visible;
+            text-decoration: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+
+        table thead {
+            background-color: #FFFF00;
+            font-weight: bold;
+        }
+
+        table th, table td {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            text-align: left;
+        }
+
+        table th {
+            text-align: center;
+            background-color: #FFFF00;
+            font-size: 10px;
+        }
+
+        .total-row {
+            background-color: #FFFF00;
+            font-weight: bold;
+        }
+
+        .total-row td {
+            background-color: #FFFF00;
+        }
+
+        .signatures {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            font-size: 10px;
+        }
+
+        .signature-row {
+            display: contents;
+        }
+
+        .signature-block {
+            text-align: center;
+        }
+
+        .signature-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 40px;
+            padding-top: 3px;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .signature-title {
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 2px;
+            border: none;
+            background-color: transparent;
+            font-size: 11px;
+        }
+
+        input[type="number"] {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .description-input {
+            width: 100%;
+            padding: 3px;
+            border: none;
+            background-color: transparent;
+            font-size: 11px;
+            cursor: pointer;
+            resize: none;
+            overflow: hidden !important;
+            min-height: 20px;
+            line-height: 1.3;
+            font-family: Arial, sans-serif;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .material-dropdown {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .material-dropdown div {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .material-dropdown div:hover {
+            background-color: #FFFF00;
+        }
+
+        .unit-input, .qty-input, .unit-cost-input {
+            width: 100%;
+            height: 100%;
+            padding: 3px;
+            border: none;
+            background-color: transparent;
+            font-size: 11px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .unit-input {
+            cursor: pointer;
+        }
+
+        .unit-dropdown {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .unit-dropdown div {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .unit-dropdown div:hover {
+            background-color: #FFFF00;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #666;
+            background-color: #e8e8e8;
+        }
+
+        button:hover {
+            background-color: #d0d0d0;
+        }
+
+        .add-row-btn {
+            background-color: #FFFF00;
+            font-weight: bold;
+            margin-top: 5px;
+            margin-right: 5px;
+            padding: 10px 15px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #666;
+        }
+
+        .remove-row-btn {
+            background-color: #ff6b6b;
+            color: white;
+            font-weight: bold;
+            padding: 10px 15px;
+            margin-top: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #666;
+        }
+
+        .delete-section-btn {
+            background-color: #cc0000;
+            color: white;
+            font-weight: bold;
+            padding: 10px 15px;
+            margin-top: 5px;
+            margin-left: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #666;
+        }
+
+        .add-section-btn {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            padding: 10px 15px;
+            margin-top: 5px;
+            margin-left: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #666;
+            position: relative;
+        }
+
+        .section-btn-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background-color: white;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            box-shadow: 0 -4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 280px;
+            margin-bottom: 5px;
+        }
+
+        .section-dropdown.show {
+            display: block;
+        }
+
+        .section-dropdown-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .section-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .section-dropdown-item:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            padding: 10px 0;
+            position: static;
+        }
+
+        .button-group button {
+            padding: 10px 22px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+            transition: all 0.2s ease;
+            position: static;
+            min-width: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .button-group button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .print-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .print-btn:hover {
+            background-color: #1976D2;
+        }
+
+        .clear-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .boq-btn, .bom-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .boq-btn:hover, .bom-btn:hover {
+            background-color: #388E3C;
+        }
+
+        .save-btn {
+            background-color: #2E7D32;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background-color: #1B5E20;
+        }
+
+        .viewsave-btn {
+            background-color: #7c5c03;
+            color: white;
+        }
+
+        .viewsave-btn:hover {
+            background-color: #553e02;
+        }
+
+        .viewprice-btn {
+            background-color: #5c4102;
+            color: white;
+        }
+
+        .viewprice-btn:hover {
+            background-color: #3d2b01;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+                font-size: 10px;
+                line-height: 1.2;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 15px;
+                margin: 0;
+            }
+            button, .button-group, .add-row-btn, .remove-row-btn, .delete-section-btn, .add-section-btn, .section-btn-container {
+                display: none !important;
+            }
+            
+            /* Hide date field border */
+            #dateField {
+                border: none !important;
+            }
+            
+            /* Professional print table styles */
+            table {
+                page-break-inside: avoid;
+                border-collapse: collapse;
+                margin-bottom: 8px;
+                font-size: 10px;
+            }
+            
+            table th, table td {
+                border: 0.5px solid #000;
+                padding: 4px 5px;
+                text-align: left;
+                vertical-align: middle;
+            }
+            
+            table th {
+                background-color: #FFFF00;
+                font-weight: bold;
+                padding: 5px;
+                text-align: center;
+            }
+            
+            /* ITEM DESCRIPTION column - make it wrap text properly */
+            table td:first-child,
+            table th:first-child {
+                width: 45%;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                white-space: normal;
+                text-align: left;
+                vertical-align: top;
+            }
+            
+            table td:first-child textarea,
+            table td:first-child input {
+                width: 100%;
+                border: none;
+                background: transparent;
+                font-size: 9px;
+                line-height: 1.2;
+                padding: 2px;
+                margin: 0;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                white-space: normal;
+                resize: none;
+                overflow: hidden !important;
+            }
+            
+            /* Adjust other columns width for proper distribution */
+            table td:nth-child(2),
+            table th:nth-child(2) {
+                width: 10%;
+                text-align: center;
+            }
+            
+            table td:nth-child(3),
+            table th:nth-child(3) {
+                width: 8%;
+                text-align: center;
+            }
+            
+            table td:nth-child(4),
+            table th:nth-child(4) {
+                width: 12%;
+                text-align: center;
+            }
+            
+            table td:nth-child(5),
+            table th:nth-child(5) {
+                width: 25%;
+                text-align: right;
+                font-weight: bold;
+            }
+            
+            table td input,
+            table td textarea,
+            table td select {
+                border: none;
+                background: transparent;
+                font-size: 9px;
+                width: 100%;
+                height: auto;
+                padding: 1px 2px;
+                margin: 0;
+                resize: none;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                overflow: hidden !important;
+            }
+            
+            /* Total rows styling */
+            .total-row {
+                background-color: #FFFF00;
+                font-weight: bold;
+            }
+            
+            .total-row td {
+                background-color: #FFFF00;
+                border: 0.5px solid #000;
+                padding: 4px 5px;
+            }
+            
+            /* Section titles */
+            .section-title {
+                background-color: #FFFF00 !important;
+                font-weight: bold !important;
+                padding: 4px 8px;
+                margin-top: 6px;
+                margin-bottom: 2px;
+                border: 0.5px solid #000;
+                page-break-after: avoid;
+                font-size: 10px;
+                color: #000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            
+            /* Header section */
+            .header {
+                margin-bottom: 10px;
+                page-break-after: avoid;
+            }
+            
+            .header h2 {
+                margin: 5px 0;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            
+            .header hr {
+                border: 1px solid #ffd102;
+                margin: 5px auto;
+            }
+            
+            /* Project info */
+            .project-info {
+                display: block;
+                margin-bottom: 10px;
+                page-break-after: avoid;
+                font-size: 10px;
+            }
+            
+            .project-info div {
+                margin: 2px 0;
+            }
+            
+            /* Signatures */
+            .signatures {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 12px;
+                margin-top: 20px;
+                page-break-inside: avoid;
+            }
+            
+            .signature-row {
+                display: contents;
+            }
+            
+            .signature-block {
+                page-break-inside: avoid;
+                text-align: center;
+                font-size: 8px;
+            }
+            
+            .signature-line {
+                border-top: 1px solid #000;
+                margin-top: 35px;
+                margin-bottom: 3px;
+            }
+        }
+    </style>
+    <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="themes.css">
+
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <script src="/static/js/app.js"></script>
+
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="main-navbar" style="position: sticky; top: 0; z-index: 9999; margin-bottom: 20px;">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-logo">B</div>
+            <div>BOM / BOQ <span style="font-weight: 400; font-size: 14px; color: var(--primary);">Studio</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+            <li><a href="/bom" class="nav-link active">📝 Create BOM</a></li>
+            <li><a href="/boq" class="nav-link">📋 Create BOQ</a></li>
+            <li><a href="/estimate" class="nav-link">💰 Cost Estimates</a></li>
+            <li><a href="/save_bomboq" class="nav-link">📁 Saved Documents</a></li>
+            <li><a href="/price_edit_bomboq" class="nav-link">🏷️ MCE Pricing</a></li>
+            {% if user and user.role in ["department_admin", "admin"] %}
+            <li><a href="/approver" class="nav-link">✅ Approvals</a></li>
+            {% endif %}
+            {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
+            <li><a href="/approved_for_po" class="nav-link">📦 Purchase Orders</a></li>
+            {% endif %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
+            {% if user and user.role == "admin" %}
+            <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
+            {% endif %}
+        </ul>
+        <div class="nav-right">
+            <button class="btn btn-secondary btn-sm" onclick="BomThemes.open()">🎨 Themes</button>
+            {% if user %}
+            <div class="user-badge-capsule">
+                <strong>{{ user.username }}</strong>
+                <span class="badge-role {{ user.role }}">{{ user.role.replace("_", " ") }}</span>
+                {% if user.department %}
+                <span class="badge-dept">{{ user.department }}</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="App.logout()">🚪 Logout</button>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Edit Mode Banner (hidden until editing a saved BOM document) -->
+    <div id="editBanner" style="display:none;position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;padding:13px 24px;flex-direction:row;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,0.35);border-bottom:3px solid #0D47A1;font-family:Arial,sans-serif;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;line-height:1;">&#9998;</span>
+            <div>
+                <div style="font-weight:700;font-size:14px;letter-spacing:0.4px;">EDIT MODE &mdash; BOM</div>
+                <div id="editDocNameLabel" style="font-size:12px;opacity:0.85;margin-top:2px;"></div>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
+            <button onclick="updateDocument()" id="updateDocBtn" style="background:#43A047;color:#fff;border:none;border-radius:6px;padding:10px 26px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.25);letter-spacing:0.3px;" onmouseover="this.style.background='#2E7D32'" onmouseout="this.style.background='#43A047'">&#128190; Update Document</button>
+            <button onclick="cancelEdit()" style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.55);border-radius:6px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&#10005; Cancel</button>
+        </div>
+    </div>
+    <div id="templateBanner" style="display:none;position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#F57C00,#E65100);color:#fff;padding:13px 24px;flex-direction:row;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,0.35);border-bottom:3px solid #BF360C;font-family:Arial,sans-serif;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;line-height:1;">&#128203;</span>
+            <div>
+                <div style="font-weight:700;font-size:14px;letter-spacing:0.4px;">TEMPLATE LOADED</div>
+                <div id="templateDocNameLabel" style="font-size:12px;opacity:0.85;margin-top:2px;"></div>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
+            <button onclick="cancelEdit()" style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.55);border-radius:6px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&#10005; Discard</button>
+        </div>
+    </div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <hr style="border: 1.5px solid #ffd102; width: 100%; margin: 0 auto 15px auto;">
+
+            <h2>BILL OF MATERIALS</h2><br>
+         
+            <hr style="border: 1.5px solid #ffd102; width: 100%; margin: 0 auto 15px auto;">
+        
+
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="button-group">
+            <button class="print-btn" onclick="window.print()">Print</button>
+            <button class="clear-btn" onclick="clearForm()">Clear Form</button>
+            <button class="boq-btn" onclick="loadPage('/boq')">CREATE BOQ</button>
+            <button class="save-btn" onclick="openSavePage()">Save</button>
+            <button class="viewsave-btn" onclick="loadPage('/save_bomboq')">View Save Files</button>
+            <button class="viewprice-btn" onclick="loadPage('/price_edit_bomboq')">View MCE</button>
+        </div>
+
+        <!-- Project Information -->
+        <div class="project-info">
+            <div class="info-group">
+                <label>Department:</label>
+                <select id="projectDepartment">
+                    <option value="">-- Select Department --</option>
+                    <option value="Purchasing">Purchasing</option>
+                    <option value="Design and Construction Department">Design and Construction Department</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div class="info-group">
+                <label>Project Name:</label>
+                <input type="text" id="projectNameField" placeholder="Enter project name">
+            </div>
+            <div class="info-group">
+                <label>Location:</label>
+                <input type="text" id="projectLocation" placeholder="Enter location">
+            </div>
+            <div class="info-group">
+                <label>Total Floor Area:</label>
+                <input type="text" id="projectFloorArea" placeholder="Enter total floor area">
+            </div>
+            <div class="info-group">
+                <label>Date:</label>
+                <input type="date" id="dateField">
+            </div>
+            <div class="info-group">
+                <label>Reference no:</label>
+                <input type="text" id="referenceNo" readonly>
+            </div>
+        </div>
+        
+ 
+        <script>
+        // Auto-generate Reference No in format MCE-yyyymonthdaytime
+        function pad(n) { return n < 10 ? '0' + n : n; }
+        function generateReferenceNo() {
+            var now = new Date();
+            var yyyy = now.getFullYear();
+            var mm = pad(now.getMonth() + 1);
+            var dd = pad(now.getDate());
+            var hh = pad(now.getHours());
+            var min = pad(now.getMinutes());
+            var ss = pad(now.getSeconds());
+            var ref = `MCE-${yyyy}${mm}${dd}${hh}${min}${ss}`;
+            document.getElementById('referenceNo').value = ref;
+        }
+        window.addEventListener('DOMContentLoaded', generateReferenceNo);
+        </script>
+
+               <!-- Bill of Materials -->
+        <div style="font-weight: bold; margin-bottom: 10px;">MATERIALS COST ESTIMATE: BILL OF MATERIALS SECTION</div>
+
+        <!-- Panel Board and Circuit Breakers -->
+        <div id="panelSection" class="bom-section">
+        <div class="section-title">PANEL BOARD AND CIRCUIT BREAKERS:</div>
+        <table id="panelTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="panel" rows="1">LP/PP ( LIGHTING PANEL / POWER PANEL ):   Main:  1 - 60A, THREE PHASE, SE-EZC100H3060, 3P, 400V, 36 KAIC MCCB , SCHNEIDER, w/ Ground and neutral bus terminal. Branches: 17- 20AT/100AF, SE-EZC100N1020, 1P, 10KAIC, 240V, 60Hz,  Bolt-on Type, SCHNEIDER Brand w/ Ground and Neutral busbar terminal. NEMA 1 ENCLOSURE</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="100,000.00"></td>
+                    <td class="text-right total-cost">100,000.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="panel" rows="1">Main 1-20A G.E. TYPE, 60Hz, Bolt-on Type,With Safety ENCLOSURE</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1,200.00"></td>
+                    <td class="text-right total-cost">1,200.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('panelTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('panelTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('panelSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('panelSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+
+        <!-- Wires and Cables -->
+        <div id="wiresSection" class="bom-section">
+        <div class="section-title">WIRES AND CABLES:</div>
+        <table id="wiresTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="wires" rows="1">3.5 sq. mm. THHN, Phelps Dodge</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="wires" rows="1">5.5 sq. mm. THHN, Phelps Dodge</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('wiresTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('wiresTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('wiresSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('wiresSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+
+    <!-- Lighting Fixtures -->
+        <div id="lightingSection" class="bom-section">
+        <div class="section-title">LIGHTING FIXTURES:</div>
+        <table id="lightingFixturesTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="lightingFixtures" rows="1">12" Diammeter Domelight Honey Comb Reflctor with E27Base 26watts LED BULB</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="lightingFixtures" rows="1">18 Watts GE Downlight 8" Diameter Round Warmwhite</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('lightingFixturesTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('lightingFixturesTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('lightingSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('lightingSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+    <!-- AuxiliaryLighting Fixtures -->
+        <div id="auxlightingSection" class="bom-section">
+        <div class="section-title">AUXILIARY LIGHTING FIXTURES:</div>
+        <table id="auxlightingFixturesTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="auxlightingFixtures" rows="1">ESP32 Microcontroller with Headers</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="auxlightingFixtures" rows="1">ESP32 Expansion Board</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,800.00"></td>
+                    <td class="text-right total-cost">5,800.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('auxlightingFixturesTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('auxlightingFixturesTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('auxlightingSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('auxlightingSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+        <!-- Convenience Outlet and Switches -->
+        <div id="outletsSection" class="bom-section">
+        <div class="section-title">CONVENIENCE OUTLET AND SWITCHES:</div>
+        <table id="outletsTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="outlets" rows="1">GROUNDING DUPLEX, UNIVERSAL OUTLET w/ safety shutter, 250V VAC, 15AMP, IP64, WITH PLATE AND COVER PANASONIC BRAND</textarea></td>
+                    <td><input type="text" class="unit-input" value="sets"></td>
+                    <td><input type="number" class="qty-input" value="35"></td>
+                    <td><input type="text" class="unit-cost-input" value="240.00"></td>
+                    <td class="text-right total-cost">8,400.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="outlets" rows="1">Floor Outlet 2 GANG, ABSO BRAND</textarea></td>
+                    <td><input type="text" class="unit-input" value="set"></td>
+                    <td><input type="number" class="qty-input" value="35"></td>
+                    <td><input type="text" class="unit-cost-input" value="30.00"></td>
+                    <td class="text-right total-cost">1,050.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('outletsTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('outletsTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('outletsSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('outletsSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+
+        <!-- Conduit and Fittings -->
+        <div id="conduitSection" class="bom-section">
+        <div class="section-title">CONDUIT AND FITTINGS:</div>
+        <table id="conduitTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="conduit" rows="1">15mm diam. Emt Pipe</textarea></td>
+                    <td><input type="text" class="unit-input" value="pc"></td>
+                    <td><input type="number" class="qty-input" value="35"></td>
+                    <td><input type="text" class="unit-cost-input" value="240.00"></td>
+                    <td class="text-right total-cost">8,400.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="conduit" rows="1">20mm diam. Emt Pipe</textarea></td>
+                    <td><input type="text" class="unit-input" value="pc"></td>
+                    <td><input type="number" class="qty-input" value="35"></td>
+                    <td><input type="text" class="unit-cost-input" value="30.00"></td>
+                    <td class="text-right total-cost">1,050.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('conduitTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('conduitTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('conduitSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('conduitSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+
+        <!-- Miscellaneous -->
+        <div id="miscSection" class="bom-section">
+        <div class="section-title">MISCELLANEOUS:</div>
+        <table id="miscTable">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Electrical Tape</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="6"></td>
+                    <td><input type="text" class="unit-cost-input" value="50.00"></td>
+                    <td class="text-right total-cost">300.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">24-hr Timer Panasonic Brand</textarea></td>
+                    <td><input type="text" class="unit-input" value="sets"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1015.00"></td>
+                    <td class="text-right total-cost">1015.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">CAT6 Cable Belden Brand</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="9,700.00"></td>
+                    <td class="text-right total-cost">9,700.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Angle bar ( 1 1/2 x 1 1/2 x 3/16 )6M </textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="800.00"></td>
+                    <td class="text-right total-cost">800.00</td>
+                </tr>
+                 <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Fullthread Round Bar 3/8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="12"></td>
+                    <td><input type="text" class="unit-cost-input" value="82.50"></td>
+                    <td class="text-right total-cost">990.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Anchor Grip 3/8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="12"></td>
+                    <td><input type="text" class="unit-cost-input" value="18.00"></td>
+                    <td class="text-right total-cost">216.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Nut & Washer 3/8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="20"></td>
+                    <td><input type="text" class="unit-cost-input" value="1.30"></td>
+                    <td class="text-right total-cost">26.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Plastic tox screw w/ screw #8</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1,000.00"></td>
+                    <td class="text-right total-cost">1,000.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Dymo tagger tape (3/8"), Black</textarea></td>
+                    <td><input type="text" class="unit-input" value="roll"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="144.00"></td>
+                    <td class="text-right total-cost">144.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Rubber Tape -NITTO</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="78.00"></td>
+                    <td class="text-right total-cost">78.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Mica Tube 3/8" dia.</textarea></td>
+                    <td><input type="text" class="unit-input" value="mts"></td>
+                    <td><input type="number" class="qty-input" value="15"></td>
+                    <td><input type="text" class="unit-cost-input" value="65.00"></td>
+                    <td class="text-right total-cost">975.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Flexible metallic conduit 3/8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="15"></td>
+                    <td><input type="text" class="unit-cost-input" value="10.00"></td>
+                    <td class="text-right total-cost">150.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">(Island or Turco ) Rust Converter</textarea></td>
+                    <td><input type="text" class="unit-input" value="gal"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="930.00"></td>
+                    <td class="text-right total-cost">930.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">G.I. Utility Box #16 (2"x4")</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="15"></td>
+                    <td><input type="text" class="unit-cost-input" value="45.00"></td>
+                    <td class="text-right total-cost">675.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Pull Box 12" x 12" x 5"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1015.00"></td>
+                    <td class="text-right total-cost">1015.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Junction Box w/ cover</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="60.00"></td>
+                    <td class="text-right total-cost">60.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">G.I. Wire #16</textarea></td>
+                    <td><input type="text" class="unit-input" value="kls"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="90.00"></td>
+                    <td class="text-right total-cost">90.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">C-Purlins 2" x 4" x 20' x 1.2mm</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="592.00"></td>
+                    <td class="text-right total-cost">2,960.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">C-Purlins 2" x 6" x 20' x 1.2mm</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="650.00"></td>
+                    <td class="text-right total-cost">3,250.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Baby roller 4" - HI TECH</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="2"></td>
+                    <td><input type="text" class="unit-cost-input" value="50.00"></td>
+                    <td class="text-right total-cost">100.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Lacquer Thiner - KINGS</textarea></td>
+                    <td><input type="text" class="unit-input" value="gal"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="553.50"></td>
+                    <td class="text-right total-cost">553.50</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Epoxy Primer (Gray) - Illinois</textarea></td>
+                    <td><input type="text" class="unit-input" value="gal"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="830.00"></td>
+                    <td class="text-right total-cost">830.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Hardiflex 9mm</textarea></td>
+                    <td><input type="text" class="unit-input" value="shts"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="950.00"></td>
+                    <td class="text-right total-cost">950.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Hardiflex 12mm</textarea></td>
+                    <td><input type="text" class="unit-input" value="shts"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1,200.00"></td>
+                    <td class="text-right total-cost">1,200.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Cable Tie 8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcks"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="280.00"></td>
+                    <td class="text-right total-cost">280.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Drill bit 1/8"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="55.00"></td>
+                    <td class="text-right total-cost">275.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Cutting disk 4"</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="15.00"></td>
+                    <td class="text-right total-cost">75.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Metal Black Screw 1" Pointed</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="100"></td>
+                    <td><input type="text" class="unit-cost-input" value="1.30"></td>
+                    <td class="text-right total-cost">130.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Rubber Molding</textarea></td>
+                    <td><input type="text" class="unit-input" value="box"></td>
+                    <td><input type="number" class="qty-input" value="2"></td>
+                    <td><input type="text" class="unit-cost-input" value="5,000.00"></td>
+                    <td class="text-right total-cost">10,000.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Marine Flywood 3/4" 4ft x 8ft (1220mm x 2440mm) </textarea></td>
+                    <td><input type="text" class="unit-input" value="shts"></td>
+                    <td><input type="number" class="qty-input" value="1"></td>
+                    <td><input type="text" class="unit-cost-input" value="1,600.00"></td>
+                    <td class="text-right total-cost">1,600.00</td>
+                </tr>
+
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Flexible hose connector clamp 1/2</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="80"></td>
+                    <td><input type="text" class="unit-cost-input" value="15.00"></td>
+                    <td class="text-right total-cost">1,200.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Duct Tape</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="200.00"></td>
+                    <td class="text-right total-cost">1,000.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Warning Tape</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="10"></td>
+                    <td><input type="text" class="unit-cost-input" value="250.00"></td>
+                    <td class="text-right total-cost">2,500.00</td>
+                </tr>
+                <tr>
+                    <td><textarea class="description-input" data-section="misc" rows="1">Cloth Tape</textarea></td>
+                    <td><input type="text" class="unit-input" value="pcs"></td>
+                    <td><input type="number" class="qty-input" value="5"></td>
+                    <td><input type="text" class="unit-cost-input" value="250.00"></td>
+                    <td class="text-right total-cost">1,250.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('miscTable')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('miscTable')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('miscSection')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('miscSection', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+
+        <!-- Total Row -->
+        <table style="margin-top: 15px;">
+            <tr class="total-row">
+                <td colspan="3" style="text-align: center; font-weight: bold;">TOTAL ESTIMATED COSTS:</td>
+              
+                <td id="grandTotal" style="text-align: right; font-weight: bold;">0.00</td>
+            </tr>
+        </table>
+
+        <!-- Signatures -->
+        <div class="signatures">
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-label">PREPARED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="prepared_name" value="Enter your Name" /></div>
+                    <div class="signature-title"><input type="text" name="prepared_position" placeholder="Position" /></div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-label">CHECKED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="checked_name" value="Kimberly Onin" /></div>
+                    <div class="signature-title"><input type="text" name="checked_position" value="Accounting Department" /></div>
+                </div>
+            </div>
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-label">CHECKED AND APPROVED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="checked_approved_name" value="Edison Sing" /></div>
+                    <div class="signature-title"><input type="text" name="checked_approved_position" value="Logistics/Warehouse Dept. Head" /></div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-label">CHECKED AND APPROVED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="checked_approved_name2" value="Ryan Caguioa" /></div>
+                    <div class="signature-title"><input type="text" name="checked_approved_position2" value="DAC Department HEAD" /></div>
+                </div>
+            </div>
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-label">NOTED AND APPROVED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="noted_name" value="Alexander Fernandez" /></div>
+                    <div class="signature-title"><input type="text" name="noted_position" value="Electrical Engineer" /></div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-label">APPROVED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="approved2_name" value="Ronal Lopez" /></div>
+                    <div class="signature-title"><input type="text" name="approved2_position" value="Division HEAD" /></div>
+                </div>
+            </div>
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-label">APPROVED BY:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="approved3_name" value="Racquel De Lara" /></div>
+                    <div class="signature-title"><input type="text" name="approved3_position" value="AVP-OPERATIONS NVI/B" /></div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-label">APPROVED BY:</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;"></div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name"><input type="text" name="approved4_name" value="Oliver Ryan Co" /></div>
+                    <div class="signature-title"><input type="text" name="approved4_position" value="VP-Corporate Management" /></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User role for permission checks
+        const userRole = '{{ user.role if user else "guest" }}';
+        const userDepartment = '{{ user.department if user else "" }}';
+        const currentUsername = '{{ user.username if user else "" }}';
+        
+        // Material options for each section
+        const materialOptions = {
+            panel: [
+                'LP/PP( LIGHTING PANEL /POWER PANEL ):   Main:  1 - 60A, THREE PHASE, SE-EZC100H3060, 3P, 400V, 36 KAIC MCCB , SCHNEIDER, w/ Ground and neutral bus terminal. Branches: 17- 20AT/100AF, SE-EZC100N1020, 1P, 10KAIC, 240V, 60Hz, Bolt-on Type, SCHNEIDER Brand w/ Ground and Neutral busbar terminal. NEMA 1 ENCLOSURE',
+                'PP( POWER PANEL ):   Main:  1 - 100A, THREE PHASE, SE-EZC100H3100, 3P, 400V, 36 KAIC MCCB , SCHNEIDER, w/ Ground and neutral bus terminal. Branches: 12- 20AT/100AF, SE-EZC100N1020, 1P, 10KAIC, 240V, 60Hz, Bolt-on Type, SCHNEIDER Brand w/ Ground and Neutral busbar terminal. NEMA 1 ENCLOSURE',
+                'MDP( MAIN DISTRIBUTION PANEL ):   Main:  1 - 200A, THREE PHASE, SE-EZC100H3200, 3P, 400V, 65 KAIC MCCB , SCHNEIDER, w/ Ground and neutral bus terminal. Branches: 1- 100AT/100AF, SE-EZC100N3100, 3P, 10KAIC, 400V, 60Hz, Bolt-on Type, 1- 40AT/100AF, SE-EZC100N3040, 3P, 14KAIC, 400V, 60Hz, Bolt-on Type, SCHNEIDER Brand w/ Ground and Neutral busbar terminal. NEMA 1 ENCLOSURE',
+                '2P-30A Circuit Breaker, GE Brand',
+                '2P-20A Circuit Breaker, GE Brand',
+                '1P-20A Circuit Breaker, GE Brand',
+                '1P-15A Circuit Breaker, GE Brand',
+                '3P-30A Circuit Breaker, GE Brand',
+                '3P-20A Circuit Breaker, GE Brand',
+                '1P-40A Circuit Breaker, GE Brand',
+                '2P-40A Circuit Breaker, GE Brand',
+                '3P-40A Circuit Breaker, GE Brand',
+                '1P-50A Circuit Breaker, GE Brand',
+                '2P-50A Circuit Breaker, GE Brand',
+                '3P-50A Circuit Breaker, GE Brand',
+                '1P-60A Circuit Breaker, GE Brand',
+                '2P-60A Circuit Breaker, GE Brand',
+                '3P-60A Circuit Breaker, GE Brand',
+                '1P-15A Circuit Breaker, SE-EZC100N1015, Schneider Brand',
+                '2P-15A Circuit Breaker, SE-EZC100N2015, Schneider Brand',
+                '1P-20A Circuit Breaker, SE-EZC100N1020, Schneider Brand',
+                '2P-20A Circuit Breaker, SE-EZC100N2020, Schneider Brand',
+                '1P-30A Circuit Breaker, SE-EZC100N1030, Schneider Brand',
+                '2P-30A Circuit Breaker, SE-EZC100N2030, Schneider Brand',
+                '3P-30A Circuit Breaker, SE-EZC100N3030, Schneider Brand',
+                '1P-40A Circuit Breaker, SE-EZC100N1040, Schneider Brand',
+                '2P-40A Circuit Breaker, SE-EZC100N2040, Schneider Brand',
+                '3P-40A Circuit Breaker, SE-EZC100N3040, Schneider Brand',
+                '1P-50A Circuit Breaker, SE-EZC100N1050, Schneider Brand',
+                '2P-50A Circuit Breaker, SE-EZC100N2050, Schneider Brand',
+                '3P-50A Circuit Breaker, SE-EZC100N3050, Schneider Brand',
+                '1P-60A Circuit Breaker, SE-EZC100N1060, Schneider Brand',
+                '2P-60A Circuit Breaker, SE-EZC100N2060, Schneider Brand',
+                '3P-60A Circuit Breaker, SE-EZC100N3060, Schneider Brand',
+                '1P-75A Circuit Breaker, SE-EZC100N1075, Schneider Brand',
+                '2P-75A Circuit Breaker, SE-EZC100N2075, Schneider Brand',
+                '3P-75A Circuit Breaker, SE-EZC100N3075, Schneider Brand',
+                '1P-100A Circuit Breaker, SE-EZC100N1100, Schneider Brand',
+                '2P-100A Circuit Breaker, SE-EZC100N2100, Schneider Brand',
+                '3P-100A Circuit Breaker, SE-EZC100N3100, Schneider Brand',
+                '1P-125A Circuit Breaker, SE-EZC100N1125, Schneider Brand',
+                '2P-125A Circuit Breaker, SE-EZC100N2125, Schneider Brand',
+                '3P-125A Circuit Breaker, SE-EZC100N3125, Schneider Brand',
+            ],
+            wires: [
+                'Royal Cable str. #14/3C',
+                'Royal Cable str. #12/3C',
+                '#22 AWG Str. cu. TF Wire -Red',
+                '#22 AWG Str. cu. TF Wire -Yellow',
+                '#22 AWG Str. cu. TF Wire -Blue',
+                '#22 AWG Str. cu. TF Wire -Green',
+                '#22 AWG Str. cu. TF Wire -Black',
+                '#22 AWG Str. cu. TF Wire -White',
+                '#18 AWG Str. cu. TF Wire -Red',
+                '#18 AWG Str. cu. TF Wire -Yellow',
+                '#18 AWG Str. cu. TF Wire -Blue',
+                '#18 AWG Str. cu. TF Wire -Green',
+                '#18 AWG Str. cu. TF Wire -Black',
+                '#18 AWG Str. cu. TF Wire -White',
+                '#16 AWG Str. cu. TF Wire -Red',
+                '#16 AWG Str. cu. TF Wire -Yellow',
+                '#16 AWG Str. cu. TF Wire -Blue',
+                '#16 AWG Str. cu. TF Wire -Green',
+                '#16 AWG Str. cu. TF Wire -Black',
+                '#16 AWG Str. cu. TF Wire -White',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-Red',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-Yellow',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-Blue',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-Green',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-Black',
+                '2.0 sq. mm. Str. cu. THHN, Phelps Dodge-White',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-Red',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-Yellow',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-Blue',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-Green',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-Black',
+                '2.0 sq. mm. Solid cu. THHN, Phelps Dodge-White',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-Red',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-Yellow',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-Blue',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-Green',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-Black',
+                '2.0 sq. mm. Str. Al. THHN, Phelps Dodge-White',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-Red',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-Yellow',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-Blue',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-Green',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-Black',
+                '2.0 sq. mm. Solid Al. THHN, Phelps Dodge-White',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-Red',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-Yellow',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-Blue',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-Green',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-Black',
+                '3.5 sq. mm. Str. cu. THHN, Phelps Dodge-White',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-Red',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-Yellow',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-Blue',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-Green',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-Black',
+                '3.5 sq. mm. Solid cu. THHN, Phelps Dodge-White',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-Red',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-Yellow',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-Blue',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-Green',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-Black',
+                '3.5 sq. mm. Str. Al. THHN, Phelps Dodge-White',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-Red',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-Yellow',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-Blue',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-Green',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-Black',
+                '3.5 sq. mm. Solid Al. THHN, Phelps Dodge-White',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-Red',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-Yellow',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-Blue',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-Green',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-Black',
+                '5.5 sq. mm. Str. cu. THHN, Phelps Dodge-White',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-Red',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-Yellow',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-Blue',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-Green',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-Black',
+                '5.5 sq. mm. Solid cu. THHN, Phelps Dodge-White',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-Red',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-Yellow',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-Blue',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-Green',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-Black',
+                '5.5 sq. mm. Str. Al. THHN, Phelps Dodge-White',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-Red',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-Yellow',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-Blue',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-Green',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-Black',
+                '5.5 sq. mm. Solid Al. THHN, Phelps Dodge-White',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-Red',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-Yellow',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-Blue',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-Green',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-Black',
+                '8.0 sq. mm. Str. cu.THHN, Phelps Dodge-White',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-Red',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-Yellow',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-Blue',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-Green',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-Black',
+                '8.0 sq. mm. Solid cu.THHN, Phelps Dodge-White',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-Red',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-Yellow',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-Blue',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-Green',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-Black',
+                '8.0 sq. mm. Str. Al.THHN, Phelps Dodge-White',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-Red',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-Yellow',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-Blue',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-Green',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-Black',
+                '8.0 sq. mm. Solid Al.THHN, Phelps Dodge-White',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-Red',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-Yellow',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-Blue',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-Green',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-Black',
+                '14.0 sq. mm. Str. cu.THHN, Phelps Dodge-White',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-Red',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-Yellow',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-Blue',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-Green',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-Black',
+                '14.0 sq. mm. Solid cu.THHN, Phelps Dodge-White',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-Red',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-Yellow',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-Blue',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-Green',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-Black',
+                '14.0 sq. mm. Str. Al.THHN, Phelps Dodge-White',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-Red',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-Yellow',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-Blue',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-Green',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-Black',
+                '14.0 sq. mm. Solid Al.THHN, Phelps Dodge-White',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-Red',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-Yellow',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-Blue',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-Green',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-Black',
+                '22.0 sq. mm. Str. cu.THHN, Phelps Dodge-White',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-Red',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-Yellow',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-Blue',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-Green',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-Black',
+                '22.0 sq. mm. Solid cu.THHN, Phelps Dodge-White',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-Red',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-Yellow',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-Blue',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-Green',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-Black',
+                '22.0 sq. mm. Str. Al.THHN, Phelps Dodge-White',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-Red',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-Yellow',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-Blue',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-Green',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-Black',
+                '22.0 sq. mm. Solid Al.THHN, Phelps Dodge-White',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-Red',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-Yellow',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-Blue',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-Green',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-Black',
+                '30.0 sq. mm. Str. cu.THHN, Phelps Dodge-White',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-Red',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-Yellow',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-Blue',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-Green',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-Black',
+                '30.0 sq. mm. Solid cu.THHN, Phelps Dodge-White',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-Red',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-Yellow',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-Blue',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-Green',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-Black',
+                '30.0 sq. mm. Str. Al.THHN, Phelps Dodge-White',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-Red',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-Yellow',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-Blue',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-Green',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-Black',
+                '30.0 sq. mm. Solid Al.THHN, Phelps Dodge-White'
+                
+            ],
+            lightingFixtures: [
+                'LED BULB 9W, 3000K, 800 LUMENS, PANASONIC',
+                'LED BULB 12W, 4000K, 1100 LUMENS, PANASONIC',
+                'LED BULB 15W, 5000K, 1500 LUMENS, PANASONIC',
+                'LED TUBE LIGHT 18W, 4000K, 1500 LUMENS, PANASONIC',
+                'LED TUBE LIGHT 36W, 5000K, 3200 LUMENS, PANASONIC',
+                'LED PANEL LIGHT 12W, 4000K, 900 LUMENS, PANASONIC',
+                'LED PANEL LIGHT 18W, 5000K, 1400 LUMENS, PANASONIC',
+                'LED FLOODLIGHT 30W, 5000K, 2400 LUMENS, PANASONIC',
+                'LED STREETLIGHT 50W, 5000K, 4000 LUMENS, PANASONIC',
+                'WT8A Led Fluorescent tube, Warm white, 16W, 1800lm',
+                'WT8A Led Fluorescent tube, Cool white, 16W, 1800lm',
+                'WT8A Led Fluorescent tube, Warm White, 8W, 900lm',
+                'WT8A Led Fluorescent tube, Daylight white, 8W, 900lm',
+                'GE UNO RECESSED DOWNLIGTH; UNOORR8D3CCT14W-BL; CCT:3000K/4000K/5000K; 14W; 1250 LUMENS -Warm White',
+                'GE UNO RECESSED DOWNLIGTH; UNOORR8D3CCT18W-BL; CCT:3000K/4000K/5000K; 18W; 1600 LUMENS -Warm White',
+                'GE UNO RECESSED DOWNLIGTH; UNOORR8D3CCT24W-BL; CCT:3000K/4000K/5000K; 24W; 2100 LUMENS -Warm White',
+                'SMD LED STRIPS 5050 Warm White, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED STRIPS 5050 Cool White, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED STRIPS 5050 Daylight, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED STRIPS 5050 Blue Light, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED STRIPS 5050 Red Light, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED STRIPS 5050 Green Light, 220V 14.4W/METER, Eurolux Brand',
+                'SMD LED 5050 End Cap (2 pcs), Eurolux Brand',
+                'SMD LED 5050 Connector (2pin), Eurolux Brand',
+                'SMD LED Connector Tube',
+                'SMD LED Power Cable (1.5m), Eurolux Brand',
+                '24" X 48" T8 Aluminum Louver Recessed Type w/ 2 x T8 Holder',
+                '24" X 48" T8 Aluminum Louver Surface Type w/ 2 x T8 Holder',
+                '12" X 48" T8 Aluminum Louver Recessed Type w/ 2 x T8 Holder',
+                '12" X 48" T8 Aluminum Louver Surface Type w/ 2 x T8 Holder'
+            ],
+            auxlightingFixtures: [
+                'SMD LED STRIPS WS2815 ADDRESSABLE RGB, 12V 100LEDS/METER',
+                'SMD LED STRIPS WS2815 ADDRESSABLE RGBW, 12V 100LEDS/METER',
+                '15mm x 20mm LED Aluminum Channel with White diffuser Cover, 1,5 meter',
+                'Control Box 60cm x 40cm x 20cm (For power supply and controller)',
+                'Arduino Nano ESP32S3 Micro Controller with Header',
+                'Arduino Nano ESP32S3 Micro Controller without Header',
+                'Arduino Nano ESP32S3 Expansion Board',
+                'Power Supply 220AC/12VDC (400watts)',
+                'Terminal Block for 1.25sq. mm wire (1n13bk)- DIN Rail Mount',
+                'DIN Rail (slotted type) 1 meter',
+                'Control Relay, 220VAC COIL, TeSysk-Model,(2NC/2NO), SCHNEIDER Brand',
+                'ANLY TIMER With socket Din Rail Mount, 220VAC, ON DELAY, 0.1s to 100 hours',
+                'Cable Spiral Wrap 8mm',
+                '16 mm diameter Push Button switch (NO) -Illuminated-Green',
+                '16 mm diameter Push Button switch (NC) -Illuminated-Red',
+                '16 mm diameter Pilot Light -Green',
+                '16 mm diameter Pilot Light -Red',  
+                'Blind Revit (1/8" x 1/2")',
+                '1.25 sq. mm TF Wire',
+                '#18 AWG Str. cu. TF Wire -Red',
+                '#18 AWG Str. cu. TF Wire -Black',
+                '#18 AWG Str. cu. TF Wire -White',
+                '#18 AWG Str. cu. TF Wire -Green',
+                '#18 AWG Str. cu. TF Wire -Blue',
+                'Shrinkable Tube 3/16" (4.8mm) - Black',
+                'Shrinkable Tube 1/8" (3.2mm) - Black',
+                'Heat Gun - 1500W',
+                'Soldering Iron - 60W',
+                'Solder Wire - 60/40 Rosin Core - 1/16" (1.6mm) - 1lb',
+                'Flux Paste - 50g',
+                'Desoldering Braid - 2.5mm x 1.5m'
+            ],
+            outlets: [
+                'GROUNDING DUPLEX  UNIVERSAL OUTLET w/ safety shutter 16A, 250V, WIDE SERIES, (WEG 15829) with Plate and Cover, PANASONIC Brand',
+                'GROUNDING UNIVERSAL OUTLET (WEG1181K)  w/ safety shutter 16A, 250V, WIDE SERIES, WITH PLATE AND COVER (WEG 68029W-1) PANASONIC Brand',
+                'GROUNDING UNIVERSAL OUTLET 16A, 250V, (WEG 15829), PANASONIC Brand',
+                '2-Gang GFCI Safety Outlet Ground Fault in Ivory Plate 20A (Designer Series) - DGFCI-201-PK, PANASONIC Brand',
+                '1 GANG 1-DEVICE ,1 WAY SWITCH (WEG 5151 - 51K) WITH PLATE AND COVER (WEG6801W-1) PANASONIC Brand',
+                '1 GANG 2-DEVICE ,1 WAY SWITCH (WEG 5151 - 51K) WITH PLATE AND COVER (WEG6802W-1) PANASONIC Brand',
+                '1 GANG 3-DEVICE ,1 WAY SWITCH (WEG 5151 - 51K) WITH PLATE AND COVER (WEG6803W-1) PANASONIC Brand',
+                '1 GANG 1-DEVICE ,LAN OUTLET CAT6/CAT5 (WEG24886) WITH PLATE AND COVER (WEG2488601W-1) PANASONIC Brand',
+                '1 GANG 2-DEVICE ,LAN OUTLET CAT6/CAT5 (WEG24886) WITH PLATE AND COVER (WEG2488602W-1) PANASONIC Brand',
+                '1 GANG 3-DEVICE ,LAN OUTLET CAT6/CAT5 (WEG24886) WITH PLATE AND COVER (WEG2488603W-1) PANASONIC Brand',
+                'GROUNDING DUPLEX UNIVERSAL OUTLET w/ safety shutter, 250V VAC, 15AMP, PANASONIC BRAND',
+                'GROUNDING DUPLEX UNIVERSAL OUTLET w/ safety shutter 16A, 250V, WIDE SERIES, (WEG 15829) PANASONIC Brand',
+                'GROUNDING DUPLEX UNIVERSAL OUTLET w/ safety shutter, 250V VAC, 20AMP, PANASONIC BRAND',
+                'SINGLE CONVENIENCE OUTLET, 250V VAC, 15AMP, PANASONIC BRAND',
+                'SINGLE CONVENIENCE OUTLET, 250V VAC, 20AMP, PANASONIC BRAND',
+                '1 GANG SWITCH, PANASONIC BRAND',
+                '2 GANG SWITCH, PANASONIC BRAND',
+                '3 GANG SWITCH, PANASONIC BRAND',
+                'Floor Outlet grounding type, 2 GANG WITH Plate with Cover, 4" x 4", ABSO BRAND',
+                'DATA OUTLET, CAT6, PANASONIC BRAND',
+                'TELEPHONE OUTLET, PANASONIC BRAND'
+            ],
+
+            conduit: [
+                '15mm PVC Pipe, 3 meters',
+                '20mm PVC Pipe, 3 meters',
+                '25mm PVC Pipe, 3 meters',
+                '15mm diam EMT Pipe, 3 meters',
+                '15mm diam. EMT Connector-Compression Type',
+                '15mm diam. EMT Coupling-Compression Type',
+                '15mm diam. bushing with locknut',
+                '15mm diam. U-Bolt with Locknut and washer',
+                '20mm diam EMT Pipe, 3 meters',
+                '20mm diam. EMT Connector-Compression Type',
+                '20mm diam. EMT Coupling-Compression Type',
+                '20mm diam. bushing with locknut',
+                '20mm diam. U-Bolt with Locknut and washer',
+                '25mm diam EMT Pipe, 3 meters',
+                '25mm diam. EMT Connector-Compression Type',
+                '25mm diam. EMT Coupling-Compression Type',
+                '25mm diam. bushing with locknut',
+                '32mm diam EMT Pipe, 3 meters',
+                '32mm diam. EMT Connector-Compression Type',
+                '32mm diam. EMT Coupling-Compression Type',
+                '32mm diam. bushing with locknut',
+                '40mm diam EMT Pipe, 3 meters',
+                '40mm diam. EMT Connector-Compression Type',
+                '40mm diam. EMT Coupling-Compression Type',
+                '40mm diam. bushing with locknut',
+                '50mm diam EMT Pipe, 3 meters',
+                '50mm diam. EMT Connector-Compression Type',
+                '50mm diam. EMT Coupling-Compression Type',
+                '50mm diam. bushing with locknut',
+                '15mm diam. RSC Pipe, 3 meters',
+                '15mm diam. RSC Coupling-Set Screw Type',
+                '15mm diam. RSC Connector-Set Screw Type',
+                '15mm diam. RSC Pipe Bushing and locknut',
+                '20mm diam. RSC Pipe, 3 meters',
+                '20mm diam. RSC Coupling-Set Screw Type',
+                '20mm diam. RSC Connector-Set Screw Type',
+                '20mm diam. RSC Pipe Bushing and locknut',
+                '25mm diam. RSC Pipe, 3 meters',
+                '25mm diam. RSC Coupling-Set Screw Type',
+                '25mm diam. RSC Connector-Set Screw Type',
+                '25mm diam. RSC Pipe Bushing and locknut',
+                '32mm diam. RSC Pipe, 3 meters',
+                '32mm diam. RSC Coupling-Set Screw Type',
+                '32mm diam. RSC Connector-Set Screw Type',
+                '32mm diam. RSC Pipe Bushing and locknut',
+                '40mm diam. RSC Pipe, 3 meters',
+                '40mm diam. RSC Coupling-Set Screw Type',
+                '40mm diam. RSC Connector-Set Screw Type',
+                '40mm diam. RSC Pipe Bushing and locknut',
+                '50mm diam. RSC Pipe, 3 meters',
+                '50mm diam. RSC Coupling-Set Screw Type',
+                '50mm diam. RSC Connector-Set Screw Type',
+                '50mm diam. RSC Pipe Bushing and locknut',
+                'Flexible Metallic conduit 3/8"',
+                'Flexible Metallic conduit 1/2"',
+                'Flexible Metallic connector 3/8"',
+                'Flexible Metallic connector 1/2"',
+
+            ],
+
+
+            misc: [
+                'CAT6 UTP CABLE BELDEN BRAND-SHIELDED, 300 METERS/BOX',
+                'SMOKE DETECTOR, PHOTOELECTRIC TYPE, PANASONIC BRAND',
+                'HEAT DETECTOR, RATE OF RISE TYPE, PANASONIC BRAND',
+                'MANUAL PULL STATION, PANASONIC BRAND',
+                'FIRE ALARM SOUNDERS, PANASONIC BRAND',
+                'SMOKE DETECTOR - NOTIFIER BRAND',
+                'HEAT DETECTOR - NOTIFIER BRAND',
+                'MANUAL PULL STATION - NOTIFIER BRAND',
+                'FIRE ALARM SOUNDERS - NOTIFIER BRAND',
+                '1.25 SQ. MM TF Wire - Red',
+                '1.25 SQ. MM TF Wire - Black',
+                '24-hr TIMER SWITCH, PANASONIC BRAND',
+                'PHOTO CELL SWITCH, PANASONIC BRAND',
+                'Angle Bar 1 1/2" x 1 1/2" x 3/16" x 6m',
+                'Flat Bar 1/4" x 2" x 6m',
+                'Flat Bar 1/8" x 2" x 6m',
+                'Fullthread round Bar Bolt 3/8" with nut and washer',
+                'Anchor Bolt 3/8" x 6" with nut and washer',
+                'Anchor grip 3/8"',
+                'nut and washer 3/8"',
+                'Hex Bolt 3/8" with nut and washer',
+                'Plastic tox screw with screw #8',
+                'Terminal Lugs cu. 5.5 sq. mm.',
+                'Terminal Lugs cu. 8.0 sq. mm.',
+                'Terminal Lugs cu. 14.0 sq. mm.',
+                'Terminal Lugs cu. 22.0 sq. mm.',
+                'Terminal Lugs cu. 30.0 sq. mm.',
+                'Terminal Lugs cu. 38.0 sq. mm.',
+                'Terminal Lugs cu. 50.0 sq. mm.',
+                'Solderless cu. Connector 5.5 sq. mm.',
+                'Solderless cu. Connector 8.0 sq. mm.',
+                'Solderless cu. Connector 14.0 sq. mm.',
+                'Solderless cu. Connector 22.0 sq. mm.',
+                'Solderless cu. Connector 30.0 sq. mm.',
+                'Solderless cu. Connector 38.0 sq. mm.',
+                'Solderless cu. Connector 50.0 sq. mm.',
+                'Dymo Tagger Label Tape 3/8" - Black',
+                'Dymo Tagger',
+                'Rubber Tape - NITTO',
+                'Mica Tube 3/8" diameter',
+                'Mica Tube 1/2" diameter',
+                'Flexible metallic conduit 3/8"',
+                'Flexible metallic conduit 1/2"',
+                'Flexible Metallic connector 3/8"',
+                'Flexible Metallic connector 1/2"',
+                'Island or Turco - Rust Converter',
+                'G.I. Utility box #16(2"x4")',
+                'G.I. Utility box #16(2"x4") with cover',
+                'Junction Box with cover - hexagon',
+                'Junction Box with cover - square',
+                'Junction Box with cover - rectangular',
+                'G.I. Square Box #16 with cover',
+                'C-Purlins 2" x 4" x 20ft x 1.2mm',
+                'C-Purlins 2" x 6" x 20ft x 1.2mm',
+                'G.I. Wire #16',
+                'Electrical Tape - Big Roll - Armak Brand',
+                'Baby Roller 4" -HI TECH BRAND',
+                'Lacquer Thinner - KINGS BRAND',
+                'Epoxy Prime -Gray - Illinois Brand',
+                'Hardiflex 9mm x 4ft x 8ft',
+                'Hardiflex 12mm x 4ft x 8ft',
+                'Cable Tie 4" - Black',
+                'Cable Tie 8" - Black',
+                'Drill Bit for Metal 1/8"',
+                'Cutting disk 4"',
+                'PORTLAND Cement',
+                'Fine Sand (Cement Sand)',
+                'Fine White Sand (Plaster Sand)',
+                'Metal Black Screw 1" Pointed',
+                'Pull Box 12" x 12" x 5"',
+                'Wire Gutter 25cm x 30cm x 330cm',
+                'Cable Clamp 3/8" (Metallic)',
+                'Electrical Tape',
+                'Rubber Molding',
+                'Duct Tape',
+                'Warning Tape',
+                'Cloth Tape',
+            ]
+        };
+
+// Function to show dropdown - only shows when typing and filters based on input
+function showMaterialDropdown(input) {
+    // Remove any existing dropdowns
+    document.querySelectorAll('.material-dropdown').forEach(el => el.remove());
+
+    const searchText = input.value.trim().toLowerCase();
+    
+    // Only show dropdown if user has typed something
+    if (searchText.length === 0) {
+        return;
+    }
+
+    const section = input.getAttribute('data-section');
+    const options = materialOptions[section] || [];
+    
+    // Filter options based on input text
+    const filteredOptions = options.filter(option => 
+        option.toLowerCase().includes(searchText)
+    );
+    
+    // Don't show dropdown if no matches
+    if (filteredOptions.length === 0) {
+        return;
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'material-dropdown';
+
+    const rect = input.getBoundingClientRect();
+    dropdown.style.position = 'absolute';
+    dropdown.style.left = rect.left + window.scrollX + 'px';
+    dropdown.style.top = rect.bottom + window.scrollY + 'px';
+    dropdown.style.width = rect.width + 'px';
+
+    filteredOptions.forEach(option => {
+        const item = document.createElement('div');
+        item.textContent = option;
+        item.addEventListener('click', function() {
+            input.value = option;
+            dropdown.remove();
+            autoResizeTextarea(input);
+        });
+        dropdown.appendChild(item);
+    });
+
+    document.body.appendChild(dropdown);
+}
+
+        // Function to auto-resize textarea based on content
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+  // Attach input listeners to description inputs - dropdown shows only when typing
+function attachDescriptionListeners() {
+    document.querySelectorAll('.description-input').forEach(input => {
+        // Only show dropdown when user types (input event)
+        input.addEventListener('input', function(e) {
+            e.stopPropagation();
+            showMaterialDropdown(this);
+            autoResizeTextarea(this);
+        });
+        // Initial resize
+        autoResizeTextarea(input);
+    });
+}
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.description-input') && !e.target.closest('.material-dropdown')) {
+                document.querySelectorAll('.material-dropdown').forEach(el => el.remove());
+            }
+            if (!e.target.closest('.unit-input') && !e.target.closest('.unit-dropdown')) {
+                document.querySelectorAll('.unit-dropdown').forEach(el => el.remove());
+            }
+        });
+
+        // Unit options for dropdown
+        const unitOptions = ['pcs', 'pc', 'set', 'sets', 'gal', 'roll', 'assy', 'kgs', 'liter', 'box', 'pack', 'meter', 'meters', 'lot'];
+
+        // Function to show unit dropdown
+        function showUnitDropdown(input) {
+            // Remove any existing dropdowns
+            document.querySelectorAll('.unit-dropdown').forEach(el => el.remove());
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'unit-dropdown';
+
+            const rect = input.getBoundingClientRect();
+            dropdown.style.position = 'absolute';
+            dropdown.style.left = rect.left + window.scrollX + 'px';
+            dropdown.style.top = rect.bottom + window.scrollY + 'px';
+            dropdown.style.width = rect.width + 'px';
+
+            unitOptions.forEach(option => {
+                const item = document.createElement('div');
+                item.textContent = option;
+                item.addEventListener('click', function() {
+                    input.value = option;
+                    dropdown.remove();
+                });
+                dropdown.appendChild(item);
+            });
+
+            document.body.appendChild(dropdown);
+        }
+
+        // Attach click listeners to unit inputs
+        function attachUnitListeners() {
+            document.querySelectorAll('.unit-input').forEach(input => {
+                input.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showUnitDropdown(this);
+                });
+                input.addEventListener('focus', function(e) {
+                    showUnitDropdown(this);
+                });
+            });
+        }
+
+        // Function to parse number from string (handles commas)
+        function parseNumber(str) {
+            if (!str) return 0;
+            return parseFloat(str.toString().replace(/,/g, '')) || 0;
+        }
+
+        // Function to format number with commas and 2 decimal places
+        function formatNumber(num) {
+            return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // Function to calculate row total (QTY * UNIT COST)
+        function calculateRowTotal(row) {
+            const qtyInput = row.querySelector('.qty-input');
+            const unitCostInput = row.querySelector('.unit-cost-input');
+            const totalCostCell = row.querySelector('.total-cost');
+
+            if (qtyInput && unitCostInput && totalCostCell) {
+                const qty = parseNumber(qtyInput.value);
+                const unitCost = parseNumber(unitCostInput.value);
+                const total = qty * unitCost;
+                totalCostCell.textContent = formatNumber(total);
+            }
+        }
+
+        // Function to calculate grand total (sum of all TOTAL COST)
+        function calculateGrandTotal() {
+            let grandTotal = 0;
+            document.querySelectorAll('.total-cost').forEach(cell => {
+                grandTotal += parseNumber(cell.textContent);
+            });
+            document.getElementById('grandTotal').textContent = formatNumber(grandTotal);
+        }
+
+        // Function to recalculate all totals
+        function recalculateAllTotals() {
+            document.querySelectorAll('#panelTable tbody tr, #wiresTable tbody tr, #outletsTable tbody tr, #miscTable tbody tr').forEach(row => {
+                calculateRowTotal(row);
+            });
+            calculateGrandTotal();
+        }
+
+        // Attach listeners to qty and unit cost inputs for calculation
+        function attachCalculationListeners() {
+            document.querySelectorAll('.qty-input, .unit-cost-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const row = this.closest('tr');
+                    calculateRowTotal(row);
+                    calculateGrandTotal();
+                });
+                input.addEventListener('change', function() {
+                    const row = this.closest('tr');
+                    calculateRowTotal(row);
+                    calculateGrandTotal();
+                });
+            });
+        }
+
+        // Function to get section from table ID
+        function getSectionFromTableId(tableId) {
+            if (tableId === 'panelTable') return 'panel';
+            if (tableId === 'wiresTable') return 'wires';
+            if (tableId === 'lightingFixturesTable') return 'lightingFixtures';
+            if (tableId === 'auxlightingFixturesTable') return 'auxlightingFixtures';
+            if (tableId === 'outletsTable') return 'outlets';
+            if (tableId === 'conduitTable') return 'conduit';
+            if (tableId === 'miscTable') return 'misc';
+            return 'misc';
+        }
+
+        // Function to add a new row to a table
+        function addRow(tableId) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const newRow = tbody.rows[0].cloneNode(true);
+            const section = getSectionFromTableId(tableId);
+
+            // Clear description textarea
+            const descInput = newRow.querySelector('.description-input');
+            if (descInput) {
+                descInput.value = '';
+                descInput.textContent = '';
+                descInput.setAttribute('data-section', section);
+                descInput.style.height = 'auto';
+            }
+
+            // Clear unit input
+            const unitInput = newRow.querySelector('.unit-input');
+            if (unitInput) {
+                unitInput.value = '';
+            }
+
+            // Clear qty input
+            const qtyInput = newRow.querySelector('.qty-input');
+            if (qtyInput) {
+                qtyInput.value = '';
+            }
+
+            // Clear unit cost input
+            const unitCostInput = newRow.querySelector('.unit-cost-input');
+            if (unitCostInput) {
+                unitCostInput.value = '';
+            }
+
+            // Clear total cost cell
+            const cells = newRow.querySelectorAll('td');
+            if (cells.length > 4) {
+                cells[4].textContent = '';
+            }
+
+            tbody.appendChild(newRow);
+            attachDescriptionListeners();
+            attachUnitListeners();
+            attachCalculationListeners();
+            calculateGrandTotal();
+        }
+
+        // Function to remove the last row from a table
+        function removeLastRow(tableId) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+
+            // Keep at least one row
+            if (rows.length > 1) {
+                rows[rows.length - 1].remove();
+                calculateGrandTotal();
+            } else {
+                alert('You must keep at least one row in this section.');
+            }
+        }
+
+        // Function to delete an entire section
+        function deleteSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                if (confirm('Are you sure you want to delete this entire section?')) {
+                    section.remove();
+                    calculateGrandTotal();
+                }
+            }
+        }
+
+        // Section templates for adding new sections
+        const sectionTypeTemplates = {
+            panel: {
+                id: 'panelSection',
+                tableId: 'panelTable',
+                title: 'PANEL BOARD AND CIRCUIT BREAKERS:',
+                dataSection: 'panel'
+            },
+            wires: {
+                id: 'wiresSection',
+                tableId: 'wiresTable',
+                title: 'WIRES AND CABLES:',
+                dataSection: 'wires'
+            },
+            lighting: {
+                id: 'lightingSection',
+                tableId: 'lightingFixturesTable',
+                title: 'LIGHTING FIXTURES:',
+                dataSection: 'lightingFixtures'
+            },
+            auxlighting: {
+                id: 'auxlightingSection',
+                tableId: 'auxlightingFixturesTable',
+                title: 'AUXILIARY LIGHTING FIXTURES:',
+                dataSection: 'auxlightingFixtures'
+            },
+            outlets: {
+                id: 'outletsSection',
+                tableId: 'outletsTable',
+                title: 'CONVENIENCE OUTLET AND SWITCHES:',
+                dataSection: 'outlets'
+            },
+            conduit: {
+                id: 'conduitSection',
+                tableId: 'conduitTable',
+                title: 'CONDUIT AND FITTINGS:',
+                dataSection: 'conduit'
+            },
+            misc: {
+                id: 'miscSection',
+                tableId: 'miscTable',
+                title: 'MISCELLANEOUS:',
+                dataSection: 'misc'
+            }
+        };
+
+        // Counter for unique IDs
+        let sectionCounter = 1;
+
+        // Function to toggle the section dropdown menu
+        function toggleSectionDropdown(button) {
+            // Close all other dropdowns first
+            document.querySelectorAll('.section-dropdown').forEach(dropdown => {
+                if (dropdown !== button.nextElementSibling) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Toggle the current dropdown
+            const dropdown = button.nextElementSibling;
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.matches('.add-section-btn') && !event.target.matches('.section-dropdown-item')) {
+                document.querySelectorAll('.section-dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
+            }
+        });
+
+        // Function to add a section by type (called from dropdown)
+        function addSectionByType(afterSectionId, sectionType) {
+            const template = sectionTypeTemplates[sectionType];
+            if (!template) return;
+
+            // Close the dropdown
+            document.querySelectorAll('.section-dropdown').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+
+            const afterSection = document.getElementById(afterSectionId);
+            if (!afterSection) {
+                // If section was deleted, find the total row and insert before it
+                const totalRow = document.querySelector('.total-row').closest('table');
+                if (totalRow) {
+                    const newSection = createSectionHTML(template);
+                    totalRow.insertAdjacentHTML('beforebegin', newSection);
+                    reattachAllListeners();
+                    calculateGrandTotal();
+                }
+                return;
+            }
+
+            const newSection = createSectionHTML(template);
+            afterSection.insertAdjacentHTML('afterend', newSection);
+            reattachAllListeners();
+            calculateGrandTotal();
+        }
+
+        // Function to create section HTML
+        function createSectionHTML(template) {
+            sectionCounter++;
+            const newId = template.id + '_' + sectionCounter;
+            const newTableId = template.tableId + '_' + sectionCounter;
+
+            return `
+        <div id="${newId}" class="bom-section">
+        <div class="section-title">${template.title}</div>
+        <table id="${newTableId}">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ITEM DESCRIPTION</th>
+                    <th style="width: 10%;">UNIT</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 17%;">UNIT COST</th>
+                    <th style="width: 18%;">TOTAL COST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><textarea class="description-input" data-section="${template.dataSection}" rows="1"></textarea></td>
+                    <td><input type="text" class="unit-input" value=""></td>
+                    <td><input type="number" class="qty-input" value=""></td>
+                    <td><input type="text" class="unit-cost-input" value=""></td>
+                    <td class="text-right total-cost">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <button class="add-row-btn" onclick="addRow('${newTableId}')">+ Add Row</button>
+            <button class="remove-row-btn" onclick="removeLastRow('${newTableId}')">- Remove Row</button>
+            <button class="delete-section-btn" onclick="deleteSection('${newId}')">Delete Section</button>
+            <span class="section-btn-container">
+                <button class="add-section-btn" onclick="toggleSectionDropdown(this)">+ Add Section</button>
+                <div class="section-dropdown">
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'panel')">PANEL BOARD AND CIRCUIT BREAKERS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'wires')">WIRES AND CABLES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'lighting')">LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'auxlighting')">AUXILIARY LIGHTING FIXTURES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'outlets')">CONVENIENCE OUTLET AND SWITCHES</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'conduit')">CONDUIT AND FITTINGS</div>
+                    <div class="section-dropdown-item" onclick="addSectionByType('${newId}', 'misc')">MISCELLANEOUS</div>
+                </div>
+            </span>
+        </div>
+        </div>
+            `;
+        }
+
+        // Function to reattach all listeners after adding new sections
+        function reattachAllListeners() {
+            attachDescriptionListeners();
+            attachUnitListeners();
+            attachCalculationListeners();
+        }
+
+        // The Save/BOQ/View-Save/View-MCE buttons are position:fixed in the top-right
+        // corner, so a sticky banner (edit or template) needs to push them down or it
+        // just overlaps them. Measures the shown banner's real height and exposes it
+        // as a CSS variable those buttons' `top` is computed from.
+        function activateTopBanner(banner) {
+            if (!banner) return;
+            document.documentElement.style.setProperty('--top-banner-offset', banner.offsetHeight + 'px');
+        }
+
+        // ── Edit Mode functions ────────────────────────────────────────────
+        function showEditBanner(docName) {
+            window._editDocName = docName;
+            const banner = document.getElementById('editBanner');
+            const label  = document.getElementById('editDocNameLabel');
+            if (banner) banner.style.display = 'flex';
+            if (label)  label.textContent = 'Editing: "' + docName + '"';
+            // Hide the regular Save button to avoid creating a duplicate
+            document.querySelectorAll('.save-btn').forEach(function(btn) { btn.style.display = 'none'; });
+            activateTopBanner(banner);
+        }
+
+        function cancelEdit() { window.location.href = '/save_bomboq'; }
+
+        // ── Template Mode functions ──────────────────────────────────────────
+        // Used when arriving via ?template=1 (see "Create New" on /save_bomboq's
+        // Unposted files section) — the form is pre-filled from another document but
+        // the regular Save button stays active so Save creates a brand new document.
+        function showTemplateBanner(sourceName) {
+            const banner = document.getElementById('templateBanner');
+            const label  = document.getElementById('templateDocNameLabel');
+            if (banner) banner.style.display = 'flex';
+            if (label)  label.textContent = 'Based on: "' + sourceName + '" — click Save to create a new document';
+            activateTopBanner(banner);
+        }
+
+        function loadTemplateFromSessionStorage() {
+            let raw = null;
+            try { raw = sessionStorage.getItem('bom_template_data'); } catch (e) { /* ignore */ }
+            if (!raw) return;
+            try { sessionStorage.removeItem('bom_template_data'); } catch (e) { /* ignore */ }
+
+            let data;
+            try { data = JSON.parse(raw); } catch (e) { return; }
+
+            populateFormFromDocument(data, { setRefNo: false });
+            showTemplateBanner(data.sourceName || 'a previous document');
+        }
+
+        // Populates the header fields and section rows from a document's saved data.
+        // Shared by true "edit an existing document" (?edit=) and "use as template
+        // for a new document" (?template=1) flows \u2014 they only differ in whether the
+        // original reference number is carried over and what happens afterward.
+        function populateFormFromDocument(item, opts) {
+            opts = opts || {};
+
+            // Populate header fields
+            const deptEl      = document.getElementById('projectDepartment');
+            const projNameEl  = document.getElementById('projectNameField');
+            const locEl       = document.getElementById('projectLocation');
+            const floorAreaEl = document.getElementById('projectFloorArea');
+            const dateEl      = document.getElementById('dateField');
+            const refNoEl     = document.getElementById('referenceNo');
+            if (deptEl)      deptEl.value      = item.department  || '';
+            if (projNameEl)  projNameEl.value  = item.projectName || '';
+            if (locEl)       locEl.value       = item.location    || '';
+            if (floorAreaEl) floorAreaEl.value = item.floorArea   || '';
+            if (dateEl)      dateEl.value      = item.dateValue   || '';
+            if (opts.setRefNo !== false && refNoEl) refNoEl.value = item.refNo || '';
+
+            // Restore section rows from saved htmlContent
+            const htmlContent = item.htmlContent || '';
+            if (htmlContent) {
+                const tmpDiv = document.createElement('div');
+                tmpDiv.innerHTML = htmlContent;
+
+                // Build map: tableId -> saved tbody innerHTML
+                const savedTbodyMap = {};
+                tmpDiv.querySelectorAll('.bom-section').forEach(function(sec) {
+                    const tbl = sec.querySelector('table');
+                    if (tbl && tbl.id) {
+                        const tbody = tbl.querySelector('tbody');
+                        if (tbody) savedTbodyMap[tbl.id] = tbody.innerHTML;
+                    }
+                });
+
+                const EMPTY_ROW = '<tr><td><textarea class="description-input" rows="1"></textarea></td><td><input type="text" class="unit-input" value=""></td><td><input type="number" class="qty-input" value=""></td><td><input type="text" class="unit-cost-input" value=""></td><td class="text-right total-cost">0.00</td></tr>';
+
+                // Inject into current page sections
+                document.querySelectorAll('.bom-section').forEach(function(sec) {
+                    const tbl = sec.querySelector('table');
+                    if (!tbl) return;
+                    const tbody = tbl.querySelector('tbody');
+                    if (!tbody) return;
+                    tbody.innerHTML = (savedTbodyMap[tbl.id] !== undefined) ? savedTbodyMap[tbl.id] : EMPTY_ROW;
+                });
+
+                // Handle extra sections added by the user (IDs like panelSection_2)
+                const baseIds = new Set(['panelSection','wiresSection','lightingSection','auxlightingSection','outletsSection','conduitSection','miscSection']);
+                tmpDiv.querySelectorAll('.bom-section').forEach(function(savedSec) {
+                    const secId = savedSec.id;
+                    if (!secId || baseIds.has(secId)) return;
+                    const savedTbl   = savedSec.querySelector('table');
+                    if (!savedTbl) return;
+                    const savedTbody = savedTbl.querySelector('tbody');
+                    if (!savedTbody) return;
+                    const secTitle = savedSec.querySelector('.section-title');
+                    const titleTxt = (secTitle ? secTitle.textContent : '').toUpperCase();
+                    const typeMap  = [['PANEL','panel'],['WIRE','wires'],['CABLE','wires'],['AUXILIARY','auxlighting'],['LIGHTING','lighting'],['OUTLET','outlets'],['SWITCH','outlets'],['CONDUIT','conduit'],['MISCELLANEOUS','misc']];
+                    let sType = 'misc';
+                    for (const [key, type] of typeMap) { if (titleTxt.includes(key)) { sType = type; break; } }
+                    const allSecs   = document.querySelectorAll('.bom-section');
+                    const lastSec   = allSecs[allSecs.length - 1];
+                    if (lastSec) {
+                        addSectionByType(lastSec.id, sType);
+                        const newSecs  = document.querySelectorAll('.bom-section');
+                        const newSec   = newSecs[newSecs.length - 1];
+                        const newTbl   = newSec ? newSec.querySelector('table') : null;
+                        const newTbody = newTbl  ? newTbl.querySelector('tbody') : null;
+                        if (newTbody) newTbody.innerHTML = savedTbody.innerHTML;
+                    }
+                });
+
+                // Sync textarea default values to .value
+                document.querySelectorAll('textarea.description-input').forEach(function(ta) {
+                    if (!ta.value && ta.textContent) ta.value = ta.textContent;
+                });
+
+                // Restore signature fields (Prepared/Checked/Approved by, name & position)
+                tmpDiv.querySelectorAll('input[name]').forEach(function(savedInput) {
+                    const liveInput = document.querySelector('input[name="' + savedInput.name + '"]');
+                    if (liveInput) liveInput.value = savedInput.value;
+                });
+            }
+
+            reattachAllListeners();
+            calculateGrandTotal();
+        }
+
+        async function loadDocumentForEditing(docName) {
+            try {
+                const banner = document.getElementById('editBanner');
+                const label  = document.getElementById('editDocNameLabel');
+                if (banner) banner.style.display = 'flex';
+                if (label)  label.textContent = 'Loading "' + docName + '"\u2026';
+
+                const response = await fetch('api/document_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'load', documentName: docName })
+                });
+                const result = await response.json();
+
+                if (!result.success || !result.document) {
+                    alert('Failed to load document for editing: ' + (result.message || 'Not found'));
+                    if (banner) banner.style.display = 'none';
+                    return;
+                }
+
+                const doc  = result.document;
+                const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
+                if (!item.refNo) item.refNo = doc.ref_no || '';
+                if (!item.htmlContent) item.htmlContent = doc.html_content || '';
+
+                populateFormFromDocument(item, { setRefNo: true });
+                showEditBanner(docName);
+            } catch (error) {
+                console.error('Error loading document for editing:', error);
+                alert('Error loading document: ' + error.message);
+            }
+        }
+
+        async function updateDocument() {
+            if (!window._editDocName) { alert('Error: No document is in edit mode.'); return; }
+            if (userRole === 'guest') { alert('Guests are not allowed to save files.'); return; }
+
+            const documentName = window._editDocName;
+
+            document.querySelectorAll('textarea').forEach(function(ta) { ta.textContent = ta.value; });
+            document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(function(inp) { inp.setAttribute('value', inp.value); });
+            document.querySelectorAll('select').forEach(function(sel) {
+                Array.from(sel.options).forEach(function(opt) {
+                    if (opt.value === sel.value) { opt.setAttribute('selected', 'selected'); }
+                    else { opt.removeAttribute('selected'); }
+                });
+            });
+
+            const referenceNo   = document.getElementById('referenceNo').value;
+            const department    = document.getElementById('projectDepartment')?.value    || '';
+            const projectName   = document.getElementById('projectNameField')?.value    || '';
+            const location      = document.getElementById('projectLocation')?.value      || '';
+            const floorArea     = document.getElementById('projectFloorArea')?.value     || '';
+            const dateValue     = document.getElementById('dateField')?.value            || '';
+            const dateCreated   = new Date().toLocaleString();
+
+            const container = document.querySelector('.container');
+            let printableHTML = container.innerHTML;
+            const tmpDiv2 = document.createElement('div');
+            tmpDiv2.innerHTML = printableHTML;
+            tmpDiv2.querySelectorAll('.button-group, .add-row-btn, .remove-row-btn, .delete-section-btn, .add-section-btn, .section-btn-container').forEach(function(el) { el.remove(); });
+            printableHTML = tmpDiv2.innerHTML;
+
+            const fullHTML = `
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { width: 100%; height: 100%; }
+                    body { font-family: Arial, sans-serif; background-color: white; padding: 20px; font-size: 11px; line-height: 1.4; }
+                    .container { max-width: 900px; margin: 0 auto; background-color: white; padding: 20px; }
+                    input[type="text"], input[type="number"], input[type="date"], textarea, select { border: none !important; background: transparent !important; font-family: Arial, sans-serif; font-size: 11px; padding: 2px !important; margin: 0 !important; }
+                    input[type="text"]::placeholder, input[type="number"]::placeholder, textarea::placeholder { color: #999; }
+                    .header-section { margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                    .header-section div { margin: 2px 0; line-height: 1.3; }
+                    .header-section strong { text-decoration: underline; }
+                    table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; }
+                    table th { background-color: #FFFF00 !important; font-weight: bold; text-align: center; border: 1px solid #000; padding: 6px 4px; font-size: 10px; }
+                    table td { border: 1px solid #000; padding: 4px 6px; text-align: left; background-color: white !important; }
+                    table td input, table td textarea, table td select { width: 100%; border: none !important; background: transparent !important; }
+                    .total-row td { background-color: #FFFF00 !important; font-weight: bold; }
+                    .grand-total-row td { background-color: #FFFF00 !important; font-weight: bold; font-size: 11px; }
+                    .section-header { background-color: #f0f0f0; font-weight: bold; margin-top: 10px; padding: 6px; border: 1px solid #000; }
+                    h1, h2 { text-align: center; margin: 10px 0; font-size: 14px; font-weight: bold; }
+                    h3 { font-size: 12px; margin: 8px 0 4px 0; }
+                    .perimeter-section { margin: 8px 0; font-weight: bold; }
+                    .signature-section { margin-top: 20px; }
+                    .signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin: 20px 20px 0 0; text-align: center; }
+                    @media print { body { margin: 0; padding: 0; } table td textarea, table td input { background: white !important; border: none !important; white-space: normal !important; overflow: visible !important; word-wrap: break-word !important; overflow-wrap: break-word !important; } }
+                </style>
+                <div class="document-header">
+                    <div><strong>Department:</strong> ${department || 'N/A'}</div>
+                    <div><strong>Project Name:</strong> ${projectName || 'N/A'}</div>
+                    <div><strong>Location:</strong> ${location || 'N/A'}</div>
+                    <div><strong>Total Floor Area:</strong> ${floorArea || 'N/A'}</div>
+                    <div><strong>Date:</strong> ${dateValue || 'N/A'}</div>
+                </div>
+                ${printableHTML}
+            `;
+
+            const updatedDocument = { name: documentName, refNo: referenceNo, department, projectName, location, floorArea, dateValue, date: dateCreated, file: '/bom', type: 'BOM', htmlContent: fullHTML };
+
+            const updateBtn = document.getElementById('updateDocBtn');
+            if (updateBtn) { updateBtn.disabled = true; updateBtn.textContent = 'Saving\u2026'; }
+
+            try {
+                const response = await fetch('api/document_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'save', documentName: updatedDocument.name, documentType: 'bom', items: [updatedDocument], status: 'saved' })
+                });
+                const responseText = await response.text();
+                let result;
+                try { result = JSON.parse(responseText); } catch (e) {
+                    alert('Error: Invalid server response');
+                    if (updateBtn) { updateBtn.disabled = false; updateBtn.textContent = '\u{1F4BE} Update Document'; }
+                    return;
+                }
+                if (result.success) {
+                    alert('Document "' + documentName + '" has been updated successfully!');
+                    window.location.href = '/save_bomboq';
+                } else {
+                    alert('Error updating: ' + (result.message || 'Unknown error'));
+                    if (updateBtn) { updateBtn.disabled = false; updateBtn.textContent = '\u{1F4BE} Update Document'; }
+                }
+            } catch (error) {
+                alert('Error updating document: ' + error.message);
+                if (updateBtn) { updateBtn.disabled = false; updateBtn.textContent = '\u{1F4BE} Update Document'; }
+            }
+        }
+        // ── End Edit Mode ─────────────────────────────────────────────────
+
+        // Function to clear the form
+        function clearForm() {
+            if (confirm('Are you sure you want to clear the form? All data will be lost.')) {
+                // Clear all text inputs
+                document.querySelectorAll('input[type="text"]').forEach(input => {
+                    input.value = '';
+                });
+                
+                // Clear all number inputs
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = '';
+                });
+                
+                // Clear all textareas (description inputs)
+                document.querySelectorAll('textarea').forEach(textarea => {
+                    textarea.value = '';
+                    textarea.style.height = 'auto';
+                });
+                
+                // Reset all total-cost cells to 0.00
+                document.querySelectorAll('.total-cost').forEach(cell => {
+                    cell.textContent = '0.00';
+                });
+                
+                // Reset grand total
+                document.getElementById('grandTotal').textContent = '0.00';
+                
+                // Regenerate reference number
+                generateReferenceNo();
+            }
+        }
+
+        // Save document function
+        async function openSavePage() {
+            // Check if user is Guest
+            if (userRole === 'guest') {
+                alert('Guests are not allowed to save files. Please contact an administrator or user to save documents.');
+                return;
+            }
+            
+            const documentName = prompt('Enter a name for this document:', '');
+            
+            if (documentName === null || documentName.trim() === '') {
+                return;
+            }
+
+            // Sync all textarea and input values to the DOM before capturing
+            document.querySelectorAll('textarea').forEach(ta => {
+                ta.textContent = ta.value;
+            });
+
+            document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(inp => {
+                // For input fields, we need to set them in a way that will be captured
+                if (inp.type === 'text' || inp.type === 'number' || inp.type === 'date') {
+                    inp.setAttribute('value', inp.value);
+                }
+            });
+
+            // Sync select elements (e.g., Department dropdown) so the chosen option is preserved in HTML
+            document.querySelectorAll('select').forEach(sel => {
+                Array.from(sel.options).forEach(opt => {
+                    if (opt.value === sel.value) { opt.setAttribute('selected', 'selected'); }
+                    else { opt.removeAttribute('selected'); }
+                });
+            });
+
+            const referenceNo = document.getElementById('referenceNo').value;
+            const department = document.getElementById('projectDepartment')?.value || '';
+            const projectName = document.getElementById('projectNameField')?.value || '';
+            const location = document.getElementById('projectLocation')?.value || '';
+            const floorArea = document.getElementById('projectFloorArea')?.value || '';
+            const dateValue = document.getElementById('dateField')?.value || '';
+            
+            const now = new Date();
+            const dateCreated = now.toLocaleString();
+
+            const container = document.querySelector('.container');
+            let printableHTML = container.innerHTML;
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = printableHTML;
+            tempDiv.querySelectorAll('.button-group, .add-row-btn, .remove-row-btn, .delete-section-btn, .add-section-btn, .section-btn-container').forEach(el => {
+                el.remove();
+            });
+            printableHTML = tempDiv.innerHTML;
+
+            const fullHTML = `
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { width: 100%; height: 100%; }
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        background-color: white; 
+                        padding: 20px; 
+                        font-size: 11px;
+                        line-height: 1.4;
+                    }
+                    .container { 
+                        max-width: 900px; 
+                        margin: 0 auto; 
+                        background-color: white; 
+                        padding: 20px;
+                    }
+                    input[type="text"], 
+                    input[type="number"], 
+                    input[type="date"],
+                    textarea,
+                    select {
+                        border: none !important;
+                        background: transparent !important;
+                        font-family: Arial, sans-serif;
+                        font-size: 11px;
+                        padding: 2px !important;
+                        margin: 0 !important;
+                    }
+                    input[type="text"]::placeholder,
+                    input[type="number"]::placeholder,
+                    textarea::placeholder {
+                        color: #999;
+                    }
+                    .header-section { 
+                        margin-bottom: 15px; 
+                        border-bottom: 2px solid #000; 
+                        padding-bottom: 10px; 
+                    }
+                    .header-section div { 
+                        margin: 2px 0; 
+                        line-height: 1.3;
+                    }
+                    .header-section strong { 
+                        text-decoration: underline; 
+                    }
+                    table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 10px 0; 
+                        page-break-inside: avoid;
+                    }
+                    table th { 
+                        background-color: #FFFF00 !important; 
+                        font-weight: bold; 
+                        text-align: center; 
+                        border: 1px solid #000; 
+                        padding: 6px 4px;
+                        font-size: 10px;
+                    }
+                    table td { 
+                        border: 1px solid #000; 
+                        padding: 4px 6px; 
+                        text-align: left;
+                        background-color: white !important;
+                    }
+                    table td input,
+                    table td textarea,
+                    table td select {
+                        width: 100%;
+                        border: none !important;
+                        background: transparent !important;
+                    }
+                    .total-row td { 
+                        background-color: #FFFF00 !important; 
+                        font-weight: bold;
+                    }
+                    .grand-total-row td { 
+                        background-color: #FFFF00 !important; 
+                        font-weight: bold; 
+                        font-size: 11px;
+                    }
+                    .section-header { 
+                        background-color: #f0f0f0; 
+                        font-weight: bold; 
+                        margin-top: 10px; 
+                        padding: 6px; 
+                        border: 1px solid #000;
+                    }
+                    h1, h2 { 
+                        text-align: center; 
+                        margin: 10px 0; 
+                        font-size: 14px;
+                        font-weight: bold;
+                    }
+                    h3 { 
+                        font-size: 12px;
+                        margin: 8px 0 4px 0;
+                    }
+                    .perimeter-section { 
+                        margin: 8px 0; 
+                        font-weight: bold; 
+                    }
+                    .signature-section {
+                        margin-top: 20px;
+                    }
+                    .signature-line {
+                        display: inline-block;
+                        width: 200px;
+                        border-bottom: 1px solid #000;
+                        margin: 20px 20px 0 0;
+                        text-align: center;
+                    }
+                    @media print { 
+                        body { margin: 0; padding: 0; }
+                        table td textarea,
+                        table td input {
+                            background: white !important;
+                            border: none !important;
+                            white-space: normal !important;
+                            overflow: visible !important;
+                            word-wrap: break-word !important;
+                            overflow-wrap: break-word !important;
+                        }
+                    }
+                </style>
+
+
+                <div class="document-header">
+                    <div><strong>Department:</strong> ${department || 'N/A'}</div>
+                    <div><strong>Project Name:</strong> ${projectName || 'N/A'}</div>
+                    <div><strong>Location:</strong> ${location || 'N/A'}</div>
+                    <div><strong>Total Floor Area:</strong> ${floorArea || 'N/A'}</div>
+                    <div><strong>Date:</strong> ${dateValue || 'N/A'}</div>
+                </div>
+
+
+
+                ${printableHTML}
+            `;
+
+            const newDocument = {
+                name: documentName.trim(),
+                refNo: referenceNo,
+                department: department,
+                projectName: projectName,
+                location: location,
+                floorArea: floorArea,
+                dateValue: dateValue,
+                date: dateCreated,
+                file: '/bom',
+                type: 'BOM',
+                htmlContent: fullHTML
+            };
+
+            // Save to database via API
+            try {
+                const response = await fetch('api/document_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'save',
+                        documentName: newDocument.name,
+                        documentType: 'bom',
+                        items: [newDocument],
+                        status: 'saved'
+                    })
+                });
+                
+                const responseText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Invalid JSON response:', responseText);
+                    alert('Error saving document: Invalid server response');
+                    return;
+                }
+                
+                if (result.success) {
+                    alert('Document "' + documentName + '" has been saved successfully to the server!');
+                    window.location.href = '/save_bomboq';
+                } else {
+                    alert('Error saving document: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving to server:', error);
+                alert('Error saving document to server: ' + error.message);
+            }
+        }
+
+
+        // Initialize listeners on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            attachDescriptionListeners();
+            attachUnitListeners();
+            attachCalculationListeners();
+            recalculateAllTotals();
+            // Edit mode: check URL for ?edit=DocumentName
+            const urlParams = new URLSearchParams(window.location.search);
+            const editDocName = urlParams.get('edit');
+            if (editDocName) {
+                await loadDocumentForEditing(decodeURIComponent(editDocName));
+            } else if (urlParams.get('template')) {
+                loadTemplateFromSessionStorage();
+            }
+        });
+
+        // Function to navigate to another page
+        function loadPage(pageUrl) {
+            if (!pageUrl) return;
+            if (pageUrl === 'bom_labor.php' || pageUrl === 'boq.php') pageUrl = '/boq';
+            else if (pageUrl === 'bom.php') pageUrl = '/bom';
+            else if (pageUrl === 'save_bomboq.php') pageUrl = '/save_bomboq';
+            else if (pageUrl === 'price_edit_bomboq.php') pageUrl = '/price_edit_bomboq';
+            else if (pageUrl === 'estimate.php') pageUrl = '/estimate';
+            window.location.href = pageUrl;
+        }
+    </script>
+    <script src="themes.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Welcome back, {{ user.username if user else 'Guest' }}!</h1>
+        <p class="page-subtitle">
+            {% if user and user.department %}
+                Department: <strong>{{ user.department }}</strong> &bull;
+            {% endif %}
+            Role: <strong style="text-transform: capitalize;">{{ (user.role if user else 'guest').replace('_', ' ') }}</strong> &bull;
+            FastAPI BOM/BOQ Management System
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="/bom" class="btn btn-primary">+ New BOM</a>
+        <a href="/boq" class="btn btn-success">+ New BOQ</a>
+        <a href="/estimate" class="btn btn-warning">+ New Estimate</a>
+    </div>
+</div>
+
+<!-- KPI Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon-box blue">📁</div>
+        <div class="metric-info">
+            <h4>Total Documents</h4>
+            <div class="metric-number">{{ metrics.total_documents }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box amber">🏷️</div>
+        <div class="metric-info">
+            <h4>Pending Price Edit</h4>
+            <div class="metric-number">{{ metrics.pending_price_edit }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box purple">⏳</div>
+        <div class="metric-info">
+            <h4>Posted for Approval</h4>
+            <div class="metric-number">{{ metrics.posted_for_approval }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box green">✅</div>
+        <div class="metric-info">
+            <h4>Approved for PO</h4>
+            <div class="metric-number">{{ metrics.approved_for_po }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box cyan">💰</div>
+        <div class="metric-info">
+            <h4>Cost Estimates</h4>
+            <div class="metric-number">{{ metrics.total_estimates }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box rose">👥</div>
+        <div class="metric-info">
+            <h4>Active Users</h4>
+            <div class="metric-number">{{ metrics.total_users }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🚀 Quick Actions & Workflows</h2>
+        <span style="font-size: 12px; color: var(--text-muted);">Select a module to launch</span>
+    </div>
+    <div class="quick-actions-grid">
+        <a href="/bom" class="action-tile">
+            <div class="action-tile-icon" style="background:#ede9fe; color:#7c3aed;">📝</div>
+            <div class="action-tile-content">
+                <h3>Create BOM</h3>
+                <p>Interactive Bill of Materials builder with live cost totals</p>
+            </div>
+        </a>
+
+        <a href="/boq" class="action-tile">
+            <div class="action-tile-icon" style="background:#dbeafe; color:#2563eb;">📋</div>
+            <div class="action-tile-content">
+                <h3>Create BOQ</h3>
+                <p>Bill of Quantities with itemized labor & materials breakdown</p>
+            </div>
+        </a>
+
+        <a href="/estimate" class="action-tile">
+            <div class="action-tile-icon" style="background:#fef3c7; color:#d97706;">💰</div>
+            <div class="action-tile-content">
+                <h3>Project Cost Estimates</h3>
+                <p>Materials, labor, allowances, mobilization & grand totals</p>
+            </div>
+        </a>
+
+        <a href="/save_bomboq" class="action-tile">
+            <div class="action-tile-icon" style="background:#dcfce7; color:#15803d;">📂</div>
+            <div class="action-tile-content">
+                <h3>Saved Documents</h3>
+                <p>Search, preview, print, edit, and manage BOM/BOQ files</p>
+            </div>
+        </a>
+
+        <a href="/price_edit_bomboq" class="action-tile">
+            <div class="action-tile-icon" style="background:#fef9c3; color:#ca8a04;">🏷️</div>
+            <div class="action-tile-content">
+                <h3>MCE Price Editing</h3>
+                <p>Purchasing department unit pricing, posting, and corrections</p>
+            </div>
+        </a>
+
+        {% if user and (user.role in ['department_admin', 'admin']) %}
+        <a href="/approver" class="action-tile">
+            <div class="action-tile-icon" style="background:#e0e7ff; color:#4338ca;">✅</div>
+            <div class="action-tile-content">
+                <h3>Department Approver</h3>
+                <p>Review & approve posted documents for your department</p>
+            </div>
+        </a>
+        {% endif %}
+
+        {% if user and (user.role == 'admin' or (user.department and user.department.lower() == 'purchasing')) %}
+        <a href="/approved_for_po" class="action-tile">
+            <div class="action-tile-icon" style="background:#d1fae5; color:#059669;">📦</div>
+            <div class="action-tile-content">
+                <h3>Approved for PO</h3>
+                <p>Purchasing PO hub, file attachment upload & printable orders</p>
+            </div>
+        </a>
+        {% endif %}
+
+        <a href="/user_logs" class="action-tile">
+            <div class="action-tile-icon" style="background:#ffedd5; color:#ea580c;">📜</div>
+            <div class="action-tile-content">
+                <h3>Activity Logs</h3>
+                <p>Full audit trail of logins, document updates, and approvals</p>
+            </div>
+        </a>
+
+        <!-- External Department Portals -->
+        <a href="https://serverx.ratfish-regulus.ts.net/" target="_blank" class="action-tile">
+            <div class="action-tile-icon" style="background:#fee2e2; color:#dc2626;">🌐</div>
+            <div class="action-tile-content">
+                <h3>Accomplishment Report &nearr;</h3>
+                <p>View external engineering accomplishment reports</p>
+            </div>
+        </a>
+
+        <a href="https://serverx.ratfish-regulus.ts.net/site2" target="_blank" class="action-tile">
+            <div class="action-tile-icon" style="background:#fee2e2; color:#dc2626;">🏢</div>
+            <div class="action-tile-content">
+                <h3>DAC Department Portal &nearr;</h3>
+                <p>Design & Construction home page portal</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity Stream -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🕒 Recent System Activity</h2>
+        <a href="/user_logs" class="btn btn-secondary btn-sm">View Full Log &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Department</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>Page</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td style="font-family: var(--font-mono); font-size: 11px; white-space: nowrap;">
+                        {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '' }}
+                    </td>
+                    <td>
+                        <strong>{{ log.username }}</strong>
+                        <span class="badge-role {{ log.role or 'guest' }}" style="font-size: 10px;">{{ log.role or 'guest' }}</span>
+                    </td>
+                    <td>{{ log.department or '—' }}</td>
+                    <td>
+                        <span class="status-badge {{ log.action }}">{{ log.action }}</span>
+                    </td>
+                    <td style="max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.details }}">
+                        {{ log.details or '—' }}
+                    </td>
+                    <td style="font-size: 11px; color: var(--text-muted);">{{ log.page or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No recent activity recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

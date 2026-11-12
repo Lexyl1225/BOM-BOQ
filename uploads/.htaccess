@@ -1,0 +1,6 @@
+php_flag engine off
+Options -Indexes
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phps|cgi|pl|asp|aspx|shtml|shtm|fcgi|fpl|jsp|htm|html|wml)$">
+Order Allow,Deny
+Deny from all
+</FilesMatch>

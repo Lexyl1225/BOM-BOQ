@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}User Management &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">👥 User Management</h1>
+        <p class="page-subtitle">Administrator control panel to manage user accounts, assign roles and departments</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="syncUsers()">💾 Sync to JSON Backup</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Add New User</button>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive" style="border: none;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Created At</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-tbody">
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        Loading users list...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="add-user-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Add New User</h3>
+            <button class="modal-close" onclick="closeAddUserModal()">&times;</button>
+        </div>
+        <form onsubmit="handleCreateUser(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="new-uname" class="form-control" placeholder="e.g. jdoe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="new-pwd" class="form-control" placeholder="Enter password (min 6 chars)" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="new-role" class="form-control">
+                        <option value="guest">Guest</option>
+                        <option value="user" selected>User</option>
+                        <option value="department_admin">Department Admin</option>
+                        <option value="admin">System Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" id="new-dept" class="form-control" placeholder="e.g. Design and Construction Department, Purchasing, etc.">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email (Optional)</label>
+                    <input type="email" id="new-email" class="form-control" placeholder="user@company.com">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddUserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="edit-user-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit User: <span id="edit-uname-title"></span></h3>
+            <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+        </div>
+        <form onsubmit="handleUpdateUser(event)">
+            <input type="hidden" id="edit-user-id">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="edit-role" class="form-control">
+                        <option value="guest">Guest</option>
+                        <option value="user">User</option>
+                        <option value="department_admin">Department Admin</option>
+                        <option value="admin">System Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" id="edit-dept" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Reset Password (leave empty to keep current)</label>
+                    <input type="password" id="edit-pwd" class="form-control" placeholder="New password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Account Status</label>
+                    <select id="edit-active" class="form-control">
+                        <option value="true">Active</option>
+                        <option value="false">Suspended / Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeEditUserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let usersList = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
+});
+
+async function loadUsers() {
+    const tbody = document.getElementById('users-tbody');
+    try {
+        const res = await fetch('/api/users/');
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">Failed to load users list. Admin role required.</td></tr>`;
+            return;
+        }
+        usersList = await res.json();
+        renderUsersTable();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">Error loading users: ${e.message}</td></tr>`;
+    }
+}
+
+function renderUsersTable() {
+    const tbody = document.getElementById('users-tbody');
+    if (!usersList || usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = usersList.map(u => {
+        const lastLogin = u.last_login ? u.last_login.substring(0, 19).replace('T', ' ') : 'Never';
+        const createdAt = u.created_at ? u.created_at.substring(0, 10) : '—';
+        const activeBadge = u.is_active
+            ? `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700;">ACTIVE</span>`
+            : `<span style="background: #fee2e2; color: #dc2626; padding: 3px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700;">INACTIVE</span>`;
+
+        return `
+            <tr>
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${u.id}</td>
+                <td><strong>${u.username}</strong></td>
+                <td><span class="badge-role ${u.role}">${u.role}</span></td>
+                <td>${u.department || '—'}</td>
+                <td>${activeBadge}</td>
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${lastLogin}</td>
+                <td style="font-size: 11px; color: var(--text-muted);">${createdAt}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditUserModal(${u.id})">✏️ Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${u.username}')">🗑️ Delete</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openAddUserModal() {
+    document.getElementById('add-user-modal').classList.add('open');
+}
+function closeAddUserModal() {
+    document.getElementById('add-user-modal').classList.remove('open');
+}
+
+async function handleCreateUser(e) {
+    e.preventDefault();
+    const username = document.getElementById('new-uname').value.trim();
+    const password = document.getElementById('new-pwd').value;
+    const role = document.getElementById('new-role').value;
+    const department = document.getElementById('new-dept').value.trim();
+    const email = document.getElementById('new-email').value.trim();
+
+    try {
+        const res = await fetch('/api/users/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role, department, email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            App.toast(`User "${username}" created!`, 'success');
+            closeAddUserModal();
+            loadUsers();
+        } else {
+            App.toast(data.detail || data.message || 'Failed to create user', 'error');
+        }
+    } catch (err) {
+        App.toast('Error: ' + err.message, 'error');
+    }
+}
+
+function openEditUserModal(userId) {
+    const user = usersList.find(u => u.id === userId);
+    if (!user) return;
+
+    document.getElementById('edit-user-id').value = user.id;
+    document.getElementById('edit-uname-title').textContent = user.username;
+    document.getElementById('edit-role').value = user.role;
+    document.getElementById('edit-dept').value = user.department || '';
+    document.getElementById('edit-pwd').value = '';
+    document.getElementById('edit-active').value = user.is_active ? 'true' : 'false';
+
+    document.getElementById('edit-user-modal').classList.add('open');
+}
+function closeEditUserModal() {
+    document.getElementById('edit-user-modal').classList.remove('open');
+}
+
+async function handleUpdateUser(e) {
+    e.preventDefault();
+    const userId = document.getElementById('edit-user-id').value;
+    const role = document.getElementById('edit-role').value;
+    const department = document.getElementById('edit-dept').value.trim();
+    const password = document.getElementById('edit-pwd').value;
+    const is_active = document.getElementById('edit-active').value === 'true';
+
+    const payload = { role, department, is_active };
+    if (password) payload.password = password;
+
+    try {
+        const res = await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            App.toast('User updated successfully', 'success');
+            closeEditUserModal();
+            loadUsers();
+        } else {
+            App.toast(data.detail || data.message || 'Failed to update user', 'error');
+        }
+    } catch (err) {
+        App.toast('Error: ' + err.message, 'error');
+    }
+}
+
+function deleteUser(userId, username) {
+    App.confirm('Delete User', `Are you sure you want to delete user "${username}"? All documents created by this user will also be removed.`, async () => {
+        try {
+            const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                App.toast(`User "${username}" deleted`, 'success');
+                loadUsers();
+            } else {
+                App.toast(data.detail || data.message || 'Failed to delete user', 'error');
+            }
+        } catch (err) {
+            App.toast('Error: ' + err.message, 'error');
+        }
+    });
+}
+
+async function syncUsers() {
+    try {
+        const res = await fetch('/api/users/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            App.toast(data.message, 'success');
+        } else {
+            App.toast(data.message || 'Sync failed', 'error');
+        }
+    } catch (e) {
+        App.toast('Error: ' + e.message, 'error');
+    }
+}
+</script>
+{% endblock %}

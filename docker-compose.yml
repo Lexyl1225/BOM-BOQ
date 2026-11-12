@@ -1,0 +1,67 @@
+# ==============================================================================
+# BOM / BOQ Studio Pro — Docker Compose Configuration
+# Features:
+#  - Integrated Tailscale with hostname 'bom'
+#  - Automatic restart on host reboot (restart: unless-stopped)
+#  - Persistent data volume mount (zero data loss across reboots)
+#  - Persistent Tailscale state (preserves machine identity and credentials)
+# ==============================================================================
+
+services:
+  bom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bom
+    hostname: bom
+    restart: unless-stopped  # Automatically restarts when the host is rebooted
+    
+    # Port mapping for local LAN access (also accessible over Tailscale via http://bom:8000)
+    ports:
+      - "8000:8000"
+
+    # Required Linux capabilities and device for Tailscale TUN interface
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    # Environment variables
+    environment:
+      # Tailscale & Funnel Configuration
+      - TS_HOSTNAME=bom
+      - TS_TAILNET=${TS_TAILNET:-ratfish-regulus.ts.net}
+      - TS_FUNNEL=${TS_FUNNEL:-true}
+      - TS_AUTHKEY=${TS_AUTHKEY:-}
+      - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
+      - FUNNEL_URL=https://bom.${TS_TAILNET:-ratfish-regulus.ts.net}
+      
+      # Application Configuration
+      - HOST=0.0.0.0
+      - PORT=8000
+      - SECRET_KEY=${SECRET_KEY:-b0m-sUpEr-s3cr3t-kEy-998822-ph-engr-alex-2026}
+      - DATA_DIR=/app/data
+      - DATABASE_URL=sqlite:////app/data/bom_system.db
+      - UPLOAD_DIR=/app/data/uploads
+      - AUTO_SEED=true
+
+    # Persistent Storage Mounts (Guarantees no data loss during reboot or updates)
+    volumes:
+      # 1. Application data mount: stores SQLite database and uploaded attachments
+      - ./data:/app/data
+      # 2. Tailscale state mount: stores authentication tokens and node identity
+      - tailscale_state:/var/lib/tailscale
+
+    # Health check for service readiness
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  # Persistent volume for Tailscale daemon state across reboots
+  tailscale_state:
+    name: bom_tailscale_state

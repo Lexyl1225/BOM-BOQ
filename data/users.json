@@ -1,0 +1,261 @@
+[
+    {
+        "username": "Admin",
+        "password": "$2y$12$yQuCU4sfu\/eLNcQAm69ZsemnOS8HIv8QPpMXUia6knZ1xSNtEdSZy",
+        "role": "admin",
+        "department": "Admin",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Testuser",
+        "password": "$2y$12$yALjX9ztPmllgRlxlfX5M.PmV7YAwZYJGrxjWQn2QvW1zNgHb7Z0i",
+        "role": "user",
+        "department": "",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Testguest",
+        "password": "$2y$12$2ITbA.P8wVwydkv.oxcBZOzPAKCyHQ\/nL71MLZaFpGB96dOqtK8Sa",
+        "role": "guest",
+        "department": "",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Admin1",
+        "password": "$2y$12$k9UeKi7f5Z4jc9c0lOraqe.WngG8kU4ozrCTRIHKpa\/.kUfkPKjta",
+        "role": "admin",
+        "department": "",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Alexander",
+        "password": "$2y$12$ubt5XQBJaqJF.0prd\/Ej5.IZN\/hS6YEyjC6bCuTGqJgotQx9cDJ0K",
+        "role": "admin",
+        "department": "",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Mark",
+        "password": "$2y$12$p5RrbAQFvvt0DBqk.6W2SuIG5P7eAIt0qgmEjU87UAsXNn2rvYME2",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Alex",
+        "password": "$2y$12$790Xoii83O2wTx2jvMuSkedtnOUPNP2A.Q7p0ZG\/nHjaD37ANpxnO",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-01-22 08:03:17"
+    },
+    {
+        "username": "Alex1_Puchasing",
+        "password": "$2y$12$hJXYgqrZg6CgSypIiEj6luRa33tYifNI90HOmpmCidSrfIAMmH.ri",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Alex2",
+        "password": "$2y$12$ASh\/MbHYb8N5kZUaK7Cw8uuYI5ZvCTsdM2RP\/CRq8T54O7eEu1eR6",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Alex3",
+        "password": "$2y$12$S580F1H78Xmpx9F5dw0bqe1nghI0yhAdNgBTjAwFcBs1t4RcNDkBG",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "testxxxx",
+        "password": "$2y$12$SPUC96XRIKf70\/sarkFmOutvKTGIwkTpHUMnSFzmLks6YqJlWdqty",
+        "role": "guest",
+        "department": "",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Sniper",
+        "password": "$2y$12$pHH.C1CF3FBrvbypXHTwmumPcs6h0g\/yPRrZxi1qo589qOx7YckoG",
+        "role": "user",
+        "department": "Electrical",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Ops",
+        "password": "$2y$12$0ESxGZ9fFs1TzmJBMXWzDu5YaER9ssz\/FToSbet5UsaK2U\/Y7Mivy",
+        "role": "user",
+        "department": "Operations",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Engr. Alex",
+        "password": "$2y$10$GsR4RYUujt10hgMnnO\/gvet3hVdJbXfuDaKCV\/ORXr.9GBORornGW",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-01-22 08:12:25"
+    },
+    {
+        "username": "Mark_DAC",
+        "password": "$2y$12$0u7xg3z7Q1x0u1YtQq8D8e7pV4Jm2xw0Yp7Q0u1YtQq8D8e7pV4Jm",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-01-23 11:33:58"
+    },
+    {
+        "username": "Mark_DACD",
+        "password": "$2y$10$7mVCysAXQ0w60b2DMlNIlOCghnjedsq58I6ShS5\/ftnpjc8u1CKY2",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "Mark3",
+        "password": "$2y$10$ip65uACgB7gSSno7TiNVguJEQPyITkHmngea7X5iNn.YAxpN3uqK.",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "Marc_DAC",
+        "password": "$2y$10$RoMs3qSh.cvHVJmzZD5rAu9PcQFRkJ1DtKBOc869WQtZB0.93YJXa",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "TonyG",
+        "password": "$2y$10$Ai1I4EivUqGjTEOx.di9P.XD8O8Fujg7jUOwp63qQ6THWfM40BjHC",
+        "role": "guest",
+        "department": "",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "Mhar",
+        "password": "$2y$10$0HQig9rX4nM\/5DRMhQq8OuKLetG9kA.ktFDqd74jQeTd8grZujAkC",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "Pepe",
+        "password": "$2y$10$\/XwYQ6htKObXGkzyC8ksE..qB15HfSqrDtIc\/T66.ciXwYGr5bCNG",
+        "role": "guest",
+        "department": "",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "Kidong",
+        "password": "$2y$10$YNoqzwV.fo7YI95vjZPIYO9G7hC5yJnpsP0yqk43lRUVkLmIUvVEu",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-02-05 15:57:45"
+    },
+    {
+        "username": "TOMSWORLD",
+        "password": "$2y$10$YP5LXHhAxti58kg2fI9kh.6v2xzbn.jCNuMThHfRyLOY3bzx6CgCK",
+        "role": "user",
+        "department": "Purchasing",
+        "created_at": "2026-02-05 21:25:27"
+    },
+    {
+        "username": "solanopetemar2014@gmail.com",
+        "password": "$2y$10$DPd0KR2RPgqRVpG\/hsUChOHxGd4Ax8E5LisGxk5uyRXoUPje7rbX.",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-05 22:11:27"
+    },
+    {
+        "username": "ERAPSKIE",
+        "password": "$2y$10$BxefGDERCA8ydosFla9Sc.b1SY54jJedvarR7ZiMH\/SW18p.JrPzi",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-06 07:38:17"
+    },
+    {
+        "username": "Edison",
+        "password": "$2y$10$sQVeiK1PgLYUdjqw7qtMd.MejmL\/91wwHEdhC9PebNrOl\/0WkEr1G",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-06 19:43:28"
+    },
+    {
+        "username": "Test_DAC",
+        "password": "$2y$12$x0WKqy4J7ZGnIKhg\/evCpO2rXd7ilaO08FECc6i4eGLVGin7\/5n5m",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-01-23 05:48:46"
+    },
+    {
+        "username": "Sniper1",
+        "password": "$2y$12$JnrxmPmXMJcgrOptoKV3TeNQTTwtxt0hBLN9cK8MBGeHo6idW.WcO",
+        "role": "user",
+        "department": "Electrical",
+        "created_at": "2026-02-05 00:24:31"
+    },
+    {
+        "username": "BongMarcos",
+        "password": "$2y$10$Zlu37hqjf782.v1J2t3OwubOLPKe3mMZoALUcnagOWAk5RyFsJxA.",
+        "role": "user",
+        "department": "Technical",
+        "created_at": "2026-02-07 09:16:48"
+    },
+    {
+        "username": "talgi",
+        "password": "$2y$10$y5EClOkyXtO2\/rJBAZZvAOeb7BxeLWM2VBX0yGPsc03bXp7p\/rdUW",
+        "role": "guest",
+        "department": "",
+        "created_at": "2026-02-07 17:19:00"
+    },
+    {
+        "username": "AlexanderF",
+        "password": "$2y$10$MEiLHn7NaEmu6qv7MR9SJOwufeDVG2xbkKvRz7mvvV4RsEu\/\/DPG.",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-02-08 13:52:55"
+    },
+    {
+        "username": "Lemuel",
+        "password": "$2y$10$ZiNKAg.kortR7g0BchF\/6OFcUHd7liAzgF6TsS4Ahf.faYcdQSsLu",
+        "role": "user",
+        "department": "Operations",
+        "created_at": "2026-02-15 07:28:10"
+    },
+    {
+        "username": "Esther",
+        "password": "$2y$10$L9sSGHm9LsVrOEW5KBcXdeNqF3Zp5XxmSsby46S2UyPMMWng14X1.",
+        "role": "user",
+        "department": "Operations",
+        "created_at": "2026-02-15 07:34:26"
+    },
+    {
+        "username": "Esther_Lim",
+        "password": "$2y$12$43e266jg.5fUdzRK6\/hsfuFi.9lQnvZT7s9E24amZL4boyEU6ivlK",
+        "role": "user",
+        "department": "Operations",
+        "created_at": "2026-02-15 03:10:07"
+    },
+    {
+        "username": "Ronil",
+        "password": "$2y$10$9swrfVT0UoiTP9wxrnefzu78hIo6RF8d4kAg3NUYBOO2AHvYtcLee",
+        "role": "user",
+        "department": "Design and Construction Department",
+        "created_at": "2026-03-31 08:34:28"
+    },
+    {
+        "username": "Ryan",
+        "password": "$2y$12$Au\/kmMmWK4Ps6K4vxKK1g.zFahQ.\/X\/NLfolT1.6Xtkkved.IzcCC",
+        "role": "department_admin",
+        "department": "Design and Construction Department",
+        "created_at": "2026-04-09 11:35:06"
+    },
+    {
+        "username": "Edward",
+        "password": "$2y$10$wuyfZwmFhhz5z6ZapurRZ.MXlz027Bjh9EGAvF8Arh8u5Q7xX\/szK",
+        "role": "department_admin",
+        "department": "Operations",
+        "created_at": "2026-04-09 23:21:47"
+    }
+]

@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approved Documents for PO</title>
+    <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <script src="/static/js/app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; font-size: 12px; }
+
+        .container {
+            max-width: 1440px;
+            width: 96%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 24px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .page-header .title-area h1 {
+            font-size: 26px;
+            color: #2E7D32;
+            margin-bottom: 4px;
+        }
+        .page-header .title-area p {
+            color: #666;
+            font-size: 13px;
+        }
+        .user-badge {
+            background: linear-gradient(135deg, #2E7D32, #43A047);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: right;
+            line-height: 1.5;
+        }
+        .user-badge strong { font-size: 13px; }
+
+        /* Nav */
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .nav-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-button:hover { transform: translateY(-1px); }
+        .btn-back    { background-color: #666; }
+        .btn-back:hover    { background-color: #444; }
+        .btn-refresh { background-color: #2E7D32; }
+        .btn-refresh:hover { background-color: #1B5E20; }
+        .btn-logout  { background-color: #c62828; }
+        .btn-logout:hover  { background-color: #a31f1f; }
+
+        /* Stats */
+        .stats-row { display: flex; gap: 15px; margin-bottom: 25px; }
+        .stat-card {
+            flex: 1;
+            padding: 18px;
+            border-radius: 8px;
+            text-align: center;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        .stat-card .stat-num { font-size: 32px; font-weight: 700; }
+        .stat-card .stat-label { font-size: 12px; margin-top: 4px; opacity: 0.9; }
+        .stat-bom  { background: linear-gradient(135deg, #1565C0, #1976D2); }
+        .stat-boq  { background: linear-gradient(135deg, #E65100, #F57C00); }
+        .stat-total { background: linear-gradient(135deg, #2E7D32, #43A047); }
+
+        /* Section */
+        .documents-section {
+            margin-top: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .section-title {
+            background: linear-gradient(135deg, #2E7D32, #43A047);
+            color: #fff;
+            padding: 14px 18px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        table th {
+            padding: 11px;
+            text-align: left;
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 12px;
+        }
+        table td {
+            padding: 11px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+        table tbody tr:hover { background-color: #f8fafc; }
+        table tbody tr:nth-child(even) { background-color: #ffffff; }
+
+        /* Action buttons */
+        .btn {
+            display: inline-flex;
+            padding: 7px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.2s;
+            color: white;
+            white-space: nowrap;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-view   { background-color: #4CAF50; }
+        .btn-view:hover   { background-color: #388E3C; }
+        .btn-print  { background-color: #2196F3; }
+        .btn-print:hover  { background-color: #1976D2; }
+        .btn-upload { background-color: #9C27B0; }
+        .btn-upload:hover { background-color: #7B1FA2; }
+        .btn-delete { background-color: #d32f2f; }
+        .btn-delete:hover { background-color: #b71c1c; }
+        .btn-danger { background-color: #f44336; }
+        .btn-danger:hover { background-color: #c62828; }
+        .button-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        /* Dedicated Document Action Buttons */
+        .doc-actions-cell {
+            display: inline-flex;
+            flex-direction: row;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        .btn-doc-action {
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding: 6px 11px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            border-radius: 5px !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.15s ease !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            color: #ffffff !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
+            line-height: 1.2 !important;
+            text-decoration: none !important;
+        }
+        .btn-doc-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.14) !important;
+        }
+        .btn-doc-view {
+            background-color: #16a34a !important;
+            color: #ffffff !important;
+        }
+        .btn-doc-view:hover {
+            background-color: #15803d !important;
+        }
+        .btn-doc-print {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+        }
+        .btn-doc-print:hover {
+            background-color: #1d4ed8 !important;
+        }
+        .btn-doc-delete {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+        }
+        .btn-doc-delete:hover {
+            background-color: #b91c1c !important;
+        }
+
+        /* Quick actions under document name */
+        .doc-name-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .doc-quick-links {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+            font-size: 11px;
+        }
+        .quick-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .quick-link:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        .quick-link.ql-view {
+            color: #16a34a;
+        }
+        .quick-link.ql-view:hover {
+            color: #15803d;
+        }
+        .quick-sep {
+            color: #cbd5e1;
+            font-size: 10px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-bom     { background: #E3F2FD; color: #1565C0; }
+        .badge-boq     { background: #FFF3E0; color: #E65100; }
+        .badge-approved { background: #E8F5E9; color: #2E7D32; }
+        .badge-dept    { background: #F3E5F5; color: #7B1FA2; font-size: 10px; }
+
+        .no-documents {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* ── Attached PO Files Styles ── */
+        .attached-files-col {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 270px;
+        }
+        .file-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 3.5px solid #3b82f6;
+            border-radius: 6px;
+            padding: 5px 8px;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            max-width: 270px;
+        }
+        .file-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border-color: #cbd5e1;
+        }
+        .file-card-pdf {
+            border-left-color: #ef4444;
+            background: #fffafa;
+        }
+        .file-card-pdf:hover {
+            border-color: #fca5a5;
+            border-left-color: #dc2626;
+            background: #fef2f2;
+        }
+        .file-card-img {
+            border-left-color: #0ea5e9;
+            background: #f0f9ff;
+        }
+        .file-card-img:hover {
+            border-color: #bae6fd;
+            border-left-color: #0284c7;
+            background: #e0f2fe;
+        }
+        .file-card-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex: 1;
+        }
+        .file-type-pill {
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .pill-pdf {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        .pill-img {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            flex: 1;
+        }
+        .file-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        .file-meta {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        .file-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .file-btn {
+            border: none;
+            background: transparent;
+            padding: 4px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            line-height: 1;
+        }
+        .file-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .file-btn-view {
+            color: #2563eb;
+            background: #eff6ff;
+            font-weight: 600;
+            font-size: 11px;
+            gap: 3px;
+        }
+        .file-btn-view:hover {
+            background: #2563eb;
+            color: #ffffff;
+        }
+        .file-btn-download {
+            color: #16a34a;
+            background: #f0fdf4;
+            font-size: 12px;
+        }
+        .file-btn-download:hover {
+            background: #16a34a;
+            color: #ffffff;
+        }
+        .file-btn-del {
+            color: #dc2626;
+            background: #fef2f2;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 2px 6px;
+        }
+        .file-btn-del:hover {
+            background: #dc2626;
+            color: #ffffff;
+        }
+        .btn-attach-po-sm {
+            background: transparent;
+            border: 1px dashed #cbd5e1;
+            color: #64748b;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            align-self: flex-start;
+            transition: all 0.15s ease;
+            margin-top: 2px;
+        }
+        .btn-attach-po-sm:hover {
+            border-color: #9C27B0;
+            color: #9C27B0;
+            background: #fdf4ff;
+        }
+        .empty-po-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            gap: 8px;
+        }
+        .empty-po-text {
+            font-size: 11px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .btn-upload-file {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+            color: #ffffff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(156, 39, 176, 0.3);
+        }
+        .btn-upload-file:hover {
+            background: linear-gradient(135deg, #7B1FA2, #6A1B9A);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(156, 39, 176, 0.4);
+        }
+        .ref-pill {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #334155;
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+        .approval-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .approver-name {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .approval-date {
+            font-size: 10.5px;
+            color: #64748b;
+        }
+        .doc-creator {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* ── File Viewer Lightbox / Modal ── */
+        .file-viewer-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 10002;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .file-viewer-overlay.show {
+            display: flex;
+        }
+        .file-viewer-box {
+            background: #ffffff;
+            width: 95%;
+            max-width: 1100px;
+            height: 90vh;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .file-viewer-toolbar {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #ffffff;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #334155;
+        }
+        .file-viewer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            overflow: hidden;
+        }
+        .file-viewer-icon {
+            font-size: 24px;
+            line-height: 1;
+        }
+        .file-viewer-info h3 {
+            font-size: 14.5px;
+            font-weight: 700;
+            margin: 0;
+            color: #f8fafc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 480px;
+        }
+        .file-viewer-sub {
+            font-size: 11.5px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .file-viewer-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .fv-btn {
+            background: rgba(255, 255, 255, 0.12);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+        .fv-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .fv-btn-close {
+            font-size: 18px;
+            line-height: 1;
+            padding: 4px 10px;
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        .fv-btn-close:hover {
+            background: #ef4444;
+            color: #ffffff;
+        }
+        .file-viewer-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .pdf-viewer-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+        }
+        .image-viewer-wrap {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: auto;
+        }
+        .image-viewer-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #fff;
+        }
+
+        /* Upload modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff;
+            width: 420px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+            color: #fff;
+            padding: 14px 18px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header .close-modal {
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        .modal-header .close-modal:hover { opacity: 1; }
+        .modal-body {
+            padding: 20px;
+        }
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: #9C27B0;
+            background: #f9f0fc;
+            color: #7B1FA2;
+        }
+        .upload-zone .upload-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+        .upload-zone input { display: none; }
+        .upload-progress {
+            display: none;
+            margin-top: 10px;
+        }
+        .upload-progress .bar-bg {
+            background: #e0e0e0;
+            border-radius: 6px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .upload-progress .bar-fill {
+            background: linear-gradient(90deg, #9C27B0, #7B1FA2);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 6px;
+        }
+        .upload-progress .progress-text {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+        }
+        .existing-files {
+            margin-top: 15px;
+        }
+        .existing-files h4 {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        /* Viewer modal */
+        .viewer-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        .viewer-overlay.show { display: flex; }
+        .viewer-box {
+            background: #fff;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .viewer-toolbar {
+            background: linear-gradient(135deg, #2E7D32, #43A047);
+            color: #fff;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .viewer-toolbar h3 { font-size: 14px; }
+        .viewer-toolbar button {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.5);
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+        .viewer-toolbar button:hover { background: rgba(255,255,255,0.35); }
+        .viewer-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .viewer-content iframe { width: 100%; min-height: 70vh; border: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="main-navbar" style="position: sticky; top: 0; z-index: 9999; margin-bottom: 20px;">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-logo">B</div>
+            <div>BOM / BOQ <span style="font-weight: 400; font-size: 14px; color: var(--primary);">Studio</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+            <li><a href="/bom" class="nav-link">📝 Create BOM</a></li>
+            <li><a href="/boq" class="nav-link">📋 Create BOQ</a></li>
+            <li><a href="/estimate" class="nav-link">💰 Cost Estimates</a></li>
+            <li><a href="/save_bomboq" class="nav-link">📁 Saved Documents</a></li>
+            <li><a href="/price_edit_bomboq" class="nav-link">🏷️ MCE Pricing</a></li>
+            {% if user and user.role in ["department_admin", "admin"] %}
+            <li><a href="/approver" class="nav-link">✅ Approvals</a></li>
+            {% endif %}
+            <li><a href="/approved_for_po" class="nav-link active">📦 Purchase Orders</a></li>
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
+            {% if user and user.role == "admin" %}
+            <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
+            {% endif %}
+        </ul>
+        <div class="nav-right">
+            <button class="btn btn-secondary btn-sm" onclick="BomThemes.open()">🎨 Themes</button>
+            {% if user %}
+            <div class="user-badge-capsule">
+                <strong>{{ user.username }}</strong>
+                <span class="badge-role {{ user.role }}">{{ user.role.replace("_", " ") }}</span>
+                {% if user.department %}
+                <span class="badge-dept">{{ user.department }}</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="App.logout()">🚪 Logout</button>
+            {% endif %}
+        </div>
+    </nav>
+
+<div class="container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="title-area">
+            <h1>&#128203; Approved Documents for PO</h1>
+            <p>Department-approved BOM &amp; BOQ documents ready for Purchase Order processing</p>
+        </div>
+        <div class="user-badge">
+            <strong>{{ user.username if user else "" }}</strong><br>
+            {{ user.role if user else "" }} &bull; {{ user.department if user else "" }}
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="button-container">
+        <a href="/price_edit_bomboq" class="nav-button btn-back">&#8592; Price Edit Page</a>
+        <button class="nav-button btn-refresh" onclick="loadDocuments()">&#8635; Refresh</button>
+        <a href="/approved_for_po/login" class="nav-button btn-logout" style="margin-left:auto;">Logout</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card stat-bom">
+            <div class="stat-num" id="statBom">0</div>
+            <div class="stat-label">BOM Documents</div>
+        </div>
+        <div class="stat-card stat-boq">
+            <div class="stat-num" id="statBoq">0</div>
+            <div class="stat-label">BOQ Documents</div>
+        </div>
+        <div class="stat-card stat-total">
+            <div class="stat-num" id="statTotal">0</div>
+            <div class="stat-label">Total Approved</div>
+        </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="documents-section">
+        <div class="section-title">&#9989; Approved Documents</div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:20%">Document Name</th>
+                        <th style="width:9%">Ref No.</th>
+                        <th style="width:6%">Type</th>
+                        <th style="width:11%">Department</th>
+                        <th style="width:14%">Approved By / Date</th>
+                        <th style="width:21%; text-align:center;">Actions</th>
+                        <th style="width:19%">Attached PO Files</th>
+                    </tr>
+                </thead>
+                <tbody id="approvedBody">
+                    <tr><td colspan="7" class="no-documents">Loading documents...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span>&#128206; Upload File</span>
+            <span class="close-modal" onclick="closeUploadModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:12px;color:#555;margin-bottom:12px;" id="uploadDocLabel">Document: </p>
+            <div class="upload-zone" id="uploadZone">
+                <span class="upload-icon">&#128194;</span>
+                <strong>Click or drag files here</strong><br>
+                <small>Accepted: PDF, JPG, PNG &bull; Max 10MB</small>
+                <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+            <div class="upload-progress" id="uploadProgress">
+                <div class="bar-bg"><div class="bar-fill" id="uploadBar"></div></div>
+                <div class="progress-text" id="uploadText">Uploading...</div>
+            </div>
+            <div class="existing-files" id="existingFiles"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Viewer modal -->
+<div class="viewer-overlay" id="viewerOverlay">
+    <div class="viewer-box">
+        <div class="viewer-toolbar">
+            <h3 id="viewerTitle">Document Preview</h3>
+            <div>
+                <button onclick="printViewer()">&#128424; Print</button>
+                <button onclick="closeViewer()">&#10005; Close</button>
+            </div>
+        </div>
+        <div class="viewer-content" id="viewerContent"></div>
+    </div>
+</div>
+
+<!-- Professional File Viewer Modal -->
+<div class="file-viewer-overlay" id="fileViewerOverlay" onclick="if(event.target===this)closeFileViewer()">
+    <div class="file-viewer-box">
+        <div class="file-viewer-toolbar">
+            <div class="file-viewer-info">
+                <span class="file-viewer-icon" id="fileViewerIcon">&#128196;</span>
+                <div>
+                    <h3 id="fileViewerTitle">Attached File Preview</h3>
+                    <div class="file-viewer-sub" id="fileViewerSubtitle">Document Details</div>
+                </div>
+            </div>
+            <div class="file-viewer-actions">
+                <a id="fileViewerNewTabBtn" href="#" target="_blank" class="fv-btn" title="Open in New Tab">&#8599; Open in Tab</a>
+                <a id="fileViewerDownloadBtn" href="#" download class="fv-btn" title="Download File">&#11015; Download</a>
+                <button type="button" class="fv-btn fv-btn-print" id="fileViewerPrintBtn" onclick="printAttachedFile()" title="Print">&#128424; Print</button>
+                <button type="button" class="fv-btn fv-btn-close" onclick="closeFileViewer()" title="Close (Esc)">&times;</button>
+            </div>
+        </div>
+        <div class="file-viewer-body" id="fileViewerContainer">
+            <!-- Dynamic PDF iframe or Image element injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+const isAdminUser = {{ "true" if user and user.role == "admin" else "false" }};
+const isPurchasingUser = {{ "true" if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) else "false" }};
+let approvedDocs = [];
+let uploadDocId = null;
+let uploadDocName = '';
+
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function formatFileDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch(e) {
+        return dateStr;
+    }
+}
+
+async function loadDocuments() {
+    const body = document.getElementById('approvedBody');
+    body.innerHTML = '<tr><td colspan="7" class="no-documents">Loading documents...</td></tr>';
+
+    try {
+        const resp = await fetch('/api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list_approved' })
+        });
+        const result = await resp.json();
+
+        if (!result.success) {
+            body.innerHTML = '<tr><td colspan="7" class="no-documents">' + esc(result.message || 'Error loading documents') + '</td></tr>';
+            return;
+        }
+
+        approvedDocs = result.documents || [];
+
+        // Attachments already come populated from list_approved_documents
+        for (let i = 0; i < approvedDocs.length; i++) {
+            if (approvedDocs[i].attachments && approvedDocs[i].attachments.length > 0) {
+                approvedDocs[i]._attachments = approvedDocs[i].attachments;
+            } else {
+                approvedDocs[i]._attachments = await fetchAttachments(approvedDocs[i].id);
+            }
+        }
+
+        renderDocuments();
+        updateStats();
+    } catch (err) {
+        body.innerHTML = '<tr><td colspan="7" class="no-documents">Error: ' + esc(err.message) + '</td></tr>';
+    }
+}
+
+async function fetchAttachments(docId) {
+    if (!docId) return [];
+    try {
+        const resp = await fetch('/api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_attachments', documentId: docId })
+        });
+        const result = await resp.json();
+        return result.success ? (result.attachments || []) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function renderDocuments() {
+    const body = document.getElementById('approvedBody');
+    if (approvedDocs.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="no-documents">No approved documents yet.</td></tr>';
+        return;
+    }
+
+    body.innerHTML = approvedDocs.map(function(doc, idx) {
+        const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
+        const name = doc.name || 'Unnamed';
+        const refNo = item.refNo || doc.ref_no || '-';
+        const type = (doc.type || '').toUpperCase();
+        const typeBadge = type === 'BOM'
+            ? '<span class="badge badge-bom">BOM</span>'
+            : '<span class="badge badge-boq">BOQ</span>';
+        const dept = doc.department || item.department || '-';
+        const approvedBy = doc.approved_by_username || '-';
+        const approvedAt = doc.approved_at ? new Date(doc.approved_at).toLocaleDateString() : '-';
+        const creator = doc.created_by_username || doc.username || '';
+
+        // Attachments Column
+        const atts = doc._attachments || [];
+        let attHtml = '';
+        if (atts.length > 0) {
+            attHtml = '<div class="attached-files-col">';
+            atts.forEach(function(att) {
+                const isPdf = (att.file_type === 'application/pdf') || (att.file_path && att.file_path.toLowerCase().endsWith('.pdf'));
+                const pillClass = isPdf ? 'pill-pdf' : 'pill-img';
+                const typeText = isPdf ? 'PDF' : 'IMG';
+                const cardClass = isPdf ? 'file-card-pdf' : 'file-card-img';
+                const cleanPath = (att.file_path && att.file_path.startsWith('/')) ? att.file_path : ('/' + (att.file_path || ''));
+                const sizeText = formatFileSize(att.file_size);
+                const safeName = esc(att.original_name);
+                const safeDocName = esc(name);
+                const safePath = esc(cleanPath);
+                const safeType = esc(att.file_type || '');
+
+                attHtml += '<div class="file-card ' + cardClass + '" onclick="previewAttachment(\'' + safePath + '\', \'' + safeName + '\', \'' + safeType + '\', \'' + safeDocName + '\')">' +
+                    '<div class="file-card-left">' +
+                        '<span class="file-type-pill ' + pillClass + '">' + typeText + '</span>' +
+                        '<div class="file-info">' +
+                            '<span class="file-name" title="' + safeName + '">' + safeName + '</span>' +
+                            '<span class="file-meta">' + sizeText + (att.uploaded_at ? ' &bull; ' + formatFileDate(att.uploaded_at) : '') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="file-card-actions" onclick="event.stopPropagation()">' +
+                        '<button type="button" class="file-btn file-btn-view" title="Preview / View File" onclick="previewAttachment(\'' + safePath + '\', \'' + safeName + '\', \'' + safeType + '\', \'' + safeDocName + '\')">&#128065; View</button>' +
+                        '<a href="' + safePath + '" download="' + safeName + '" class="file-btn file-btn-download" title="Download File">&#11015;</a>' +
+                        ((isAdminUser || isPurchasingUser) ? '<button type="button" class="file-btn file-btn-del" title="Delete Attachment" onclick="deleteAttachment(' + att.id + ', ' + idx + ')">&times;</button>' : '') +
+                    '</div>' +
+                '</div>';
+            });
+            if (isAdminUser || isPurchasingUser) {
+                attHtml += '<button type="button" class="btn-attach-po-sm" onclick="openUploadModal(' + idx + ')">&#128206; + Attach More</button>';
+            }
+            attHtml += '</div>';
+        } else {
+            attHtml = '<div class="empty-po-box">' +
+                '<span class="empty-po-text">No PO files attached</span>' +
+                ((isAdminUser || isPurchasingUser) ? '<button type="button" class="btn-upload-file" onclick="openUploadModal(' + idx + ')">&#128206; Attach File</button>' : '') +
+            '</div>';
+        }
+
+        return '<tr>' +
+            '<td><div class="doc-name-cell"><strong>' + esc(name) + '</strong>' +
+                (creator ? '<div class="doc-creator">by: ' + esc(creator) + '</div>' : '') +
+                '<div class="doc-quick-links">' +
+                    '<span class="quick-link ql-view" title="Quick View" onclick="viewDoc(' + idx + ')">&#128065; View</span>' +
+                    '<span class="quick-sep">&bull;</span>' +
+                    '<span class="quick-link ql-print" title="Quick Print" onclick="printDoc(' + idx + ')">&#128424; Print</span>' +
+                '</div>' +
+            '</div></td>' +
+            '<td><span class="ref-pill">' + esc(refNo) + '</span></td>' +
+            '<td>' + typeBadge + '</td>' +
+            '<td><span class="badge badge-dept">' + esc(dept) + '</span></td>' +
+            '<td>' +
+                '<div class="approval-cell">' +
+                    '<div class="approver-name">&#9989; ' + esc(approvedBy) + '</div>' +
+                    '<div class="approval-date">' + esc(approvedAt) + '</div>' +
+                '</div>' +
+            '</td>' +
+            '<td style="text-align: center; vertical-align: middle; white-space: nowrap;">' +
+                '<div class="doc-actions-cell">' +
+                    '<button type="button" class="btn-doc-action btn-doc-view" title="View Document Preview" onclick="viewDoc(' + idx + ')">&#128065; View</button>' +
+                    '<button type="button" class="btn-doc-action btn-doc-print" title="Print Document" onclick="printDoc(' + idx + ')">&#128424; Print</button>' +
+                    (isAdminUser ? '<button type="button" class="btn-doc-action btn-doc-delete" title="Delete Document" onclick="deleteDocument(' + idx + ')">&#128465; Delete</button>' : '') +
+                '</div>' +
+            '</td>' +
+            '<td>' + attHtml + '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+function previewAttachment(filePath, fileName, fileType, docName) {
+    const overlay = document.getElementById('fileViewerOverlay');
+    const title = document.getElementById('fileViewerTitle');
+    const subtitle = document.getElementById('fileViewerSubtitle');
+    const container = document.getElementById('fileViewerContainer');
+    const downloadBtn = document.getElementById('fileViewerDownloadBtn');
+    const openNewTabBtn = document.getElementById('fileViewerNewTabBtn');
+    const iconEl = document.getElementById('fileViewerIcon');
+
+    const cleanPath = (filePath && filePath.startsWith('/')) ? filePath : ('/' + (filePath || ''));
+
+    title.textContent = fileName || 'Attached File';
+    subtitle.textContent = (docName ? 'Document: ' + docName : '') + (fileType ? ' • ' + fileType : '');
+    downloadBtn.href = cleanPath;
+    downloadBtn.setAttribute('download', fileName || 'attachment');
+    openNewTabBtn.href = cleanPath;
+
+    container.innerHTML = '';
+    
+    const isPdf = fileType === 'application/pdf' || cleanPath.toLowerCase().endsWith('.pdf');
+    const isImage = (fileType && fileType.startsWith('image/')) || /\.(jpg|jpeg|png|webp|gif)$/i.test(cleanPath);
+
+    if (isPdf) {
+        if (iconEl) iconEl.innerHTML = '&#128196;';
+        const iframe = document.createElement('iframe');
+        iframe.src = cleanPath;
+        iframe.className = 'pdf-viewer-frame';
+        container.appendChild(iframe);
+    } else if (isImage) {
+        if (iconEl) iconEl.innerHTML = '&#128247;';
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'image-viewer-wrap';
+        const img = document.createElement('img');
+        img.src = cleanPath;
+        img.alt = fileName || 'Image Attachment';
+        img.className = 'image-viewer-img';
+        imgWrap.appendChild(img);
+        container.appendChild(imgWrap);
+    } else {
+        if (iconEl) iconEl.innerHTML = '&#128194;';
+        container.innerHTML = '<div style="text-align:center; padding: 40px; color: #fff;">' +
+            '<div style="font-size: 48px; margin-bottom: 12px;">📁</div>' +
+            '<div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">Direct Preview Not Supported</div>' +
+            '<p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">You can open the file in a new tab or download it directly.</p>' +
+            '<a href="' + cleanPath + '" class="fv-btn" target="_blank" style="background:#2563eb; color:#fff; padding:10px 18px; font-size:13px;">&#8599; Open in New Tab</a>' +
+        '</div>';
+    }
+
+    overlay.classList.add('show');
+}
+
+function closeFileViewer() {
+    const overlay = document.getElementById('fileViewerOverlay');
+    overlay.classList.remove('show');
+    document.getElementById('fileViewerContainer').innerHTML = '';
+}
+
+function printAttachedFile() {
+    const iframe = document.querySelector('#fileViewerContainer iframe');
+    if (iframe) {
+        try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            return;
+        } catch(e) {}
+    }
+    const img = document.querySelector('#fileViewerContainer img');
+    if (img) {
+        const pw = window.open('', '', 'width=900,height=800');
+        pw.document.write('<!DOCTYPE html><html><head><title>Print File</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;}img{max-width:100%;max-height:100%;object-fit:contain;}</style></head><body><img src="' + img.src + '" onload="window.print();window.close();"></body></html>');
+        pw.document.close();
+    }
+}
+
+function updateStats() {
+    let bom = 0, boq = 0;
+    approvedDocs.forEach(function(d) { if (d.type === 'bom') bom++; else boq++; });
+    document.getElementById('statBom').textContent = bom;
+    document.getElementById('statBoq').textContent = boq;
+    document.getElementById('statTotal').textContent = approvedDocs.length;
+}
+
+function esc(str) {
+    if (!str) return '';
+    var d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+}
+
+// ── Build professional print CSS (mirrors /price_edit_bomboq) ──
+function buildPrintCSS() {
+    return [
+        '* { margin: 0; padding: 0; box-sizing: border-box; }',
+        'body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #333; background-color: white; padding: 30px 25px; font-weight: 500; }',
+        '.page-header { border-bottom: 3px solid #1f5a96; padding-bottom: 20px; margin-bottom: 25px; }',
+        'h1 { font-size: 28px; color: #000; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.5px; }',
+        '.document-type { font-size: 15px; color: #000; font-weight: 600; margin-bottom: 15px; }',
+        '.header-info { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; background-color: #f5f7fa; padding: 15px 20px; border-radius: 4px; margin-bottom: 25px; border-left: 4px solid #1f5a96; }',
+        '.info-label { font-size: 11px; color: #000; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }',
+        '.info-value { font-size: 13px; color: #1f5a96; font-weight: 600; }',
+        '.bom-section { margin-bottom: 25px; page-break-inside: avoid; }',
+        'h2, h3, h4, h5, h6 { color: #000 !important; }',
+        '.section-title { background: linear-gradient(135deg, #1f5a96 0%, #2d7ab8 100%); color: white; padding: 12px 15px; font-weight: 700; font-size: 13px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 3px 3px 0 0; }',
+        'table { width: 100%; border-collapse: collapse; background-color: white; table-layout: fixed; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0 0 3px 3px; overflow: hidden; }',
+        'table th { background-color: #2d7ab8; color: white; font-weight: 700; text-align: center; border: none; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }',
+        'table td { border: 1px solid #e0e4e8; padding: 8px 6px; text-align: left; vertical-align: middle; background-color: white; font-weight: 500; }',
+        'table tbody tr:nth-child(odd) { background-color: #fafbfc; }',
+        'table tr:first-child th:nth-child(1) { width: 25% !important; text-align: left; }',
+        'table tr:first-child th:nth-child(2) { width: 8% !important; }',
+        'table tr:first-child th:nth-child(3) { width: 7% !important; }',
+        'table tr:first-child th:nth-child(4) { width: 10% !important; }',
+        'table tr:first-child th:nth-child(5) { width: 10% !important; }',
+        'table tr:first-child th:nth-child(6) { width: 10% !important; }',
+        'table tr:first-child th:nth-child(7) { width: 10% !important; }',
+        'table tr:first-child th:nth-child(8) { width: 12% !important; }',
+        'table tbody tr td:nth-child(1) { width: 25% !important; text-align: left; overflow: visible !important; max-width: 25% !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; white-space: pre-wrap !important; vertical-align: top !important; hyphens: auto !important; }',
+        'table tbody tr td:nth-child(2) { width: 8% !important; text-align: center; }',
+        'table tbody tr td:nth-child(3) { width: 7% !important; text-align: center; }',
+        'table tbody tr td:nth-child(4) { width: 10% !important; text-align: center; }',
+        'table tbody tr td:nth-child(5) { width: 10% !important; text-align: right; }',
+        'table tbody tr td:nth-child(6) { width: 10% !important; text-align: center; }',
+        'table tbody tr td:nth-child(7) { width: 10% !important; text-align: right; }',
+        'table tbody tr td:nth-child(8) { width: 12% !important; text-align: right; font-weight: 700; color: #1f5a96; }',
+        '.total-row { background-color: #e8f0f7 !important; font-weight: 700; color: #1f5a96; }',
+        '.total-row td { border-top: 2px solid #1f5a96; border-bottom: 2px solid #1f5a96; padding: 12px 8px; }',
+        'table tbody tr td:first-child * { max-width: 100% !important; overflow: visible !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; display: block !important; white-space: pre-wrap !important; }',
+        'textarea { display: block !important; width: 100% !important; min-height: auto !important; max-width: 100% !important; border: none !important; background: transparent !important; color: #222 !important; font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 11px; padding: 0 !important; margin: 0 !important; white-space: pre-wrap !important; overflow: visible !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; line-height: 1.3; opacity: 1 !important; visibility: visible !important; resize: none !important; height: auto !important; font-weight: 600; }',
+        'input[type="text"], input[type="number"], input[type="date"] { display: block !important; width: 100% !important; border: none !important; background: transparent !important; color: #222 !important; font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 11px; padding: 0 !important; margin: 0 !important; opacity: 1 !important; visibility: visible !important; font-weight: 600; overflow: visible !important; max-width: 100% !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }',
+        '.button-group { margin-bottom: 15px; text-align: center; }',
+        '.print-button, .close-button { background-color: #1f5a96; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-size: 12px; font-weight: 500; }',
+        '.page-footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e4e8; }',
+        '.signatures { margin-top: 30px; font-size: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 30px; row-gap: 30px; }',
+        '.signature-row { display: contents; }',
+        '.signature-block { text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 140px; justify-content: flex-start; }',
+        '.signature-label { font-weight: 700; color: #000; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; line-height: 1.4; }',
+        '.signature-line { border-top: 1.5px solid #000; width: 140px; margin: 0 auto 5px auto; }',
+        '.signature-name { font-weight: 700; margin-top: 8px; color: #000; font-size: 11px; }',
+        '.signature-title { font-size: 9px; margin-top: 2px; color: #000; font-weight: 500; }',
+        '.section-title, .section-title * { color: #000 !important; background: #f0f0f0 !important; }',
+        '[style*="color: #999"] { color: #000 !important; }',
+        '[style*="color: #666"] { color: #000 !important; }',
+        '[style*="color: #555"] { color: #000 !important; }',
+        '* { color: inherit; }',
+        '*:not(a):not(.total-row):not(.info-value) { color: #000 !important; }',
+        '@media print { body { margin: 0; padding: 20px; } .button-group { display: none; } .page-header { border-bottom-color: #1f5a96; } .signatures { margin-top: 40px; } }'
+    ].join(' ');
+}
+
+function buildPrintHeader(doc, item, withButtons) {
+    const docType = (doc.type || 'boq').toLowerCase();
+    const isBOM = docType === 'bom';
+    const headerTitle = isBOM ? 'BILL OF MATERIALS' : 'BILL OF QUANTITIES';
+    const docTypeLabel = isBOM ? 'BOM Document' : 'BOQ Document';
+    const department  = doc.department || item.department || 'N/A';
+    const project     = item.projectName || doc.projectName || 'N/A';
+    const location    = item.location || doc.location || 'N/A';
+    const date        = item.dateValue || item.date || doc.created_at || 'N/A';
+    const approvedBy  = doc.approved_by_username || '-';
+    const approvedAt  = doc.approved_at ? new Date(doc.approved_at).toLocaleDateString() : '-';
+
+    let html = '<div class="page-header">';
+    html += '<h1>' + headerTitle + '</h1>';
+    html += '<div class="document-type">' + docTypeLabel + ' - ' + esc(doc.name) + '</div>';
+    html += '</div>';
+    html += '<div class="header-info">';
+    html += '<div class="info-item"><div class="info-label">Department</div><div class="info-value">' + esc(department) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">Project</div><div class="info-value">' + esc(project) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">Location</div><div class="info-value">' + esc(location) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">Date</div><div class="info-value">' + esc(date) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">Approved By</div><div class="info-value">' + esc(approvedBy) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">Approved Date</div><div class="info-value">' + esc(approvedAt) + '</div></div>';
+    html += '</div>';
+    if (withButtons) {
+        html += '<div class="button-group">';
+        html += '<button class="print-button" onclick="window.print()">Print Document</button>';
+        html += '<button class="close-button" onclick="window.close()">Close</button>';
+        html += '</div>';
+    }
+    return html;
+}
+
+function prepareDocContent(sourceHtmlContent, targetDoc) {
+    if (!sourceHtmlContent) return '<p>No content available for this document.</p>';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = sourceHtmlContent;
+    // Remove project-info block — already shown in buildPrintHeader()
+    tempDiv.querySelectorAll('.project-info').forEach(function(el) { el.remove(); });
+    // Strip inline width styles from table elements so print CSS takes effect
+    tempDiv.querySelectorAll('th, td').forEach(function(el) {
+        const style = (el.getAttribute('style') || '')
+            .replace(/width:\s*[\d.]+%[^;]*/gi, '')
+            .replace(/width:\s*[\d.]+px[^;]*/gi, '')
+            .replace(/;\s*;/g, ';').trim();
+        style && style !== ';' ? el.setAttribute('style', style) : el.removeAttribute('style');
+    });
+    return tempDiv.innerHTML;
+}
+
+function fixPrintWindowElements(pw) {
+    setTimeout(function() {
+        try {
+            // Replace textareas with divs
+            pw.document.querySelectorAll('textarea').forEach(function(ta) {
+                const text = ta.value || ta.textContent || '';
+                const div = pw.document.createElement('div');
+                div.textContent = text;
+                Object.assign(div.style, { display:'block', color:'#000', background:'transparent', padding:'0', margin:'0', border:'none', fontFamily:'"Segoe UI", Calibri, Arial, sans-serif', fontSize:'11px', lineHeight:'1.3', whiteSpace:'pre-wrap', wordWrap:'break-word', overflowWrap:'break-word', overflow:'visible', width:'100%', boxSizing:'border-box' });
+                ta.parentNode.replaceChild(div, ta);
+            });
+            // Fix inputs
+            pw.document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(function(inp) {
+                inp.value = inp.value || inp.getAttribute('value') || '';
+                Object.assign(inp.style, { color:'#000', background:'white', opacity:'1', visibility:'visible' });
+            });
+            // Replace selects with text spans
+            pw.document.querySelectorAll('select').forEach(function(sel) {
+                const text = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : sel.value;
+                const span = pw.document.createElement('span');
+                span.textContent = text;
+                Object.assign(span.style, { color:'#000', display:'inline-block', wordWrap:'break-word', overflow:'visible' });
+                sel.parentNode.replaceChild(span, sel);
+            });
+        } catch(e) {}
+    }, 100);
+}
+
+// ── View ──
+function viewDoc(idx) {
+    const doc = approvedDocs[idx];
+    if (!doc) return;
+    const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
+    const htmlContent = item.htmlContent || doc.html_content || '';
+    const bodyContent = buildPrintHeader(doc, item, false) + prepareDocContent(htmlContent, doc);
+    document.getElementById('viewerTitle').textContent = doc.name || 'Preview';
+    const content = document.getElementById('viewerContent');
+    const iframe = document.createElement('iframe');
+    content.innerHTML = '';
+    content.appendChild(iframe);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' + buildPrintCSS() + '</style></head><body>' + bodyContent + '</body></html>');
+    iframe.contentWindow.document.close();
+    fixPrintWindowElements(iframe.contentWindow);
+    document.getElementById('viewerOverlay').classList.add('show');
+}
+
+// ── Print ──
+function printDoc(idx) {
+    const doc = approvedDocs[idx];
+    if (!doc) return;
+    const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
+    const htmlContent = item.htmlContent || doc.html_content || '';
+    const bodyContent = buildPrintHeader(doc, item, true) + prepareDocContent(htmlContent, doc);
+    const pw = window.open('', '', 'width=1000,height=800');
+    pw.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(doc.name || 'Print') + '</title><style>' + buildPrintCSS() + '</style></head><body>' + bodyContent + '</body></html>');
+    pw.document.close();
+    fixPrintWindowElements(pw);
+    pw.focus();
+    setTimeout(function() { pw.print(); }, 500);
+}
+
+function printViewer() {
+    const iframe = document.querySelector('#viewerContent iframe');
+    if (iframe) iframe.contentWindow.print();
+}
+
+function closeViewer() {
+    document.getElementById('viewerOverlay').classList.remove('show');
+    document.getElementById('viewerContent').innerHTML = '';
+}
+
+// ── Upload ──
+function openUploadModal(idx) {
+    const doc = approvedDocs[idx];
+    if (!doc) return;
+    uploadDocId = doc.id;
+    uploadDocName = doc.name;
+    document.getElementById('uploadDocLabel').innerHTML = 'Document: <strong style="color:#1e293b;">' + esc(doc.name) + '</strong>';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+
+    // Show existing files
+    loadExistingFiles(doc._attachments || []);
+
+    document.getElementById('uploadModal').classList.add('show');
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').classList.remove('show');
+    uploadDocId = null;
+    uploadDocName = '';
+}
+
+function loadExistingFiles(attachments) {
+    const container = document.getElementById('existingFiles');
+    if (!attachments || attachments.length === 0) {
+        container.innerHTML = '<p style="font-size:12px;color:#94a3b8;margin:10px 0 0;text-align:center;">No PO files attached yet.</p>';
+        return;
+    }
+    let html = '<h4 style="font-size:12px;font-weight:700;color:#334155;margin:14px 0 8px;">Attached Files (' + attachments.length + '):</h4>' +
+               '<div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;padding-right:2px;">';
+    attachments.forEach(function(att) {
+        const isPdf = (att.file_type === 'application/pdf') || (att.file_path && att.file_path.toLowerCase().endsWith('.pdf'));
+        const pillClass = isPdf ? 'pill-pdf' : 'pill-img';
+        const typeText = isPdf ? 'PDF' : 'IMG';
+        const cardClass = isPdf ? 'file-card-pdf' : 'file-card-img';
+        const cleanPath = (att.file_path && att.file_path.startsWith('/')) ? att.file_path : ('/' + (att.file_path || ''));
+        const safeName = esc(att.original_name);
+        const safePath = esc(cleanPath);
+        const safeType = esc(att.file_type || '');
+        const sizeText = formatFileSize(att.file_size);
+        const safeDocName = esc(uploadDocName || '');
+
+        html += '<div class="file-card ' + cardClass + '" style="padding:6px 10px;">' +
+            '<div class="file-card-left">' +
+                '<span class="file-type-pill ' + pillClass + '">' + typeText + '</span>' +
+                '<div class="file-info">' +
+                    '<span class="file-name" title="' + safeName + '" style="max-width:170px;">' + safeName + '</span>' +
+                    '<span class="file-meta">' + sizeText + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="file-card-actions">' +
+                '<button type="button" class="file-btn file-btn-view" title="Preview" onclick="previewAttachment(\'' + safePath + '\', \'' + safeName + '\', \'' + safeType + '\', \'' + safeDocName + '\')">&#128065;</button>' +
+                '<a href="' + safePath + '" download="' + safeName + '" class="file-btn file-btn-download" title="Download">&#11015;</a>' +
+                ((isAdminUser || isPurchasingUser) ? '<button type="button" class="file-btn file-btn-del" title="Delete Attachment" onclick="deleteAttachmentFromModal(' + att.id + ')">&times;</button>' : '') +
+            '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Drag and drop
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', function() { fileInput.click(); });
+uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+uploadZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) uploadFile(this.files[0]);
+});
+
+function uploadFile(file) {
+    // Validate
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const isAllowedExt = /\.(pdf|jpg|jpeg|png|webp)$/i.test(file.name);
+    if (!allowed.includes(file.type) && !isAllowedExt) {
+        alert('Invalid file type. Only PDF, JPG, and PNG files are allowed.');
+        return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+        alert('File is too large. Maximum size is 20MB.');
+        return;
+    }
+
+    const progress = document.getElementById('uploadProgress');
+    const bar = document.getElementById('uploadBar');
+    const text = document.getElementById('uploadText');
+    progress.style.display = 'block';
+    bar.style.width = '0%';
+    text.textContent = 'Uploading ' + file.name + '...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('document_id', uploadDocId);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload_api.php', true);
+
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            bar.style.width = pct + '%';
+            text.textContent = 'Uploading... ' + pct + '%';
+        }
+    });
+
+    xhr.onload = function() {
+        try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.success) {
+                bar.style.width = '100%';
+                text.textContent = 'Upload complete!';
+                fileInput.value = '';
+                // Refresh the doc's attachments
+                refreshDocAttachments();
+            } else {
+                text.textContent = 'Error: ' + (result.message || 'Upload failed');
+                bar.style.width = '0%';
+            }
+        } catch (e) {
+            text.textContent = 'Error: Invalid server response';
+        }
+    };
+
+    xhr.onerror = function() {
+        text.textContent = 'Network error while uploading';
+    };
+
+    xhr.send(formData);
+}
+
+async function refreshDocAttachments() {
+    if (!uploadDocId) return;
+    const atts = await fetchAttachments(uploadDocId);
+    // Update local data
+    for (let i = 0; i < approvedDocs.length; i++) {
+        if (approvedDocs[i].id == uploadDocId) {
+            approvedDocs[i]._attachments = atts;
+            break;
+        }
+    }
+    loadExistingFiles(atts);
+    renderDocuments();
+}
+
+async function deleteDocument(idx) {
+    const doc = approvedDocs[idx];
+    if (!doc) return;
+    if (!confirm('Delete document "' + doc.name + '"?\n\nThis will permanently delete the document and all its attachments.')) return;
+    try {
+        const resp = await fetch('/api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', documentName: doc.name })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            approvedDocs.splice(idx, 1);
+            renderDocuments();
+            updateStats();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+async function deleteAttachment(attId, docIdx) {
+    if (!confirm('Are you sure you want to delete this attachment?')) return;
+    try {
+        const resp = await fetch('/api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_attachment', attachmentId: attId })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            const doc = approvedDocs[docIdx];
+            doc._attachments = await fetchAttachments(doc.id);
+            renderDocuments();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+async function deleteAttachmentFromModal(attId) {
+    if (!confirm('Are you sure you want to delete this attachment?')) return;
+    try {
+        const resp = await fetch('/api/document_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_attachment', attachmentId: attId })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            await refreshDocAttachments();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Close modals on backdrop click
+document.getElementById('uploadModal').addEventListener('click', function(e) { if (e.target === this) closeUploadModal(); });
+document.getElementById('viewerOverlay').addEventListener('click', function(e) { if (e.target === this) closeViewer(); });
+
+// Close modals on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFileViewer();
+        closeUploadModal();
+        closeViewer();
+    }
+});
+
+// Init
+document.addEventListener('DOMContentLoaded', loadDocuments);
+</script>
+<script src="themes.js"></script>
+</body>
+</html>

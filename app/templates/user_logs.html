@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📜 User Activity & Audit Logs</h1>
+        <p class="page-subtitle">Track, audit, and analyze all user actions, document updates, logins, and approvals</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="exportLogs('csv')">📥 Export CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportLogs('json')">📥 Export JSON</button>
+        <button class="btn btn-primary btn-sm" onclick="loadLogs(1)">🔄 Refresh</button>
+    </div>
+</div>
+
+<!-- Stats Strip -->
+<div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+    <div class="metric-card">
+        <div class="metric-icon-box blue">📊</div>
+        <div class="metric-info">
+            <h4>Total Activities</h4>
+            <div class="metric-number" id="stats-total">0</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box green">📅</div>
+        <div class="metric-info">
+            <h4>Activities Today</h4>
+            <div class="metric-number" id="stats-today">0</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box purple">👥</div>
+        <div class="metric-info">
+            <h4>Active Users</h4>
+            <div class="metric-number" id="stats-users">0</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+    <div class="search-filter-bar" style="margin-bottom: 0;">
+        <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="log-search" class="search-input" placeholder="Search by details, username, action, page, or IP..." onkeyup="if(event.key==='Enter') loadLogs(1)">
+        </div>
+
+        <select id="log-user-filter" class="select-filter" onchange="loadLogs(1)">
+            <option value="">All Users</option>
+        </select>
+
+        <select id="log-action-filter" class="select-filter" onchange="loadLogs(1)">
+            <option value="">All Actions</option>
+        </select>
+
+        <input type="date" id="log-date-filter" class="select-filter" onchange="loadLogs(1)" title="Filter by date">
+
+        <button class="btn btn-primary btn-sm" onclick="loadLogs(1)">Filter</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetFilters()">Reset</button>
+    </div>
+</div>
+
+<!-- Logs Data Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive" style="border: none;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">Log ID</th>
+                    <th style="width: 160px;">Timestamp</th>
+                    <th>User</th>
+                    <th>Department</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>Page</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody id="logs-tbody">
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        Loading activity logs...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff; flex-wrap: wrap; gap: 12px;">
+        <div style="font-size: 13px; color: var(--text-muted);">
+            Showing page <strong id="current-page-num">1</strong> of <strong id="total-pages-num">1</strong> (<span id="total-records-count">0</span> total events)
+        </div>
+        <div style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" id="prev-page-btn" onclick="changePage(-1)">&larr; Previous</button>
+            <button class="btn btn-secondary btn-sm" id="next-page-btn" onclick="changePage(1)">Next &rarr;</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let loadedLogs = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadFiltersAndStats();
+    loadLogs(1);
+});
+
+async function loadFiltersAndStats() {
+    try {
+        const res = await fetch('/api/logs/stats');
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('stats-total').textContent = data.total_activities.toLocaleString();
+            document.getElementById('stats-today').textContent = data.activities_today.toLocaleString();
+            document.getElementById('stats-users').textContent = data.unique_users_count.toLocaleString();
+
+            const userSelect = document.getElementById('log-user-filter');
+            data.unique_users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                opt.textContent = u;
+                userSelect.appendChild(opt);
+            });
+
+            const actionSelect = document.getElementById('log-action-filter');
+            data.unique_actions.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a;
+                opt.textContent = a;
+                actionSelect.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading log stats:', e);
+    }
+}
+
+async function loadLogs(page = 1) {
+    currentPage = page;
+    const tbody = document.getElementById('logs-tbody');
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading...</td></tr>`;
+
+    const user = document.getElementById('log-user-filter').value;
+    const action = document.getElementById('log-action-filter').value;
+    const logDate = document.getElementById('log-date-filter').value;
+    const search = document.getElementById('log-search').value.trim();
+
+    const params = new URLSearchParams({
+        page: page,
+        per_page: 50
+    });
+    if (user) params.append('username', user);
+    if (action) params.append('action', action);
+    if (logDate) params.append('date', logDate);
+    if (search) params.append('search', search);
+
+    try {
+        const res = await fetch(`/api/logs/?${params.toString()}`);
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            loadedLogs = data.logs || [];
+            totalPages = data.total_pages || 1;
+
+            document.getElementById('current-page-num').textContent = data.page;
+            document.getElementById('total-pages-num').textContent = totalPages;
+            document.getElementById('total-records-count').textContent = data.total_logs.toLocaleString();
+
+            document.getElementById('prev-page-btn').disabled = (currentPage <= 1);
+            document.getElementById('next-page-btn').disabled = (currentPage >= totalPages);
+
+            renderLogsTable(loadedLogs);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">${data.detail || 'Error loading logs'}</td></tr>`;
+        }
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">Network error: ${err.message}</td></tr>`;
+    }
+}
+
+function renderLogsTable(logs) {
+    const tbody = document.getElementById('logs-tbody');
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 50px; color: var(--text-muted);">No activity logs found matching the filter criteria.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = logs.map(l => {
+        return `
+            <tr>
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${l.log_id}</td>
+                <td style="font-family: var(--font-mono); font-size: 11px; white-space: nowrap;">${l.timestamp}</td>
+                <td>
+                    <strong>${l.username}</strong>
+                    <span class="badge-role ${l.role}" style="font-size: 10px; margin-left: 4px;">${l.role}</span>
+                </td>
+                <td><span style="font-size: 12px;">${l.department || '—'}</span></td>
+                <td><span class="status-badge ${l.action}">${l.action}</span></td>
+                <td style="max-width: 380px; word-break: break-word;" title="${l.details}">${l.details || '—'}</td>
+                <td style="font-size: 11px; color: var(--text-muted);">${l.page || '—'}</td>
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${l.ip_address || '—'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function changePage(delta) {
+    const target = currentPage + delta;
+    if (target >= 1 && target <= totalPages) {
+        loadLogs(target);
+    }
+}
+
+function resetFilters() {
+    document.getElementById('log-user-filter').value = '';
+    document.getElementById('log-action-filter').value = '';
+    document.getElementById('log-date-filter').value = '';
+    document.getElementById('log-search').value = '';
+    loadLogs(1);
+}
+
+function exportLogs(format) {
+    if (!loadedLogs || loadedLogs.length === 0) {
+        App.toast('No logs to export', 'warning');
+        return;
+    }
+
+    if (format === 'json') {
+        const str = JSON.stringify(loadedLogs, null, 2);
+        downloadFile(str, `activity_logs_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+    } else {
+        const headers = ['Log ID', 'Timestamp', 'Username', 'Role', 'Department', 'Action', 'Details', 'Page', 'IP Address'];
+        const csvRows = [headers.join(',')];
+        loadedLogs.forEach(l => {
+            const row = [
+                `"${l.log_id}"`,
+                `"${l.timestamp}"`,
+                `"${l.username}"`,
+                `"${l.role}"`,
+                `"${l.department || ''}"`,
+                `"${l.action}"`,
+                `"${(l.details || '').replace(/"/g, '""')}"`,
+                `"${l.page || ''}"`,
+                `"${l.ip_address || ''}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+        downloadFile(csvRows.join('\n'), `activity_logs_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+    }
+    App.toast(`Exported ${loadedLogs.length} logs as ${format.toUpperCase()}`, 'success');
+}
+
+function downloadFile(content, fileName, contentType) {
+    const a = document.createElement('a');
+    const file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+</script>
+{% endblock %}
