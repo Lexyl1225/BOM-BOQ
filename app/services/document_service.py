@@ -6,6 +6,31 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc
 from app.models import Document, User, DocumentAttachment
 
+# Approved documents are locked: only Administrators may edit them or send them back to MCE price edit.
+LOCKED_STATUSES = ("approved",)
+APPROVED_LOCK_MESSAGE = (
+    "This document has been approved and is locked. "
+    "Only an Administrator can edit it or send it back to MCE Price Edit."
+)
+APPROVED_DELETE_LOCK_MESSAGE = (
+    "This document has been approved and is locked. Only an Administrator can delete it."
+)
+
+class DocumentLockedError(Exception):
+    """Raised when a non-admin attempts to modify an approved (locked) document."""
+
+    def __init__(self, document_name: str = "", message: str = APPROVED_LOCK_MESSAGE):
+        self.document_name = document_name
+        super().__init__(message)
+
+def is_locked_for_user(doc: Optional[Document], user: User) -> bool:
+    """True when the document is locked against modification by this user."""
+    return bool(doc and doc.status in LOCKED_STATUSES and user.role != "admin")
+
+def _ensure_editable(doc: Optional[Document], user: User) -> None:
+    if is_locked_for_user(doc, user):
+        raise DocumentLockedError(doc.name)
+
 def _format_doc(doc: Document) -> Dict[str, Any]:
     """Helper to convert Document ORM model to dictionary with parsed items and attachments."""
     items = []
@@ -94,6 +119,7 @@ def save_document(
 
     now = datetime.utcnow()
     if doc:
+        _ensure_editable(doc, user)
         doc.type = document_type.lower()
         doc.items = items_json
         doc.status = status
@@ -109,6 +135,7 @@ def save_document(
         if existing_any and user.role != "admin":
             # If exists but user has permission to edit via department or admin, update it
             if user.department and existing_any.creator and existing_any.creator.department == user.department:
+                _ensure_editable(existing_any, user)
                 existing_any.type = document_type.lower()
                 existing_any.items = items_json
                 existing_any.status = status
@@ -218,6 +245,8 @@ def update_document_status(db: Session, document_name: str, new_status: str, use
     if not (is_admin or is_purchasing or is_owner or same_dept):
         return False
 
+    _ensure_editable(doc, user)
+
     doc.status = new_status
     doc.updated_at = datetime.utcnow()
     if new_status == "posted":
@@ -242,6 +271,8 @@ def save_price_edit(
     doc = db.query(Document).filter(Document.name == document_name).first()
     if not doc:
         return {"success": False, "message": "Document not found in database"}
+
+    _ensure_editable(doc, user)
 
     # Extract html content if present
     items_list = items if isinstance(items, list) else [items]
@@ -274,6 +305,9 @@ def delete_document(db: Session, document_name: str, user: User) -> bool:
 
     if not (is_admin or is_purchasing or is_owner or same_dept):
         return False
+
+    if is_locked_for_user(doc, user):
+        raise DocumentLockedError(doc.name, APPROVED_DELETE_LOCK_MESSAGE)
 
     db.delete(doc)
     db.commit()

@@ -108,6 +108,14 @@
 
 {% block scripts %}
 <script>
+// Approved documents are locked; only Administrators may edit them or send them back to MCE Price Edit.
+const IS_ADMIN = '{{ user.role if user else "" }}' === 'admin';
+const APPROVED_LOCK_MSG = 'This document has been approved and is locked. Only an Administrator can edit it or send it back to MCE Price Edit.';
+const APPROVED_DELETE_LOCK_MSG = 'This document has been approved and is locked. Only an Administrator can delete it.';
+function isDocLocked(doc) {
+    return !!doc && doc.status === 'approved' && !IS_ADMIN;
+}
+
 let allDocuments = [];
 let currentTab = 'all';
 let currentPreviewDoc = null;
@@ -199,6 +207,17 @@ function renderTable() {
 
         const lastModified = doc.updated_at ? doc.updated_at.substring(0, 19).replace('T', ' ') : '—';
         const editUrl = doc.type === 'bom' ? `/bom?edit=${encodeURIComponent(doc.name)}` : `/boq?edit=${encodeURIComponent(doc.name)}`;
+        const locked = isDocLocked(doc);
+        const lockIcon = doc.status === 'approved' ? ' <span title="Approved documents are locked (Admin-only changes)">🔒</span>' : '';
+        const editBtn = locked
+            ? `<button class="btn btn-secondary btn-sm" disabled title="${APPROVED_LOCK_MSG}">✏️ Edit</button>`
+            : `<a href="${editUrl}" class="btn btn-secondary btn-sm" title="Edit in Builder">✏️ Edit</a>`;
+        const mceBtn = locked
+            ? `<button class="btn btn-warning btn-sm" disabled title="${APPROVED_LOCK_MSG}">📤 MCE</button>`
+            : `<button class="btn btn-warning btn-sm" onclick="sendToPriceEdit('${encodeURIComponent(doc.name)}')" title="Send to MCE Price Edit">📤 MCE</button>`;
+        const deleteBtn = locked
+            ? `<button class="btn btn-danger btn-sm" disabled title="${APPROVED_DELETE_LOCK_MSG}">🗑️</button>`
+            : `<button class="btn btn-danger btn-sm" onclick="deleteDoc('${encodeURIComponent(doc.name)}')" title="Delete">🗑️</button>`;
 
         return `
             <tr>
@@ -208,16 +227,16 @@ function renderTable() {
                 </td>
                 <td style="font-family:var(--font-mono); font-size:11px;">${doc.ref_no || '—'}</td>
                 <td>${typeBadge}</td>
-                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td><span class="status-badge ${statusClass}">${statusLabel}</span>${lockIcon}</td>
                 <td><span style="font-size:12px;">${doc.department || doc.creator_department || '—'}</span></td>
                 <td><strong>${doc.created_by_username || doc.username || '—'}</strong></td>
                 <td style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${lastModified}</td>
                 <td style="text-align:right; white-space:nowrap;">
-                    <a href="${editUrl}" class="btn btn-secondary btn-sm" title="Edit in Builder">✏️ Edit</a>
+                    ${editBtn}
                     <button class="btn btn-secondary btn-sm" onclick="previewDoc('${encodeURIComponent(doc.name)}')" title="Quick Preview">👁️ Preview</button>
                     <button class="btn btn-secondary btn-sm" onclick="printDoc('${encodeURIComponent(doc.name)}')" title="Print">🖨️ Print</button>
-                    <button class="btn btn-warning btn-sm" onclick="sendToPriceEdit('${encodeURIComponent(doc.name)}')" title="Send to MCE Price Edit">📤 MCE</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteDoc('${encodeURIComponent(doc.name)}')" title="Delete">🗑️</button>
+                    ${mceBtn}
+                    ${deleteBtn}
                 </td>
             </tr>
         `;
@@ -751,6 +770,10 @@ function printModalDoc() {
 
 async function sendToPriceEdit(docNameEncoded) {
     const docName = decodeURIComponent(docNameEncoded);
+    if (isDocLocked(allDocuments.find(d => d.name === docName))) {
+        App.toast(APPROVED_LOCK_MSG, 'warning');
+        return;
+    }
     App.confirm('Send to Price Edit', `Send document "${docName}" to Purchasing department for unit price estimation (MCE)?`, async () => {
         try {
             const res = await fetch('/api/documents/update_status', {
@@ -776,6 +799,10 @@ async function sendToPriceEdit(docNameEncoded) {
 
 async function deleteDoc(docNameEncoded) {
     const docName = decodeURIComponent(docNameEncoded);
+    if (isDocLocked(allDocuments.find(d => d.name === docName))) {
+        App.toast(APPROVED_DELETE_LOCK_MSG, 'warning');
+        return;
+    }
     App.confirm('Delete Document', `Are you sure you want to permanently delete "${docName}"? This action cannot be undone.`, async () => {
         try {
             const res = await fetch('/api/documents/delete', {

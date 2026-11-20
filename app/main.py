@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings, BASE_DIR
 from app.database import init_db
+from app.services.document_service import DocumentLockedError
 from app.routers import (
     auth_router,
     users_router,
@@ -135,6 +136,15 @@ async def custom_500_handler(request: Request, exc):
     return JSONResponse(
         status_code=500,
         content={"success": False, "detail": "An internal server error occurred."}
+    )
+
+@app.exception_handler(DocumentLockedError)
+async def document_locked_handler(request: Request, exc: DocumentLockedError):
+    """Approved documents are read-only for non-admins (applies to REST and legacy APIs)."""
+    message = str(exc)
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"success": False, "locked": True, "message": message, "detail": message}
     )
 
 # Include Routers

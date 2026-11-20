@@ -533,10 +533,10 @@
             <button class="back-button" onclick="goBack()"> Back</button>
             <button class="back-button" onclick="backToHome()">Back to Home</button>
             {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
-            <button class="nav-btn approved-po-btn" onclick="loadPage("/approved_for_po")">Approved for PO</button>
+            <button class="back-button" onclick="window.location.href='/approved_for_po'">Approved for PO</button>
             {% endif %}
             {% if user and user.role in ["department_admin", "admin"] %}
-            <button class="nav-btn approver-btn" onclick="loadPage("/approver")">Approver</button>
+            <button class="nav-btn approver-btn" onclick="window.location.href='/approver'">Approver</button>
             {% endif %}
             <button class="back-button" style="background-color: #d32f2f; margin-left: auto;" onclick="logout()"> Logout</button>
         </div>

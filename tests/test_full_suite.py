@@ -5,6 +5,7 @@ Tests all endpoints, security layers, document lifecycles, and legacy compatibil
 
 import sys
 import os
+import uuid
 from pathlib import Path
 
 # Add project root to sys.path
@@ -165,8 +166,9 @@ def run_tests():
     print(f"  ✓ GET /api/documents/ returned {docs['count']} documents")
 
     # Create new BOM document
+    test_doc_name = f"FastAPI_Automated_Test_BOM_{uuid.uuid4().hex[:8]}"  # unique per run (approved docs are locked)
     new_doc_payload = {
-        "documentName": "FastAPI_Automated_Test_BOM",
+        "documentName": test_doc_name,
         "documentType": "bom",
         "items": [
             {
@@ -205,7 +207,7 @@ def run_tests():
     assert r.status_code == 200
     loaded = r.json()
     assert loaded["success"] is True
-    assert loaded["document"]["document_name"] == "FastAPI_Automated_Test_BOM"
+    assert loaded["document"]["document_name"] == test_doc_name
     assert len(loaded["document"]["items"]) == 2
     print(f"  ✓ GET /api/documents/{created_doc_id} retrieved correctly")
 
@@ -248,6 +250,44 @@ def run_tests():
     assert len(matching) == 1
     assert matching[0]["status"] == "approved"
     print(f"  ✓ Verified document ID {created_doc_id} appears in Approved for PO list")
+
+    # Approved documents are locked for non-admins (REST + legacy APIs)
+    purch_headers = {"Authorization": f"Bearer {purch_token}"}
+    r = client.post("/api/documents/update_status", json={"documentName": test_doc_name, "status": "pending_price_edit"}, headers=engr_headers)
+    assert r.status_code == 403 and r.json().get("locked") is True
+    r = client.post("/api/documents/", json={**new_doc_payload, "status": "saved"}, headers=engr_headers)
+    assert r.status_code == 403
+    r = client.post(f"/api/documents/{created_doc_id}/price-edit", json=edit_payload, headers=purch_headers)
+    assert r.status_code == 403
+    r = client.post("/api/document_api.php", json={"action": "save", "documentName": test_doc_name, "documentType": "bom", "items": [], "status": "saved"}, headers=engr_headers)
+    assert r.status_code == 403 and r.json()["success"] is False
+    r = client.post("/api/document_api.php", json={"action": "update_status", "documentName": test_doc_name, "status": "pending_price_edit"}, headers=purch_headers)
+    assert r.status_code == 403
+    r = client.get(f"/api/documents/{created_doc_id}", headers=engr_headers)
+    assert r.json()["document"]["status"] == "approved"
+    print("  ✓ Approved document locked: non-admin edit / MCE send / price edit rejected (403)")
+
+    # Only Administrators may delete approved documents (owner, department and Purchasing are blocked)
+    r = client.post("/api/documents/delete", json={"documentName": test_doc_name}, headers=engr_headers)
+    assert r.status_code == 403 and r.json().get("locked") is True
+    r = client.delete(f"/api/documents/{test_doc_name}", headers=purch_headers)
+    assert r.status_code == 403
+    r = client.post("/api/document_api.php", json={"action": "delete", "documentName": test_doc_name}, headers=purch_headers)
+    assert r.status_code == 403
+    assert client.get(f"/api/documents/{created_doc_id}", headers=engr_headers).status_code == 200
+    print("  ✓ Approved document delete rejected for owner and Purchasing (403)")
+
+    # Administrator may still send an approved document back to MCE price edit
+    r = client.post("/api/documents/update_status", json={"documentName": test_doc_name, "status": "pending_price_edit"}, headers=admin_headers)
+    assert r.status_code == 200 and r.json()["success"] is True
+    print("  ✓ Admin can send an approved document back to MCE Price Edit")
+
+    # Re-approve, then confirm an Administrator can delete an approved document
+    client.post("/api/documents/update_status", json={"documentName": test_doc_name, "status": "approved"}, headers=admin_headers)
+    r = client.post("/api/documents/delete", json={"documentName": test_doc_name}, headers=admin_headers)
+    assert r.status_code == 200 and r.json()["success"] is True
+    assert client.get(f"/api/documents/{created_doc_id}", headers=admin_headers).status_code == 404
+    print("  ✓ Admin can delete an approved document")
 
     # 7. Test Cost Estimates API
     print("\n[Step 7] Testing Cost Estimates API...")

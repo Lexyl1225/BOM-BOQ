@@ -2475,6 +2475,14 @@ function attachDescriptionListeners() {
                 }
 
                 const doc  = result.document;
+
+                // Approved documents are locked; only Administrators may edit them
+                if (doc.status === 'approved' && userRole !== 'admin') {
+                    alert('"' + docName + '" has been approved and is locked. ' +
+                          'Only an Administrator can edit it or send it back to MCE Price Edit.');
+                    window.location.href = '/save_bomboq';
+                    return;
+                }
                 const item = (doc.items && doc.items.length > 0) ? doc.items[0] : {};
                 if (!item.refNo) item.refNo = doc.ref_no || '';
                 if (!item.htmlContent) item.htmlContent = doc.html_content || '';
