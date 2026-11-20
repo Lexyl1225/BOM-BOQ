@@ -93,6 +93,41 @@ def parse_sql_values(text: str) -> List[List[Any]]:
         values.append(row)
     return values
 
+# Legacy department names -> current canonical names.
+# Applied on every startup so existing databases (and fresh seeds from old SQL dumps) stay consistent.
+DEPARTMENT_RENAMES = {
+    "Design and Construction Department": "Design and Construction",
+}
+
+def normalize_department_names(db: Session) -> int:
+    """Rename legacy department values in place. Idempotent; returns number of rows updated.
+
+    Audit log *details* text is intentionally left untouched to preserve the historical record;
+    only the structured department column is normalized so filters and badges match.
+    """
+    updated = 0
+    for old, new in DEPARTMENT_RENAMES.items():
+        for model in (User, Document, CostEstimate, ActivityLog):
+            updated += (
+                db.query(model)
+                .filter(model.department == old)
+                .update({model.department: new}, synchronize_session=False)
+            )
+        # Saved document snapshots print the department label in their HTML/JSON
+        for doc in db.query(Document).filter(
+            (Document.html_content.contains(old)) | (Document.items.contains(old))
+        ):
+            doc.html_content = (doc.html_content or "").replace(old, new) or doc.html_content
+            doc.items = (doc.items or "").replace(old, new) or doc.items
+            updated += 1
+        for est in db.query(CostEstimate).filter(CostEstimate.source_documents.contains(old)):
+            est.source_documents = est.source_documents.replace(old, new)
+            updated += 1
+    if updated:
+        db.commit()
+        logger.info(f"Normalized {updated} legacy department value(s).")
+    return updated
+
 def seed_database(db: Session):
     """Seed SQLite database with existing dump data and users if empty."""
     user_count = db.query(User).count()
@@ -305,7 +340,7 @@ def seed_database(db: Session):
     if db.query(CostEstimate).count() == 0:
         sample_est = CostEstimate(
             estimate_name="SM Mega Center Cabanatuan - Electrical Fitout",
-            department="Design and Construction Department",
+            department="Design and Construction",
             materials_total=64500.00,
             labor_total=24000.00,
             meal_allowance=4500.00,

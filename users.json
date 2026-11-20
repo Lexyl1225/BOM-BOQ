@@ -45,7 +45,7 @@
         "username": "Alex",
         "password": "$2y$12$790Xoii83O2wTx2jvMuSkedtnOUPNP2A.Q7p0ZG\/nHjaD37ANpxnO",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-01-22 08:03:17"
     },
     {
@@ -94,35 +94,35 @@
         "username": "Engr. Alex",
         "password": "$2y$10$GsR4RYUujt10hgMnnO\/gvet3hVdJbXfuDaKCV\/ORXr.9GBORornGW",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-01-22 08:12:25"
     },
     {
         "username": "Mark_DAC",
         "password": "$2y$12$0u7xg3z7Q1x0u1YtQq8D8e7pV4Jm2xw0Yp7Q0u1YtQq8D8e7pV4Jm",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-01-23 11:33:58"
     },
     {
         "username": "Mark_DACD",
         "password": "$2y$10$7mVCysAXQ0w60b2DMlNIlOCghnjedsq58I6ShS5\/ftnpjc8u1CKY2",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-05 15:57:45"
     },
     {
         "username": "Mark3",
         "password": "$2y$10$ip65uACgB7gSSno7TiNVguJEQPyITkHmngea7X5iNn.YAxpN3uqK.",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-05 15:57:45"
     },
     {
         "username": "Marc_DAC",
         "password": "$2y$10$RoMs3qSh.cvHVJmzZD5rAu9PcQFRkJ1DtKBOc869WQtZB0.93YJXa",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-05 15:57:45"
     },
     {
@@ -164,28 +164,28 @@
         "username": "solanopetemar2014@gmail.com",
         "password": "$2y$10$DPd0KR2RPgqRVpG\/hsUChOHxGd4Ax8E5LisGxk5uyRXoUPje7rbX.",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-05 22:11:27"
     },
     {
         "username": "ERAPSKIE",
         "password": "$2y$10$BxefGDERCA8ydosFla9Sc.b1SY54jJedvarR7ZiMH\/SW18p.JrPzi",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-06 07:38:17"
     },
     {
         "username": "Edison",
         "password": "$2y$10$sQVeiK1PgLYUdjqw7qtMd.MejmL\/91wwHEdhC9PebNrOl\/0WkEr1G",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-06 19:43:28"
     },
     {
         "username": "Test_DAC",
         "password": "$2y$12$x0WKqy4J7ZGnIKhg\/evCpO2rXd7ilaO08FECc6i4eGLVGin7\/5n5m",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-01-23 05:48:46"
     },
     {
@@ -213,7 +213,7 @@
         "username": "AlexanderF",
         "password": "$2y$10$MEiLHn7NaEmu6qv7MR9SJOwufeDVG2xbkKvRz7mvvV4RsEu\/\/DPG.",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-02-08 13:52:55"
     },
     {
@@ -241,14 +241,14 @@
         "username": "Ronil",
         "password": "$2y$10$9swrfVT0UoiTP9wxrnefzu78hIo6RF8d4kAg3NUYBOO2AHvYtcLee",
         "role": "user",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-03-31 08:34:28"
     },
     {
         "username": "Ryan",
         "password": "$2y$12$Au\/kmMmWK4Ps6K4vxKK1g.zFahQ.\/X\/NLfolT1.6Xtkkved.IzcCC",
         "role": "department_admin",
-        "department": "Design and Construction Department",
+        "department": "Design and Construction",
         "created_at": "2026-04-09 11:35:06"
     },
     {

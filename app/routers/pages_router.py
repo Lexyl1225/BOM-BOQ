@@ -73,12 +73,15 @@ def dashboard_page(
         "total_users": db.query(User).filter(User.is_active == True).count(),
     }
 
-    recent_logs = (
-        db.query(ActivityLog)
-        .order_by(ActivityLog.timestamp.desc())
-        .limit(10)
-        .all()
-    )
+    # Audit trail is restricted to Administrators
+    recent_logs = []
+    if user.role == "admin":
+        recent_logs = (
+            db.query(ActivityLog)
+            .order_by(ActivityLog.timestamp.desc())
+            .limit(10)
+            .all()
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -237,6 +240,11 @@ def user_logs_page(
     auth_redirect = _require_auth(user)
     if auth_redirect:
         return auth_redirect
+
+    # Admin only
+    if user.role != "admin":
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
     return templates.TemplateResponse(
         request=request,
         name="user_logs.html",

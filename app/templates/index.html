@@ -14,7 +14,7 @@
             FastAPI BOM/BOQ Management System
         </p>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="page-actions">
         <a href="/bom" class="btn btn-primary">+ New BOM</a>
         <a href="/boq" class="btn btn-success">+ New BOQ</a>
         <a href="/estimate" class="btn btn-warning">+ New Estimate</a>
@@ -134,13 +134,15 @@
         </a>
         {% endif %}
 
+        {% if user and user.role == 'admin' %}
         <a href="/user_logs" class="action-tile">
             <div class="action-tile-icon" style="background:#ffedd5; color:#ea580c;">📜</div>
             <div class="action-tile-content">
-                <h3>Activity Logs</h3>
+                <h3>Audit Logs</h3>
                 <p>Full audit trail of logins, document updates, and approvals</p>
             </div>
         </a>
+        {% endif %}
 
         <!-- External Department Portals -->
         <a href="https://serverx.ratfish-regulus.ts.net/" target="_blank" class="action-tile">
@@ -161,7 +163,8 @@
     </div>
 </div>
 
-<!-- Recent Activity Stream -->
+{% if user and user.role == 'admin' %}
+<!-- Recent Activity Stream (Admin only) -->
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">🕒 Recent System Activity</h2>
@@ -209,4 +212,5 @@
         </table>
     </div>
 </div>
+{% endif %}
 {% endblock %}

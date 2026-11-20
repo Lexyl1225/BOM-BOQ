@@ -481,7 +481,6 @@
         }
     </style>
     <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="themes.css">
 
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/themes.css">
@@ -509,8 +508,8 @@
             {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
             <li><a href="/approved_for_po" class="nav-link">📦 Purchase Orders</a></li>
             {% endif %}
-            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             {% if user and user.role == "admin" %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
             {% endif %}
         </ul>
@@ -638,7 +637,7 @@
                     <select id="targetDepartmentSelect" style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 5px; font-size: 14px; background-color: #f9f9f9;">
                         <option value="">-- Select Department --</option>
                         <option value="Purchasing">Purchasing</option>
-                        <option value="Design and Construction Department">Design and Construction Department</option>
+                        <option value="Design and Construction">Design and Construction</option>
                         <option value="Operations">Operations</option>
                         <option value="Electrical">Electrical</option>
                         <option value="Technical">Technical</option>
@@ -971,7 +970,7 @@
             
             // Table styling
             printWindow.document.write('table { width: 100%; border-collapse: collapse; background-color: white; table-layout: fixed; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0 0 3px 3px; overflow: hidden; }');
-            printWindow.document.write('table th { background-color: #2d7ab8; color: white; font-weight: 700; text-align: center; border: none; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }');
+            printWindow.document.write('table th { background-color: #FFFF00; color: #000 !important; font-weight: 700; text-align: center; border: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }');
             printWindow.document.write('table td { border: 1px solid #e0e4e8; padding: 8px 6px; text-align: left; vertical-align: middle; background-color: white; font-weight: 500; }');
             printWindow.document.write('table tbody tr:nth-child(odd) { background-color: #fafbfc; }');
             printWindow.document.write('table tbody tr:hover { background-color: #f0f4f8; }');
@@ -1279,7 +1278,7 @@
             
             // Table styling
             printWindow.document.write('table { width: 100%; border-collapse: collapse; background-color: white; table-layout: fixed; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0 0 3px 3px; overflow: hidden; }');
-            printWindow.document.write('table th { background-color: #2d7ab8; color: white; font-weight: 700; text-align: center; border: none; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }');
+            printWindow.document.write('table th { background-color: #FFFF00; color: #000 !important; font-weight: 700; text-align: center; border: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }');
             printWindow.document.write('table td { border: 1px solid #e0e4e8; padding: 8px 6px; text-align: left; vertical-align: middle; background-color: white; font-weight: 500; }');
             printWindow.document.write('table tbody tr:nth-child(odd) { background-color: #fafbfc; }');
             printWindow.document.write('table tbody tr:hover { background-color: #f0f4f8; }');

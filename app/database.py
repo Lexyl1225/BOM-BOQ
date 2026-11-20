@@ -39,3 +39,11 @@ def init_db():
                 seed_database(db)
             except Exception as e:
                 logger.error(f"Error during database auto-seeding: {e}", exc_info=True)
+
+    from app.services.seed_service import normalize_department_names
+    with SessionLocal() as db:
+        try:
+            normalize_department_names(db)
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error normalizing department names: {e}", exc_info=True)

@@ -801,8 +801,8 @@
             <li><a href="/approver" class="nav-link">✅ Approvals</a></li>
             {% endif %}
             <li><a href="/approved_for_po" class="nav-link active">📦 Purchase Orders</a></li>
-            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             {% if user and user.role == "admin" %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
             {% endif %}
         </ul>
@@ -1215,7 +1215,7 @@ function buildPrintCSS() {
         'h2, h3, h4, h5, h6 { color: #000 !important; }',
         '.section-title { background: linear-gradient(135deg, #1f5a96 0%, #2d7ab8 100%); color: white; padding: 12px 15px; font-weight: 700; font-size: 13px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 3px 3px 0 0; }',
         'table { width: 100%; border-collapse: collapse; background-color: white; table-layout: fixed; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0 0 3px 3px; overflow: hidden; }',
-        'table th { background-color: #2d7ab8; color: white; font-weight: 700; text-align: center; border: none; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }',
+        'table th { background-color: #FFFF00; color: #000 !important; font-weight: 700; text-align: center; border: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }',
         'table td { border: 1px solid #e0e4e8; padding: 8px 6px; text-align: left; vertical-align: middle; background-color: white; font-weight: 500; }',
         'table tbody tr:nth-child(odd) { background-color: #fafbfc; }',
         'table tr:first-child th:nth-child(1) { width: 25% !important; text-align: left; }',

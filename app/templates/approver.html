@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Department Approval - {{ user.department if user.role == "department_admin" else "All Departments" }}</title>
     <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="themes.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; font-size: 12px; }
@@ -257,8 +256,8 @@
             {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
             <li><a href="/approved_for_po" class="nav-link">📦 Purchase Orders</a></li>
             {% endif %}
-            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             {% if user and user.role == "admin" %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
             {% endif %}
         </ul>

@@ -628,7 +628,6 @@
         }
     </style>
     <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="themes.css">
 
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/themes.css">
@@ -656,8 +655,8 @@
             {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
             <li><a href="/approved_for_po" class="nav-link">📦 Purchase Orders</a></li>
             {% endif %}
-            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             {% if user and user.role == "admin" %}
+            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
             <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
             {% endif %}
         </ul>
@@ -732,7 +731,7 @@
                 <select id="projectDepartment">
                     <option value="">-- Select Department --</option>
                     <option value="Purchasing">Purchasing</option>
-                    <option value="Design and Construction Department">Design and Construction Department</option>
+                    <option value="Design and Construction">Design and Construction</option>
                     <option value="Operations">Operations</option>
                     <option value="Electrical">Electrical</option>
                     <option value="Technical">Technical</option>

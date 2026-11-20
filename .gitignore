@@ -3,3 +3,4 @@ bom_db_dump.sql
 .env
 user_activity_logs.json
 users.json
+/windows-venv/

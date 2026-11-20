@@ -7,7 +7,7 @@ from sqlalchemy import desc, func, distinct, or_
 from app.database import get_db
 from app.models import ActivityLog, User
 from app.schemas import ActivityLogResponse, ActivityLogCreate
-from app.auth import get_current_user, get_current_user_optional
+from app.auth import get_current_user_optional, require_admin
 from app.services.activity_service import log_from_request
 
 router = APIRouter(prefix="/api/logs", tags=["Activity Logs"])
@@ -21,10 +21,10 @@ async def get_logs(
     action: Optional[str] = None,
     log_date: Optional[str] = Query(None, alias="date"),
     search: Optional[str] = None,
-    user: User = Depends(get_current_user),
+    admin: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Retrieve activity logs with filtering and pagination."""
+    """Retrieve activity logs with filtering and pagination (Admin only)."""
     effective_per_page = limit if limit is not None else per_page
     query = db.query(ActivityLog)
 
@@ -85,10 +85,10 @@ async def get_logs(
 
 @router.get("/stats")
 async def get_log_stats(
-    user: User = Depends(get_current_user),
+    admin: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Get activity log statistics."""
+    """Get activity log statistics (Admin only)."""
     total = db.query(ActivityLog).count()
     today_count = db.query(ActivityLog).filter(func.date(ActivityLog.timestamp) == date.today()).count()
     unique_users = [u[0] for u in db.query(distinct(ActivityLog.username)).all() if u[0]]
@@ -110,7 +110,7 @@ async def create_log(
     user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
-    """Client-side logging hook."""
+    """Client-side logging hook (write-only; any session may record its own activity)."""
     log_from_request(
         db=db,
         request=request,

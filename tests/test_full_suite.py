@@ -119,7 +119,7 @@ def run_tests():
         ("/boq", "Create BOQ"),
         ("/save_bomboq", "Saved Documents"),
         ("/estimate", "Cost Estimates"),
-        ("/user_logs", "Activity Logs"),
+        ("/user_logs", "Audit Logs"),
         ("/price_edit_bomboq", "MCE Pricing"),
         ("/approver", "Department Approvals"),
         ("/approved_for_po", "Approved for PO"),
@@ -135,6 +135,25 @@ def run_tests():
     assert r.status_code == 303
     assert r.headers["location"] == "/"
     print("  ✓ Role protection: Non-admin redirected away from /users_admin")
+
+    # Role protection: Audit Logs page is admin-only (direct URL and legacy .php alias)
+    for url in ("/user_logs", "/user_logs.php"):
+        r = client.get(url, cookies=engr_cookies)
+        assert r.status_code == 303
+        assert r.headers["location"] == "/"
+        r = client.get(url, cookies=purch_cookies)
+        assert r.status_code == 303
+    print("  ✓ Role protection: Non-admins redirected away from /user_logs")
+
+    # Non-admin dashboard/pages must not expose Audit Logs links or the activity feed
+    for url in ("/", "/bom", "/estimate"):
+        r = client.get(url, cookies=engr_cookies)
+        assert r.status_code == 200
+        assert 'href="/user_logs"' not in r.text, f"Audit Logs link leaked on {url}"
+    assert "Recent System Activity" not in client.get("/", cookies=engr_cookies).text
+    r = client.get("/", cookies=admin_cookies)
+    assert 'href="/user_logs"' in r.text and "Recent System Activity" in r.text
+    print("  ✓ Audit Logs navigation hidden for non-admins, visible for admins")
 
     # 5. Test Document REST APIs
     print("\n[Step 5] Testing Document REST APIs...")
@@ -286,6 +305,21 @@ def run_tests():
     assert logs_res["success"] is True
     assert len(logs_res["logs"]) == 5
     print(f"  ✓ GET /api/logs/ retrieved recent logs successfully")
+
+    guest_client = TestClient(app, follow_redirects=False)  # no cookies carried over from earlier logins
+    for path in ("/api/logs/?limit=5", "/api/logs/stats"):
+        r = guest_client.get(path, headers=engr_headers)
+        assert r.status_code == 403, f"{path} should be admin-only, got {r.status_code}"
+        r = guest_client.get(path)
+        assert r.status_code == 401, f"{path} should require auth, got {r.status_code}"
+    r = client.get("/api/logs/stats", headers=admin_headers)
+    assert r.status_code == 200 and r.json()["success"] is True
+    print("  ✓ Audit Logs API restricted to admins (403 for users, 401 for guests)")
+
+    # Client-side activity logging remains available to all sessions (write-only)
+    r = client.post("/api/logs/", json={"action": "page_view", "details": "test", "page": "/bom"}, headers=engr_headers)
+    assert r.status_code == 200
+    print("  ✓ POST /api/logs/ client logging still accepted for non-admins")
 
     # 10. Test OpenAPI Documentation
     print("\n[Step 10] Testing OpenAPI Specification & Docs...")

@@ -45,7 +45,7 @@
         </div>
         <select id="dept-filter" class="select-filter" onchange="filterDocuments()">
             <option value="">All Departments</option>
-            <option value="Design and Construction Department">Design and Construction</option>
+            <option value="Design and Construction">Design and Construction</option>
             <option value="Purchasing">Purchasing</option>
             <option value="Operations">Operations</option>
             <option value="Electrical">Electrical</option>
@@ -492,11 +492,14 @@ function buildDocumentHtml(doc, isPrintMode = false) {
             border-radius: 0 0 3px 3px;
         }
         table th {
-            background-color: #2d7ab8;
-            color: white !important;
+            /* Black on yellow matches the saved BOM/BOQ document format and stays legible in print */
+            background-color: #FFFF00;
+            color: #000 !important;
             font-weight: 700;
             text-align: center;
-            border: none;
+            border: 1px solid #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
             padding: 10px 6px;
             font-size: 11px;
             text-transform: uppercase;
@@ -600,7 +603,7 @@ function buildDocumentHtml(doc, isPrintMode = false) {
 
         /* Text legibility overrides */
         [style*="color: #999"], [style*="color: #666"], [style*="color: #555"] { color: #000 !important; }
-        *:not(a):not(.total-row):not(.info-value):not(.toolbar-btn):not(.toolbar-title):not(th) { color: #000 !important; }
+        *:not(a):not(.total-row):not(.info-value):not(.toolbar-btn):not(.toolbar-title) { color: #000 !important; }
 
         /* Print Media */
         @media print {
