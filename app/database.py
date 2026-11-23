@@ -26,10 +26,31 @@ def get_db():
     finally:
         db.close()
 
+# Columns added after the first release. create_all() only creates missing tables,
+# so existing databases get these via ALTER TABLE.
+_ADDED_COLUMNS = {
+    "users": [
+        ("must_change_password", "BOOLEAN NOT NULL DEFAULT 0"),
+        ("password_changed_at", "DATETIME"),
+    ],
+}
+
+def _migrate_columns():
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table, columns in _ADDED_COLUMNS.items():
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            for name, ddl in columns:
+                if name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
+                    logger.info(f"Added column {table}.{name}")
+
 def init_db():
     """Initialize database tables and run automatic seed service if required."""
     from app import models  # ensure models are registered
     Base.metadata.create_all(bind=engine)
+    _migrate_columns()
     logger.info("Database schema initialized.")
     
     if settings.AUTO_SEED:

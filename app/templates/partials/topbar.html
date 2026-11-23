@@ -11,6 +11,7 @@
     'users_admin': ('Users', 'Administration'),
     'api_keys': ('API Keys', 'Administration'),
     'logs': ('Audit Logs', 'Administration'),
+    'change_password': ('Change Password', 'Account'),
 } %}
 {% set _t = _titles.get(active_page, ('BOM / BOQ Studio', '')) %}
 <header class="app-topbar">
@@ -47,6 +48,7 @@
                         {% if user.department %}<span class="badge-dept">{{ user.department }}</span>{% endif %}
                     </div>
                 </div>
+                <a href="/change_password" class="user-menu-item" role="menuitem">{{ icon('lock', 16) }} Change password</a>
                 <button type="button" class="user-menu-item" role="menuitem" onclick="BomThemes.open()">{{ icon('palette', 16) }} Themes</button>
                 <button type="button" class="user-menu-item danger" role="menuitem" onclick="App.logout()">{{ icon('logout', 16) }} Sign out</button>
             </div>

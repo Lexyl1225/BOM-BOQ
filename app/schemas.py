@@ -28,6 +28,19 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     is_active: Optional[bool] = None
     password: Optional[str] = None
+    require_password_change: Optional[bool] = None
+
+class PasswordChangeRequest(BaseModel):
+    """A signed-in user changing their own password."""
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+class AdminSetPasswordRequest(BaseModel):
+    """An Administrator setting a specific password for another user."""
+    new_password: str
+    confirm_password: str
+    require_change: bool = True
 
 class UserResponse(BaseModel):
     id: int
@@ -39,6 +52,8 @@ class UserResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
+    password_changed_at: Optional[datetime] = None
+    password_change_required: bool = False
 
     class Config:
         from_attributes = True

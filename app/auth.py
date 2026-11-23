@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import bcrypt
 import jwt
@@ -30,11 +30,18 @@ KNOWN_TEST_PASSWORDS = {
     "Testguest": ["guest123", "123456"],
 }
 
-def verify_password(plain_password: str, hashed_password: str, username: Optional[str] = None) -> bool:
+def verify_password(
+    plain_password: str,
+    hashed_password: str,
+    username: Optional[str] = None,
+    allow_fallback: bool = True,
+) -> bool:
     """
     Verify password against bcrypt hash.
     Supports PHP $2y$ prefix by replacing with $2b$.
-    Also checks known test passwords for seeded accounts if bcrypt check fails.
+    Also checks known test passwords for seeded accounts if bcrypt check fails,
+    unless allow_fallback is False (callers pass False once the user has set a
+    password of their own, so the shared test passwords stop working for them).
     """
     if not hashed_password:
         return False
@@ -49,7 +56,10 @@ def verify_password(plain_password: str, hashed_password: str, username: Optiona
             return True
     except Exception as e:
         logger.warning(f"Bcrypt verification error: {e}")
-    
+
+    if not allow_fallback:
+        return False
+
     # Check known test passwords
     if username and username in KNOWN_TEST_PASSWORDS:
         if plain_password in KNOWN_TEST_PASSWORDS[username]:
@@ -65,6 +75,32 @@ def get_password_hash(password: str) -> str:
     """Generate bcrypt hash string."""
     salt = bcrypt.gensalt(rounds=10)
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+def check_user_password(user: User, plain_password: str) -> bool:
+    """Verify a user's password. The seeded test-password fallbacks only apply to
+    accounts whose password has never been set by the user or an Administrator."""
+    return verify_password(
+        plain_password, user.password, user.username,
+        allow_fallback=user.password_changed_at is None,
+    )
+
+def password_stamp(user: User) -> int:
+    """Millisecond timestamp of the last password change (0 if never changed).
+    Embedded in session tokens so a password change signs out older sessions."""
+    if not user.password_changed_at:
+        return 0
+    return int(user.password_changed_at.replace(tzinfo=timezone.utc).timestamp() * 1000)
+
+class PasswordChangeRequired(Exception):
+    """Raised for API calls from a user who must change their password first."""
+    message = "You must change your password before continuing."
+
+# API paths a user may call while a password change is pending
+PASSWORD_CHANGE_ALLOWED_PATHS = {
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/auth/change-password",
+}
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create signed JWT access token."""
@@ -117,6 +153,21 @@ def get_current_user_optional(
     
     username = payload["sub"]
     user = db.query(User).filter(User.username == username, User.is_active == True).first()
+    if not user:
+        return None
+
+    # Tokens issued before the last password change are no longer valid
+    if int(payload.get("pwd") or 0) != password_stamp(user):
+        return None
+
+    # Until the password is changed, only the change-password API may be used
+    path = request.url.path
+    if (
+        user.password_change_required
+        and path.startswith("/api/")
+        and path.rstrip("/") not in PASSWORD_CHANGE_ALLOWED_PATHS
+    ):
+        raise PasswordChangeRequired()
     return user
 
 def get_current_user(

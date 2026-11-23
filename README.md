@@ -222,6 +222,23 @@ python run.py
 
 *Quick login buttons are available directly on the login screen (`/login`) for instant one-click testing.*
 
+> The demo passwords above only work until a user sets a password of their own. Non-admin accounts are asked to do that the first time they sign in.
+
+### 🔒 Password Management
+
+| Feature | Who | Where |
+|:---|:---|:---|
+| **First sign-in password change** | Every user except Administrators | Forced full-screen at `/change_password` until done. Pages redirect there, and the API returns `403 password_change_required`. |
+| **Change my password** | Every signed-in user, including Administrators | Account menu (top right) → **Change password** |
+| **Reset a user's password** | Administrators | `/users_admin` → **Password** → *Reset password*. Generates a temporary password, shown once. The user must change it at next sign-in. |
+| **Change a user's password** | Administrators | `/users_admin` → **Password** → *Change password*. Sets a specific password, with an option to require a change at next sign-in. |
+
+* **Password rules:** at least 8 characters, at least one letter and one number, and not the same as the username.
+* **Sign-out:** any password change or reset signs the account out of its other sessions.
+* **Audit log:** every change or reset is recorded (`password_change`, `admin_reset_password`, `admin_change_password`).
+* **Own account:** Administrators can't reset their own password from `/users_admin`. They use **Change password**, which asks for the current password.
+* **Existing databases:** they are upgraded automatically on startup, with new `users.must_change_password` and `users.password_changed_at` columns.
+
 ---
 
 ## 🔄 Engineering Document Lifecycle

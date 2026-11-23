@@ -121,20 +121,100 @@ def run_tests():
     assert me["role"] == "admin"
     print(f"  ✓ /api/auth/me verified: {me['username']} ({me['role']})")
 
-    # Login as Engineering User
-    r = client.post("/api/auth/login", json={"username": "Engr. Alex", "password": "123456"})
-    assert r.status_code == 200
-    engr_token = r.json()["token"]
+    def first_login(username, password, new_password):
+        """Sign in a seeded user, completing the first-login password change if required."""
+        r = client.post("/api/auth/login", json={"username": username, "password": password})
+        if r.status_code == 401:
+            # Suite re-run on the same database: the password was already changed
+            r = client.post("/api/auth/login", json={"username": username, "password": new_password})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        token = body["token"]
+        if not body["must_change_password"]:
+            return token
+        hdrs = {"Authorization": f"Bearer {token}"}
+        # Blocked until the password is changed (pages redirect, API returns 403)
+        r = client.get("/", cookies={"bom_session_token": token})
+        assert r.status_code == 303 and r.headers["location"] == "/change_password"
+        r = client.get("/change_password", cookies={"bom_session_token": token})
+        assert r.status_code == 200 and "Set your password" in r.text
+        r = client.get("/api/documents/", headers=hdrs)
+        assert r.status_code == 403 and r.json()["error"] == "password_change_required", r.text
+        assert client.get("/api/auth/me", headers=hdrs).status_code == 200
+        r = client.post("/api/auth/change-password", headers=hdrs, json={
+            "current_password": password, "new_password": new_password, "confirm_password": new_password})
+        assert r.status_code == 200, r.text
+        new_token = r.json()["token"]
+        # The old token is signed out; the new one works
+        assert client.get("/api/auth/me", headers=hdrs).status_code == 401
+        assert client.get("/api/documents/", headers={"Authorization": f"Bearer {new_token}"}).status_code == 200
+        return new_token
+
+    # Login as Engineering User (first sign-in: must choose a password)
+    engr_token = first_login("Engr. Alex", "123456", "EngrPass2026")
     engr_cookies = {"bom_session_token": engr_token}
     engr_headers = {"Authorization": f"Bearer {engr_token}"}
-    print("  ✓ Engineering user login successful")
+    # The shared test password no longer works once a real password is set
+    r = client.post("/api/auth/login", json={"username": "Engr. Alex", "password": "123456"})
+    assert r.status_code == 401
+    r = client.post("/api/auth/login", json={"username": "Engr. Alex", "password": "EngrPass2026"})
+    assert r.status_code == 200 and r.json()["must_change_password"] is False
+    print("  ✓ Engineering user login successful (first-login password change enforced)")
 
     # Login as Purchasing User
-    r = client.post("/api/auth/login", json={"username": "Mark", "password": "123456"})
-    assert r.status_code == 200
-    purch_token = r.json()["token"]
+    purch_token = first_login("Mark", "123456", "MarkPass2026")
     purch_cookies = {"bom_session_token": purch_token}
     print("  ✓ Purchasing user login successful")
+
+    # Password management (Admin reset / change, self-service change)
+    print("\n[Step 3b] Testing Password Management...")
+    temp_name = f"pwtest_{uuid.uuid4().hex[:6]}"
+    r = client.post("/api/users/", headers=admin_headers, json={"username": temp_name, "password": "short", "role": "user", "department": "Design and Construction"})
+    assert r.status_code == 400, "weak password must be rejected"
+    r = client.post("/api/users/", headers=admin_headers, json={"username": temp_name, "password": "Initial123", "role": "user", "department": "Design and Construction"})
+    assert r.status_code == 200, r.text
+    temp_id = r.json()["user"]["id"]
+    assert r.json()["user"]["password_change_required"] is True
+    print("  ✓ Admin-created users must change their password at first sign-in")
+
+    # Non-admins can't use the admin password endpoints
+    r = client.post(f"/api/users/{temp_id}/reset-password", headers=engr_headers)
+    assert r.status_code == 403
+    # Admin can't reset their own password from the admin endpoints
+    admin_id = me["id"]
+    r = client.post(f"/api/users/{admin_id}/reset-password", headers=admin_headers)
+    assert r.status_code == 400
+
+    temp_token = first_login(temp_name, "Initial123", "Chosen456")
+    r = client.post(f"/api/users/{temp_id}/reset-password", headers=admin_headers)
+    assert r.status_code == 200, r.text
+    temporary = r.json()["temporary_password"]
+    assert len(temporary) >= 8 and r.json()["user"]["password_change_required"] is True
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {temp_token}"}).status_code == 401
+    assert client.post("/api/auth/login", json={"username": temp_name, "password": "Chosen456"}).status_code == 401
+    r = client.post("/api/auth/login", json={"username": temp_name, "password": temporary})
+    assert r.status_code == 200 and r.json()["must_change_password"] is True
+    print("  ✓ Admin reset issues a one-time temporary password and signs the user out")
+
+    r = client.post(f"/api/users/{temp_id}/password", headers=admin_headers, json={"new_password": "AdminSet789", "confirm_password": "AdminSet789", "require_change": False})
+    assert r.status_code == 200 and r.json()["user"]["password_change_required"] is False
+    r = client.post("/api/auth/login", json={"username": temp_name, "password": "AdminSet789"})
+    assert r.status_code == 200 and r.json()["must_change_password"] is False
+    temp_headers = {"Authorization": f"Bearer {r.json()['token']}"}
+    r = client.post(f"/api/users/{temp_id}/password", headers=admin_headers, json={"new_password": "AdminSet789", "confirm_password": "Mismatch789"})
+    assert r.status_code == 400
+    print("  ✓ Admin can set a specific password (with or without forcing a change)")
+
+    # Self-service change at any time
+    r = client.post("/api/auth/change-password", headers=temp_headers, json={"current_password": "wrong", "new_password": "Another321", "confirm_password": "Another321"})
+    assert r.status_code == 400
+    r = client.post("/api/auth/change-password", headers=temp_headers, json={"current_password": "AdminSet789", "new_password": "Another321", "confirm_password": "Another321"})
+    assert r.status_code == 200
+    r = client.get("/change_password", cookies={"bom_session_token": r.json()["token"]})
+    assert r.status_code == 200 and "Change Password" in r.text
+    assert client.post("/api/auth/change-password", headers=admin_headers, json={"current_password": "x", "new_password": "y", "confirm_password": "y"}).status_code == 400
+    client.delete(f"/api/users/{temp_id}", headers=admin_headers)
+    print("  ✓ Any signed-in user can change their own password")
 
     # 4. Test Authenticated HTML Pages
     print("\n[Step 4] Testing Authenticated HTML Pages...")

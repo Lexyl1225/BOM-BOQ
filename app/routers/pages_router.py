@@ -32,9 +32,12 @@ def _api_key_for(user: Optional[User]) -> str:
 templates.env.globals["api_key_for"] = _api_key_for
 
 def _require_auth(user: Optional[User]) -> Optional[RedirectResponse]:
-    """Helper to redirect unauthenticated users to the login page."""
+    """Redirect unauthenticated users to the login page, and users with a pending
+    password change (first sign-in or Administrator reset) to the change-password page."""
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    if user.password_change_required:
+        return RedirectResponse(url="/change_password", status_code=status.HTTP_303_SEE_OTHER)
     return None
 
 def _require_builder_access(user: User, page: str) -> Optional[RedirectResponse]:
@@ -59,6 +62,30 @@ def login_page(
         request=request,
         name="login.html",
         context={"user": None, "hide_nav": True, "active_page": "login"}
+    )
+
+@router.get("/change_password", response_class=HTMLResponse)
+def change_password_page(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional)
+):
+    """Change your own password. Shown full-screen (no navigation) when the change is required."""
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    from app.services.user_service import PASSWORD_MIN_LENGTH, PASSWORD_POLICY_TEXT
+    forced = user.password_change_required
+    return templates.TemplateResponse(
+        request=request,
+        name="change_password.html",
+        context={
+            "user": user,
+            "active_page": "change_password",
+            "hide_nav": forced,
+            "forced": forced,
+            "first_login": forced and not user.must_change_password,
+            "min_length": PASSWORD_MIN_LENGTH,
+            "policy_text": PASSWORD_POLICY_TEXT,
+        }
     )
 
 @router.get("/logout")

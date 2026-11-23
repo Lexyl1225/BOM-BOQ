@@ -31,6 +31,12 @@
     function reportKeyProblem(res) {
         if (notified || !res || (res.status !== 401 && res.status !== 403)) return;
         res.clone().json().then(data => {
+            // A pending password change blocks the API: send the user to the change-password page.
+            if (data && data.error === 'password_change_required') {
+                notified = true;
+                if (window.location.pathname !== '/change_password') window.location.href = '/change_password';
+                return;
+            }
             if (!data || typeof data.error !== 'string' || data.error.indexOf('api_key') !== 0) return;
             notified = true;
             const msg = (data.message || 'API access was denied.') + ' Some features may not work until an Administrator restores your department\'s API key.';
@@ -68,6 +74,53 @@
 
     window.BomApiKey = { get: apiKey, header: HEADER };
 })();
+
+/* --------------------------------------------------------------------------
+ * Password fields: show/hide toggle (.reveal-btn inside .password-field) and
+ * a live checklist for the password policy.
+ * ------------------------------------------------------------------------ */
+const PasswordUI = {
+    MIN_LENGTH: 8,
+
+    rules(password, username) {
+        const pwd = password || '';
+        return {
+            length: pwd.length >= PasswordUI.MIN_LENGTH,
+            letter: /[A-Za-z]/.test(pwd),
+            number: /[0-9]/.test(pwd),
+            username: pwd.length > 0 && (!username || pwd.trim().toLowerCase() !== String(username).trim().toLowerCase()),
+        };
+    },
+
+    isValid(password, username) {
+        return Object.values(PasswordUI.rules(password, username)).every(Boolean);
+    },
+
+    // Tick items in a <ul class="pw-rules"> whose <li data-rule="..."> match rules()
+    bindRules(input, list, username) {
+        if (!input || !list) return;
+        const update = () => {
+            const r = PasswordUI.rules(input.value, typeof username === 'function' ? username() : username);
+            list.querySelectorAll('[data-rule]').forEach(li => li.classList.toggle('ok', !!r[li.dataset.rule]));
+        };
+        input.addEventListener('input', update);
+        update();
+        return update;
+    },
+};
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.password-field .reveal-btn');
+    if (!btn) return;
+    const input = btn.parentElement.querySelector('input');
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(show));
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+});
+
+window.PasswordUI = PasswordUI;
 
 const App = {
     // Show modern toast notification

@@ -1,22 +1,59 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% block title %}User Management &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block head %}
+<style>
+    .user-name { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+    .user-cell { max-width: 200px; }
+    /* Keep the actions visible when the table scrolls sideways on narrow screens */
+    #users-table th.col-actions, #users-table td.col-actions {
+        position: sticky; right: 0; background: var(--bg-card);
+        box-shadow: -8px 0 8px -8px rgba(15, 23, 42, .18);
+    }
+    #users-table thead th.col-actions { background: #f8fafc; }
+    #users-table tbody tr:hover td.col-actions { background: #f8fafc; }
+    .user-you { font-size: 11px; font-weight: 600; color: var(--primary); margin-left: 6px; }
+    .user-sub { font-size: 11px; color: var(--text-muted); }
+    .status-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+    .cell-mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .activity { font-size: 12px; color: var(--text-secondary); white-space: nowrap; line-height: 1.6; }
+    .row-actions .btn.icon-only { padding: 6px 8px; }
+    .row-actions .btn[disabled] { opacity: .45; cursor: not-allowed; }
+    .activity span { color: var(--text-muted); display: inline-block; min-width: 62px; }
+    #pw-modal [hidden] { display: none !important; }
+    .pw-panel p.lead { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+    .pw-panel ul.effects { margin: 0 0 4px 18px; font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 4px; }
+    .modal-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">👥 User Management</h1>
-        <p class="page-subtitle">Administrator control panel to manage user accounts, assign roles and departments</p>
+        <div class="page-eyebrow">{{ icon('users', 14) }} Administration</div>
+        <h1 class="page-title">User Management</h1>
+        <p class="page-subtitle">Manage user accounts, roles, departments and passwords.</p>
     </div>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-secondary btn-sm" onclick="syncUsers()">💾 Sync to JSON Backup</button>
+    <div class="page-actions">
+        <button class="btn btn-secondary btn-sm" onclick="syncUsers()">{{ icon('refresh', 15) }} Sync to JSON Backup</button>
         <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Add New User</button>
+    </div>
+</div>
+
+<div class="info-note">
+    {{ icon('lock', 18) }}
+    <div>
+        New users (except Administrators) choose their own password the first time they sign in.
+        Use <strong>Password</strong> on a row to reset a user's password to a temporary one, or set a new one yourself.
+        To change your own password, use <a href="/change_password">Change password</a> in the account menu.
     </div>
 </div>
 
 <div class="card" style="padding: 0; overflow: hidden;">
     <div class="table-responsive" style="border: none;">
-        <table class="data-table">
+        <table class="data-table" id="users-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -24,42 +61,47 @@
                     <th>Role</th>
                     <th>Department</th>
                     <th>Status</th>
-                    <th>Last Login</th>
-                    <th>Created At</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th>Activity</th>
+                    <th class="col-actions" style="text-align: right;">Actions</th>
                 </tr>
             </thead>
             <tbody id="users-tbody">
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                        Loading users list...
-                    </td>
-                </tr>
+                <tr><td colspan="7" class="table-empty">Loading users…</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <!-- Add User Modal -->
-<div id="add-user-modal" class="modal-overlay">
+<div id="add-user-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-user-title">
     <div class="modal-box" style="max-width: 480px;">
         <div class="modal-header">
-            <h3 class="modal-title">Add New User</h3>
-            <button class="modal-close" onclick="closeAddUserModal()">&times;</button>
+            <h3 class="modal-title" id="add-user-title">Add New User</h3>
+            <button class="modal-close" onclick="closeModal('add-user-modal')" aria-label="Close">&times;</button>
         </div>
-        <form onsubmit="handleCreateUser(event)">
+        <form onsubmit="handleCreateUser(event)" novalidate>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" id="new-uname" class="form-control" placeholder="e.g. jdoe" required>
+                    <label class="form-label" for="new-uname">Username</label>
+                    <input type="text" id="new-uname" class="form-control" placeholder="e.g. jdoe" required autocomplete="off">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="new-pwd" class="form-control" placeholder="Enter password (min 6 chars)" required minlength="6">
+                    <label class="form-label" for="new-pwd">Initial password</label>
+                    <div class="password-field">
+                        <input type="password" id="new-pwd" class="form-control" required minlength="8" maxlength="72" autocomplete="new-password">
+                        <button type="button" class="reveal-btn" aria-label="Show password" aria-pressed="false">{{ icon('eye', 17) }}</button>
+                    </div>
+                    <ul class="pw-rules" id="new-pwd-rules">
+                        <li data-rule="length">At least 8 characters</li>
+                        <li data-rule="letter">At least one letter</li>
+                        <li data-rule="number">At least one number</li>
+                        <li data-rule="username">Different from the username</li>
+                    </ul>
+                    <span class="form-hint" id="new-pwd-hint">The user will be asked to choose their own password the first time they sign in.</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Role</label>
-                    <select id="new-role" class="form-control">
+                    <label class="form-label" for="new-role">Role</label>
+                    <select id="new-role" class="form-control" onchange="updateNewUserHint()">
                         <option value="guest">Guest</option>
                         <option value="user" selected>User</option>
                         <option value="department_admin">Department Admin</option>
@@ -67,16 +109,17 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Department</label>
+                    <label class="form-label" for="new-dept">Department</label>
                     <input type="text" id="new-dept" class="form-control" placeholder="e.g. Design and Construction, Purchasing, etc.">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Email (Optional)</label>
+                    <label class="form-label" for="new-email">Email (optional)</label>
                     <input type="email" id="new-email" class="form-control" placeholder="user@company.com">
                 </div>
+                <div class="form-error" id="add-error" role="alert"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddUserModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('add-user-modal')">Cancel</button>
                 <button type="submit" class="btn btn-primary btn-sm">Create User</button>
             </div>
         </form>
@@ -84,17 +127,17 @@
 </div>
 
 <!-- Edit User Modal -->
-<div id="edit-user-modal" class="modal-overlay">
+<div id="edit-user-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
     <div class="modal-box" style="max-width: 480px;">
         <div class="modal-header">
-            <h3 class="modal-title">Edit User: <span id="edit-uname-title"></span></h3>
-            <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+            <h3 class="modal-title" id="edit-user-title">Edit User: <span id="edit-uname-title"></span></h3>
+            <button class="modal-close" onclick="closeModal('edit-user-modal')" aria-label="Close">&times;</button>
         </div>
         <form onsubmit="handleUpdateUser(event)">
             <input type="hidden" id="edit-user-id">
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Role</label>
+                    <label class="form-label" for="edit-role">Role</label>
                     <select id="edit-role" class="form-control">
                         <option value="guest">Guest</option>
                         <option value="user">User</option>
@@ -103,194 +146,428 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Department</label>
+                    <label class="form-label" for="edit-dept">Department</label>
                     <input type="text" id="edit-dept" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Reset Password (leave empty to keep current)</label>
-                    <input type="password" id="edit-pwd" class="form-control" placeholder="New password">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Account Status</label>
+                    <label class="form-label" for="edit-active">Account status</label>
                     <select id="edit-active" class="form-control">
                         <option value="true">Active</option>
                         <option value="false">Suspended / Inactive</option>
                     </select>
                 </div>
+                <span class="form-hint">Passwords are managed with the <strong>Password</strong> button on the user's row.</span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="closeEditUserModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('edit-user-modal')">Cancel</button>
                 <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Password Modal (Admin: reset or change another user's password) -->
+<div id="pw-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
+    <div class="modal-box" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title" id="pw-modal-title">Password: <span id="pw-uname"></span></h3>
+                <div class="modal-sub" id="pw-modal-sub"></div>
+            </div>
+            <button class="modal-close" onclick="closeModal('pw-modal')" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="segmented" role="tablist" aria-label="Password action">
+                <button type="button" role="tab" id="tab-reset" aria-controls="panel-reset" aria-selected="true" onclick="showPwTab('reset')">{{ icon('refresh', 15) }} Reset password</button>
+                <button type="button" role="tab" id="tab-set" aria-controls="panel-set" aria-selected="false" onclick="showPwTab('set')">{{ icon('key', 15) }} Change password</button>
+            </div>
+
+            <!-- Reset: generate a temporary password -->
+            <section class="pw-panel" id="panel-reset" role="tabpanel" aria-labelledby="tab-reset">
+                <div id="reset-intro">
+                    <p class="lead">Replace the user's password with a randomly generated temporary password. Use this when a user has forgotten their password.</p>
+                    <ul class="effects">
+                        <li>The temporary password is shown <strong>once</strong>. Give it to the user privately.</li>
+                        <li>The user is signed out on all devices.</li>
+                        <li>They must choose a new password the next time they sign in.</li>
+                    </ul>
+                </div>
+                <div id="reset-result" hidden>
+                    <p class="lead">Temporary password for <strong id="reset-uname"></strong>:</p>
+                    <div class="new-key-box">
+                        <code id="reset-temp"></code>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyTempPassword()">{{ icon('copy', 15) }} Copy</button>
+                    </div>
+                    <p class="warn-text">This won't be shown again. The user will be asked to change it when they sign in.</p>
+                </div>
+            </section>
+
+            <!-- Set: Administrator chooses the new password -->
+            <section class="pw-panel" id="panel-set" role="tabpanel" aria-labelledby="tab-set" hidden>
+                <form id="set-pw-form" onsubmit="handleSetPassword(event)" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" for="set-pwd">New password</label>
+                        <div class="password-field">
+                            <input type="password" id="set-pwd" class="form-control" minlength="8" maxlength="72" autocomplete="new-password">
+                            <button type="button" class="reveal-btn" aria-label="Show password" aria-pressed="false">{{ icon('eye', 17) }}</button>
+                        </div>
+                        <ul class="pw-rules" id="set-pwd-rules">
+                            <li data-rule="length">At least 8 characters</li>
+                            <li data-rule="letter">At least one letter</li>
+                            <li data-rule="number">At least one number</li>
+                            <li data-rule="username">Different from the username</li>
+                        </ul>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="set-pwd-confirm">Confirm new password</label>
+                        <div class="password-field">
+                            <input type="password" id="set-pwd-confirm" class="form-control" autocomplete="new-password">
+                            <button type="button" class="reveal-btn" aria-label="Show password" aria-pressed="false">{{ icon('eye', 17) }}</button>
+                        </div>
+                    </div>
+                    <label class="check-row">
+                        <input type="checkbox" id="set-require-change" checked>
+                        <span><strong>Require the user to change this password at next sign-in</strong><br>Recommended. Leave it ticked unless the user chose this password themselves.</span>
+                    </label>
+                    <p class="form-hint">The user will be signed out on all devices.</p>
+                    <div class="form-error" id="set-error" role="alert"></div>
+                </form>
+            </section>
+        </div>
+
+        <div class="modal-footer" id="pw-footer-reset">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('pw-modal')" id="reset-cancel">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="handleResetPassword()" id="reset-submit">{{ icon('refresh', 15) }} Reset password</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="closeModal('pw-modal')" id="reset-done" hidden>Done</button>
+        </div>
+        <div class="modal-footer" id="pw-footer-set" hidden>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('pw-modal')">Cancel</button>
+            <button type="submit" form="set-pw-form" class="btn btn-primary btn-sm" id="set-submit">{{ icon('lock', 15) }} Change password</button>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const CURRENT_USER_ID = {{ user.id | tojson }};
+const ICONS = {
+    edit: `{{ icon('edit', 15) }}`,
+    lock: `{{ icon('lock', 15) }}`,
+    trash: `{{ icon('trash', 15) }}`,
+};
 let usersList = [];
+let pwTarget = null;
+
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fmtDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtShort(iso) {
+    const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function errorText(data, status) {
+    if (Array.isArray(data.detail)) return 'Please fill in every required field.';
+    return data.detail || data.message || `Request failed (${status})`;
+}
+
+async function request(url, options = {}) {
+    const opts = Object.assign({ credentials: 'same-origin' }, options);
+    if (opts.body && typeof opts.body === 'object') {
+        opts.headers = { 'Content-Type': 'application/json' };
+        opts.body = JSON.stringify(opts.body);
+    }
+    const res = await fetch(url, opts);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) throw new Error(errorText(data, res.status));
+    return data;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    if (id === 'pw-modal') {
+        // Never leave a temporary password or typed password on screen
+        document.getElementById('reset-temp').textContent = '';
+        document.getElementById('set-pw-form').reset();
+        pwTarget = null;
+    }
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    ['pw-modal', 'edit-user-modal', 'add-user-modal'].forEach(id => {
+        if (document.getElementById(id).classList.contains('open')) closeModal(id);
+    });
+});
 
 document.addEventListener('DOMContentLoaded', () => {
+    PasswordUI.bindRules(document.getElementById('new-pwd'), document.getElementById('new-pwd-rules'),
+        () => document.getElementById('new-uname').value);
+    document.getElementById('new-uname').addEventListener('input', () =>
+        document.getElementById('new-pwd').dispatchEvent(new Event('input')));
+    PasswordUI.bindRules(document.getElementById('set-pwd'), document.getElementById('set-pwd-rules'),
+        () => pwTarget ? pwTarget.username : '');
     loadUsers();
 });
 
 async function loadUsers() {
     const tbody = document.getElementById('users-tbody');
     try {
-        const res = await fetch('/api/users/');
+        const res = await fetch('/api/users/', { credentials: 'same-origin' });
         if (!res.ok) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">Failed to load users list. Admin role required.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="table-empty error">Failed to load users. Administrator role required.</td></tr>`;
             return;
         }
         usersList = await res.json();
         renderUsersTable();
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 40px;">Error loading users: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty error">Error loading users: ${esc(e.message)}</td></tr>`;
     }
 }
 
 function renderUsersTable() {
     const tbody = document.getElementById('users-tbody');
     if (!usersList || usersList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty">No users found.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = usersList.map(u => {
-        const lastLogin = u.last_login ? u.last_login.substring(0, 19).replace('T', ' ') : 'Never';
-        const createdAt = u.created_at ? u.created_at.substring(0, 10) : '—';
-        const activeBadge = u.is_active
-            ? `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700;">ACTIVE</span>`
-            : `<span style="background: #fee2e2; color: #dc2626; padding: 3px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700;">INACTIVE</span>`;
+        const isSelf = u.id === CURRENT_USER_ID;
+        const status = [
+            u.is_active ? '<span class="pill active">Active</span>' : '<span class="pill danger">Inactive</span>',
+        ];
+        if (u.password_change_required) {
+            status.push(u.password_changed_at
+                ? '<span class="pill inactive" title="Must replace the password set by an Administrator at next sign-in">Must change password</span>'
+                : '<span class="pill inactive" title="Will choose their own password at first sign-in">Awaiting first sign-in</span>');
+        }
+        const activity = `<div class="activity">
+                <div><span>Sign-in</span> ${u.last_login ? esc(fmtShort(u.last_login)) : 'Never'}</div>
+                <div><span>Password</span> ${u.password_changed_at ? esc(fmtShort(u.password_changed_at)) : 'Never changed'}</div>
+            </div>`;
+        const passwordBtn = isSelf
+            ? `<a class="btn btn-secondary btn-sm" href="/change_password" title="Change your own password">${ICONS.lock} Password</a>`
+            : `<button class="btn btn-secondary btn-sm" onclick="openPasswordModal(${u.id})" title="Reset or change this user's password">${ICONS.lock} Password</button>`;
+        const deleteBtn = isSelf
+            ? `<button class="btn btn-ghost-danger btn-sm icon-only" disabled title="You can't delete your own account" aria-label="Delete (not available for your own account)">${ICONS.trash}</button>`
+            : `<button class="btn btn-ghost-danger btn-sm icon-only" onclick="deleteUser(${u.id})" title="Delete user" aria-label="Delete ${esc(u.username)}">${ICONS.trash}</button>`;
 
         return `
             <tr>
-                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${u.id}</td>
-                <td><strong>${u.username}</strong></td>
-                <td><span class="badge-role ${u.role}">${u.role}</span></td>
-                <td>${u.department || '—'}</td>
-                <td>${activeBadge}</td>
-                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${lastLogin}</td>
-                <td style="font-size: 11px; color: var(--text-muted);">${createdAt}</td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <button class="btn btn-secondary btn-sm" onclick="openEditUserModal(${u.id})">✏️ Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${u.username}')">🗑️ Delete</button>
-                </td>
-            </tr>
-        `;
+                <td class="cell-mono">${u.id}</td>
+                <td class="user-cell"><span class="user-name">${esc(u.username)}</span>${isSelf ? '<span class="user-you">(you)</span>' : ''}
+                    ${u.email ? `<div class="user-sub">${esc(u.email)}</div>` : ''}</td>
+                <td><span class="badge-role ${esc(u.role)}">${esc(u.role.replace('_', ' '))}</span></td>
+                <td>${esc(u.department) || '—'}</td>
+                <td><div class="status-stack">${status.join('')}</div></td>
+                <td>${activity}</td>
+                <td class="col-actions"><div class="row-actions">
+                    <button class="btn btn-secondary btn-sm icon-only" onclick="openEditUserModal(${u.id})" title="Edit role, department and status" aria-label="Edit ${esc(u.username)}">${ICONS.edit}</button>
+                    ${passwordBtn}
+                    ${deleteBtn}
+                </div></td>
+            </tr>`;
     }).join('');
 }
 
-function openAddUserModal() {
-    document.getElementById('add-user-modal').classList.add('open');
+/* ---------- Add user ---------- */
+function updateNewUserHint() {
+    const isAdmin = document.getElementById('new-role').value === 'admin';
+    document.getElementById('new-pwd-hint').textContent = isAdmin
+        ? 'Administrators are not asked to change this password. They can change it any time from the account menu.'
+        : 'The user will be asked to choose their own password the first time they sign in.';
 }
-function closeAddUserModal() {
-    document.getElementById('add-user-modal').classList.remove('open');
+
+function openAddUserModal() {
+    document.getElementById('add-error').textContent = '';
+    updateNewUserHint();
+    openModal('add-user-modal');
+    document.getElementById('new-uname').focus();
 }
 
 async function handleCreateUser(e) {
     e.preventDefault();
+    const err = document.getElementById('add-error');
+    err.textContent = '';
     const username = document.getElementById('new-uname').value.trim();
     const password = document.getElementById('new-pwd').value;
     const role = document.getElementById('new-role').value;
     const department = document.getElementById('new-dept').value.trim();
-    const email = document.getElementById('new-email').value.trim();
+    const email = document.getElementById('new-email').value.trim() || null;
+
+    if (!username) { err.textContent = 'Enter a username.'; return; }
+    if (!PasswordUI.isValid(password, username)) { err.textContent = 'The password does not meet the requirements.'; return; }
 
     try {
-        const res = await fetch('/api/users/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, role, department, email })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            App.toast(`User "${username}" created!`, 'success');
-            closeAddUserModal();
-            loadUsers();
-        } else {
-            App.toast(data.detail || data.message || 'Failed to create user', 'error');
-        }
-    } catch (err) {
-        App.toast('Error: ' + err.message, 'error');
+        await request('/api/users/', { method: 'POST', body: { username, password, role, department, email } });
+        App.toast(`User "${username}" created`, 'success');
+        e.target.reset();
+        closeModal('add-user-modal');
+        loadUsers();
+    } catch (ex) {
+        err.textContent = ex.message;
     }
 }
 
+/* ---------- Edit user ---------- */
 function openEditUserModal(userId) {
     const user = usersList.find(u => u.id === userId);
     if (!user) return;
-
     document.getElementById('edit-user-id').value = user.id;
     document.getElementById('edit-uname-title').textContent = user.username;
     document.getElementById('edit-role').value = user.role;
     document.getElementById('edit-dept').value = user.department || '';
-    document.getElementById('edit-pwd').value = '';
     document.getElementById('edit-active').value = user.is_active ? 'true' : 'false';
-
-    document.getElementById('edit-user-modal').classList.add('open');
-}
-function closeEditUserModal() {
-    document.getElementById('edit-user-modal').classList.remove('open');
+    openModal('edit-user-modal');
 }
 
 async function handleUpdateUser(e) {
     e.preventDefault();
     const userId = document.getElementById('edit-user-id').value;
-    const role = document.getElementById('edit-role').value;
-    const department = document.getElementById('edit-dept').value.trim();
-    const password = document.getElementById('edit-pwd').value;
-    const is_active = document.getElementById('edit-active').value === 'true';
-
-    const payload = { role, department, is_active };
-    if (password) payload.password = password;
-
+    const payload = {
+        role: document.getElementById('edit-role').value,
+        department: document.getElementById('edit-dept').value.trim(),
+        is_active: document.getElementById('edit-active').value === 'true',
+    };
     try {
-        const res = await fetch(`/api/users/${userId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            App.toast('User updated successfully', 'success');
-            closeEditUserModal();
-            loadUsers();
-        } else {
-            App.toast(data.detail || data.message || 'Failed to update user', 'error');
-        }
-    } catch (err) {
-        App.toast('Error: ' + err.message, 'error');
+        await request(`/api/users/${userId}`, { method: 'PUT', body: payload });
+        App.toast('User updated', 'success');
+        closeModal('edit-user-modal');
+        loadUsers();
+    } catch (ex) {
+        App.toast(ex.message, 'error');
     }
 }
 
-function deleteUser(userId, username) {
-    App.confirm('Delete User', `Are you sure you want to delete user "${username}"? All documents created by this user will also be removed.`, async () => {
+/* ---------- Password (reset / change) ---------- */
+function openPasswordModal(userId) {
+    const user = usersList.find(u => u.id === userId);
+    if (!user || user.id === CURRENT_USER_ID) return;
+    pwTarget = user;
+    document.getElementById('pw-uname').textContent = user.username;
+    document.getElementById('pw-modal-sub').textContent = user.password_changed_at
+        ? `Password last changed ${fmtDate(user.password_changed_at)}`
+        : 'Password has never been changed';
+    document.getElementById('reset-intro').hidden = false;
+    document.getElementById('reset-result').hidden = true;
+    document.getElementById('reset-submit').hidden = false;
+    document.getElementById('reset-submit').disabled = false;
+    document.getElementById('reset-cancel').hidden = false;
+    document.getElementById('reset-done').hidden = true;
+    document.getElementById('tab-set').disabled = false;
+    document.getElementById('set-pw-form').reset();
+    document.getElementById('set-require-change').checked = true;
+    document.getElementById('set-error').textContent = '';
+    document.getElementById('set-pwd').dispatchEvent(new Event('input'));
+    showPwTab('reset');
+    openModal('pw-modal');
+}
+
+function showPwTab(tab) {
+    const isReset = tab === 'reset';
+    document.getElementById('tab-reset').setAttribute('aria-selected', String(isReset));
+    document.getElementById('tab-set').setAttribute('aria-selected', String(!isReset));
+    document.getElementById('panel-reset').hidden = !isReset;
+    document.getElementById('panel-set').hidden = isReset;
+    document.getElementById('pw-footer-reset').hidden = !isReset;
+    document.getElementById('pw-footer-set').hidden = isReset;
+    if (!isReset) document.getElementById('set-pwd').focus();
+}
+
+async function handleResetPassword() {
+    if (!pwTarget) return;
+    const btn = document.getElementById('reset-submit');
+    btn.disabled = true;
+    try {
+        const data = await request(`/api/users/${pwTarget.id}/reset-password`, { method: 'POST' });
+        document.getElementById('reset-uname').textContent = pwTarget.username;
+        document.getElementById('reset-temp').textContent = data.temporary_password;
+        document.getElementById('reset-intro').hidden = true;
+        document.getElementById('reset-result').hidden = false;
+        btn.hidden = true;
+        document.getElementById('reset-cancel').hidden = true;
+        document.getElementById('reset-done').hidden = false;
+        document.getElementById('tab-set').disabled = true;
+        App.toast(data.message, 'success');
+        loadUsers();
+    } catch (ex) {
+        App.toast(ex.message, 'error');
+        btn.disabled = false;
+    }
+}
+
+async function copyTempPassword() {
+    const text = document.getElementById('reset-temp').textContent;
+    try {
+        await navigator.clipboard.writeText(text);
+        App.toast('Temporary password copied', 'success');
+    } catch (e) {
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('reset-temp'));
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        App.toast('Press Ctrl+C to copy the selected password', 'info');
+    }
+}
+
+async function handleSetPassword(e) {
+    e.preventDefault();
+    if (!pwTarget) return;
+    const err = document.getElementById('set-error');
+    err.textContent = '';
+    const new_password = document.getElementById('set-pwd').value;
+    const confirm_password = document.getElementById('set-pwd-confirm').value;
+    const require_change = document.getElementById('set-require-change').checked;
+
+    if (!PasswordUI.isValid(new_password, pwTarget.username)) { err.textContent = 'The password does not meet the requirements.'; return; }
+    if (new_password !== confirm_password) { err.textContent = 'The passwords do not match.'; return; }
+
+    const btn = document.getElementById('set-submit');
+    btn.disabled = true;
+    try {
+        const data = await request(`/api/users/${pwTarget.id}/password`, {
+            method: 'POST', body: { new_password, confirm_password, require_change }
+        });
+        App.toast(data.message, 'success');
+        closeModal('pw-modal');
+        loadUsers();
+    } catch (ex) {
+        err.textContent = ex.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+/* ---------- Delete / sync ---------- */
+function deleteUser(userId) {
+    const user = usersList.find(u => u.id === userId);
+    if (!user) return;
+    App.confirm('Delete User', `Are you sure you want to delete user "${user.username}"? All documents created by this user will also be removed.`, async () => {
         try {
-            const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                App.toast(`User "${username}" deleted`, 'success');
-                loadUsers();
-            } else {
-                App.toast(data.detail || data.message || 'Failed to delete user', 'error');
-            }
-        } catch (err) {
-            App.toast('Error: ' + err.message, 'error');
+            await request(`/api/users/${userId}`, { method: 'DELETE' });
+            App.toast(`User "${user.username}" deleted`, 'success');
+            loadUsers();
+        } catch (ex) {
+            App.toast(ex.message, 'error');
         }
     });
 }
 
 async function syncUsers() {
     try {
-        const res = await fetch('/api/users/sync', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-            App.toast(data.message, 'success');
-        } else {
-            App.toast(data.message || 'Sync failed', 'error');
-        }
+        const data = await request('/api/users/sync', { method: 'POST' });
+        App.toast(data.message, 'success');
     } catch (e) {
-        App.toast('Error: ' + e.message, 'error');
+        App.toast(e.message, 'error');
     }
 }
 </script>

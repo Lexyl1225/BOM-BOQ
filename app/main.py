@@ -16,6 +16,7 @@ from app.config import settings, BASE_DIR
 from app.database import init_db
 from app.services.document_service import DocumentLockedError, DocumentRestrictedError
 from app.api_key_middleware import ApiKeyMiddleware
+from app.auth import PasswordChangeRequired
 from app.openapi_docs import install_openapi
 from app.routers import (
     auth_router,
@@ -161,6 +162,20 @@ async def document_locked_handler(request: Request, exc: DocumentLockedError):
             "restricted": restricted,
             "message": message,
             "detail": message,
+        }
+    )
+
+@app.exception_handler(PasswordChangeRequired)
+async def password_change_required_handler(request: Request, exc: PasswordChangeRequired):
+    """A user with a pending password change may only call the change-password API."""
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={
+            "success": False,
+            "error": "password_change_required",
+            "message": PasswordChangeRequired.message,
+            "detail": PasswordChangeRequired.message,
+            "redirect": "/change_password",
         }
     )
 

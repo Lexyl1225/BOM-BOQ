@@ -34,6 +34,12 @@ The API key must belong to the **same department** as the signed-in user.
 | Deactivated key | 401 | `api_key_inactive` |
 | Key from another department | 403 | `api_key_department_mismatch` |
 
+### Passwords
+Users (except Administrators) must choose their own password at first sign-in, and after an Administrator
+resets it. Until they do, every API call except `GET /api/auth/me`, `POST /api/auth/logout` and
+`POST /api/auth/change-password` returns **403** with `error: password_change_required`.
+Changing a password signs out the account's other sessions (older tokens return 401).
+
 **Endpoints that don't need a key:** `GET /api/health`, `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`,
 and the Administrator-only `/api/admin/api-keys/*` endpoints (so an Administrator can always restore access).
 
@@ -43,12 +49,12 @@ and the Administrator-only `/api/admin/api-keys/*` endpoints (so an Administrato
 """
 
 TAGS_METADATA = [
-    {"name": "Authentication", "description": "Sign in, register, sign out and current-user info. Login, register and logout don't need an API key."},
+    {"name": "Authentication", "description": "Sign in, register, sign out, change your own password and current-user info. Login, register and logout don't need an API key."},
     {"name": "Documents", "description": "BOM / BOQ documents: save, load, price edit, approvals and Purchase Order lists."},
     {"name": "Cost Estimates", "description": "Project cost estimates."},
     {"name": "Uploads & Attachments", "description": "Purchase Order attachments (PDF, JPG, PNG up to 10 MB)."},
     {"name": "Activity Logs", "description": "Audit trail (reading is Administrator-only)."},
-    {"name": "Users Management", "description": "User accounts (Administrator-only)."},
+    {"name": "Users Management", "description": "User accounts, including password reset / change for other users (Administrator-only)."},
     {"name": "API Key Management", "description": "Department API keys (Administrator-only). Exempt from the API key requirement."},
     {"name": "Legacy Compatibility", "description": "Endpoints kept for the original PHP front end (`*.php`)."},
     {"name": "System", "description": "Health checks."},

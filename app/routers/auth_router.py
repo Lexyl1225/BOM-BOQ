@@ -5,15 +5,37 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models import User
-from app.schemas import UserLogin, UserCreate, UserResponse, ApiResponse
+from app.schemas import UserLogin, UserCreate, UserResponse, ApiResponse, PasswordChangeRequest
 from app.auth import (
-    verify_password, get_password_hash, create_access_token,
+    get_password_hash, create_access_token, check_user_password, password_stamp,
     get_current_user, get_current_user_optional
 )
 from app.services.activity_service import log_from_request
-from app.services.user_service import get_user_by_username, update_last_login
+from app.services.user_service import (
+    get_user_by_username, update_last_login, password_policy_error, set_user_password,
+    PASSWORD_POLICY_TEXT,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+def _issue_session(response: Response, user: User) -> str:
+    """Create a session token for the user and set it as the HTTP-only cookie."""
+    token = create_access_token({
+        "sub": user.username,
+        "role": user.role,
+        "department": user.department or "",
+        "user_id": user.id,
+        "pwd": password_stamp(user),
+    })
+    response.set_cookie(
+        key=settings.COOKIE_NAME,
+        value=token,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        samesite="lax",
+        path="/"
+    )
+    return token
 
 async def _extract_request_data(request: Request) -> dict:
     content_type = request.headers.get("content-type", "")
@@ -62,7 +84,7 @@ async def login(
             detail="Invalid username or password. Please try again."
         )
     
-    if not verify_password(pwd, user.password, user.username):
+    if not check_user_password(user, pwd):
         log_from_request(db, request, "login_failed", f"Failed password for user '{uname}'")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,23 +94,8 @@ async def login(
     # Update last login
     update_last_login(db, user.username)
     
-    # Create token
-    token = create_access_token({
-        "sub": user.username,
-        "role": user.role,
-        "department": user.department or "",
-        "user_id": user.id
-    })
-    
-    # Set HTTP-only Cookie
-    response.set_cookie(
-        key=settings.COOKIE_NAME,
-        value=token,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        httponly=True,
-        samesite="lax",
-        path="/"
-    )
+    # Create token and set the HTTP-only session cookie
+    token = _issue_session(response, user)
     
     # Log successful login
     log_from_request(db, request, "login", "User logged in successfully", user=user, page="login")
@@ -100,6 +107,8 @@ async def login(
         "token": token,
         "access_token": token,
         "token_type": "bearer",
+        "must_change_password": user.password_change_required,
+        "redirect": "/change_password" if user.password_change_required else "/",
         "user": user_resp.dict()
     }
 
@@ -130,8 +139,9 @@ async def register(
         raise HTTPException(status_code=400, detail="Username and password are required")
     if pwd != cpwd:
         raise HTTPException(status_code=400, detail="Passwords do not match")
-    if len(pwd) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+    policy_error = password_policy_error(pwd, uname)
+    if policy_error:
+        raise HTTPException(status_code=400, detail=policy_error)
     
     existing = get_user_by_username(db, uname)
     if existing:
@@ -142,7 +152,7 @@ async def register(
         if not auth_uname or not auth_pwd:
             raise HTTPException(status_code=403, detail="Admin authorization credentials are required to create an Admin account.")
         auth_user = get_user_by_username(db, auth_uname)
-        if not auth_user or auth_user.role != "admin" or not verify_password(auth_pwd, auth_user.password, auth_user.username):
+        if not auth_user or auth_user.role != "admin" or not check_user_password(auth_user, auth_pwd):
             raise HTTPException(status_code=403, detail="Invalid admin credentials. Only existing admins can create Admin accounts.")
             
     elif urole == "department_admin":
@@ -151,14 +161,14 @@ async def register(
         if not udept.strip():
             raise HTTPException(status_code=400, detail="Department is required for Department Admin accounts.")
         auth_user = get_user_by_username(db, auth_uname)
-        if not auth_user or auth_user.role != "admin" or not verify_password(auth_pwd, auth_user.password, auth_user.username):
+        if not auth_user or auth_user.role != "admin" or not check_user_password(auth_user, auth_pwd):
             raise HTTPException(status_code=403, detail="Invalid admin credentials. Only existing admins can create Department Admin accounts.")
             
     elif urole == "user":
         if not auth_uname or not auth_pwd:
             raise HTTPException(status_code=403, detail="Existing User or Admin credentials are required to create a User account.")
         auth_user = get_user_by_username(db, auth_uname)
-        if not auth_user or auth_user.role not in ("user", "admin", "department_admin") or not verify_password(auth_pwd, auth_user.password, auth_user.username):
+        if not auth_user or auth_user.role not in ("user", "admin", "department_admin") or not check_user_password(auth_user, auth_pwd):
             raise HTTPException(status_code=403, detail="Invalid authorization credentials. Only existing users or admins can authorize new User accounts.")
 
     # Create user
@@ -170,7 +180,9 @@ async def register(
         department=udept.strip(),
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
-        is_active=True
+        is_active=True,
+        # The user chose this password themselves, so no first-login change is needed
+        password_changed_at=datetime.utcnow(),
     )
     db.add(new_user)
     db.commit()
@@ -215,3 +227,44 @@ async def get_me(user: User = Depends(get_current_user)):
         **u_dict
     }
 
+
+@router.post("/change-password")
+async def change_password(
+    request: Request,
+    response: Response,
+    payload: PasswordChangeRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change the signed-in user's own password (any role, including Administrators).
+
+    Required on first sign-in and after an Administrator reset; available at any time otherwise.
+    Other sessions for this account are signed out; this session gets a fresh token.
+    """
+    if not check_user_password(user, payload.current_password):
+        log_from_request(db, request, "password_change_failed", "Incorrect current password", user=user)
+        raise HTTPException(status_code=400, detail="Your current password is incorrect.")
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(status_code=400, detail="The new passwords do not match.")
+    if payload.new_password == payload.current_password:
+        raise HTTPException(status_code=400, detail="Choose a password that is different from your current one.")
+    policy_error = password_policy_error(payload.new_password, user.username)
+    if policy_error:
+        raise HTTPException(status_code=400, detail=policy_error)
+
+    was_required = user.password_change_required
+    set_user_password(db, user, payload.new_password, require_change=False)
+    token = _issue_session(response, user)
+    log_from_request(
+        db, request, "password_change",
+        "Changed password (required at sign-in)" if was_required else "Changed password",
+        user=user,
+    )
+    return {
+        "success": True,
+        "message": "Your password has been changed.",
+        "token": token,
+        "access_token": token,
+        "token_type": "bearer",
+    }

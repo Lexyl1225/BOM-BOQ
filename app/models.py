@@ -18,6 +18,18 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
+    # Password lifecycle. password_changed_at stays NULL until a password is set by the
+    # user or an Administrator; must_change_password is set by an Administrator reset.
+    must_change_password = Column(Boolean, default=False, nullable=False)
+    password_changed_at = Column(DateTime, nullable=True)
+
+    @property
+    def password_change_required(self) -> bool:
+        """True when the user must choose a new password before using the app:
+        after an Administrator reset, or on first sign-in (Administrators exempt)."""
+        if self.must_change_password:
+            return True
+        return self.role != "admin" and self.password_changed_at is None
 
     __table_args__ = (
         Index("idx_username", "username"),
