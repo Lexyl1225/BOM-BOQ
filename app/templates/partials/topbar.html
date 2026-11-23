@@ -1,0 +1,58 @@
+{% from "partials/icons.html" import icon %}
+{% set _titles = {
+    'home': ('Dashboard', 'Overview'),
+    'bom': ('Create BOM', 'Documents'),
+    'boq': ('Create BOQ', 'Documents'),
+    'estimate': ('Cost Estimates', 'Documents'),
+    'save_bomboq': ('Saved Documents', 'Documents'),
+    'price_edit': ('MCE Pricing', 'Workflow'),
+    'approver': ('Approvals', 'Workflow'),
+    'po': ('Purchase Orders', 'Workflow'),
+    'users_admin': ('Users', 'Administration'),
+    'api_keys': ('API Keys', 'Administration'),
+    'logs': ('Audit Logs', 'Administration'),
+} %}
+{% set _t = _titles.get(active_page, ('BOM / BOQ Studio', '')) %}
+<header class="app-topbar">
+    <div class="topbar-left">
+        <button type="button" class="icon-btn" onclick="AppShell.toggleSidebar()" aria-label="Toggle navigation" aria-controls="appSidebar">
+            {{ icon('menu', 20) }}
+        </button>
+        <div class="topbar-title">
+            {% if _t[1] %}<span class="topbar-crumb">{{ _t[1] }}</span>{% endif %}
+            <span class="topbar-page">{{ _t[0] }}</span>
+        </div>
+    </div>
+
+    <div class="topbar-right">
+        <button type="button" class="icon-btn" onclick="BomThemes.open()" title="Color themes" aria-label="Color themes">
+            {{ icon('palette', 19) }}
+        </button>
+
+        {% if user %}
+        <details class="user-menu">
+            <summary class="user-menu-trigger" aria-label="Account menu">
+                <span class="avatar" aria-hidden="true">{{ user.username[:1]|upper }}</span>
+                <span class="user-menu-meta">
+                    <strong>{{ user.username }}</strong>
+                    <small>{{ user.role.replace('_', ' ')|title }}</small>
+                </span>
+                {{ icon('chevron-down', 16) }}
+            </summary>
+            <div class="user-menu-panel" role="menu">
+                <div class="user-menu-head">
+                    <strong>{{ user.username }}</strong>
+                    <div class="user-menu-badges">
+                        <span class="badge-role {{ user.role }}">{{ user.role.replace('_', ' ') }}</span>
+                        {% if user.department %}<span class="badge-dept">{{ user.department }}</span>{% endif %}
+                    </div>
+                </div>
+                <button type="button" class="user-menu-item" role="menuitem" onclick="BomThemes.open()">{{ icon('palette', 16) }} Themes</button>
+                <button type="button" class="user-menu-item danger" role="menuitem" onclick="App.logout()">{{ icon('logout', 16) }} Sign out</button>
+            </div>
+        </details>
+        {% else %}
+        <a href="/login" class="btn btn-primary btn-sm">Sign In</a>
+        {% endif %}
+    </div>
+</header>

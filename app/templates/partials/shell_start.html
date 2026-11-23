@@ -1,0 +1,6 @@
+{# Opens the sidebar app shell for standalone pages that don't extend base.html. Close with shell_end.html. #}
+<div class="app-shell" id="appShell">
+    {% include "partials/sidebar.html" %}
+    <div class="app-main">
+        {% include "partials/topbar.html" %}
+        <div class="app-page legacy-page">

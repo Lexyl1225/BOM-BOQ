@@ -1,6 +1,58 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
 /venv/
-bom_db_dump.sql
-.env
-user_activity_logs.json
-users.json
+/.venv/
 /windows-venv/
+/venv-windows/
+
+# ---------------------------------------------------------------------------
+# Secrets & environment
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+# Output of api-key-gen.py
+/bom-secrets/
+
+# ---------------------------------------------------------------------------
+# Runtime data (live database, user uploads, backups)
+# These hold real documents, password hashes and the encrypted department
+# API keys, so they must never be committed. Docker builds copy them from the
+# local folder, not from git.
+# ---------------------------------------------------------------------------
+/bom_system.db
+*.db-journal
+*.db-wal
+*.db-shm
+/bom_db_dump.sql
+/users.json
+/user_activity_logs.json
+/data/
+/uploads/*
+!/uploads/.htaccess
+
+# ---------------------------------------------------------------------------
+# Logs, editors & OS files
+# ---------------------------------------------------------------------------
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# mysql dump instruction files
+# ---------------------------------------------------------------------------
+mysql_dump_instructions.txt

@@ -14,7 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings, BASE_DIR
 from app.database import init_db
-from app.services.document_service import DocumentLockedError
+from app.services.document_service import DocumentLockedError, DocumentRestrictedError
+from app.api_key_middleware import ApiKeyMiddleware
+from app.openapi_docs import install_openapi
 from app.routers import (
     auth_router,
     users_router,
@@ -23,7 +25,8 @@ from app.routers import (
     uploads_router,
     logs_router,
     legacy_router,
-    pages_router
+    pages_router,
+    api_keys_router
 )
 
 # Configure logging
@@ -52,8 +55,14 @@ app = FastAPI(
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # Keep the API key / token entered via "Authorize" across page reloads
+    swagger_ui_parameters={"persistAuthorization": True, "docExpansion": "none", "filter": True},
 )
+
+# Department API key enforcement for every /api endpoint (see app/api_key_middleware.py).
+# Registered before CORS so CORS stays the outermost layer.
+app.add_middleware(ApiKeyMiddleware)
 
 # CORS Middleware (allows seamless cross-origin communication if integrated with other internal microservices)
 app.add_middleware(
@@ -140,16 +149,25 @@ async def custom_500_handler(request: Request, exc):
 
 @app.exception_handler(DocumentLockedError)
 async def document_locked_handler(request: Request, exc: DocumentLockedError):
-    """Approved documents are read-only for non-admins (applies to REST and legacy APIs)."""
+    """Approved documents are read-only for non-admins, and restricted departments
+    (e.g. Purchasing) may not edit or delete documents. Applies to REST and legacy APIs."""
     message = str(exc)
+    restricted = isinstance(exc, DocumentRestrictedError)
     return JSONResponse(
         status_code=status.HTTP_403_FORBIDDEN,
-        content={"success": False, "locked": True, "message": message, "detail": message}
+        content={
+            "success": False,
+            "locked": not restricted,
+            "restricted": restricted,
+            "message": message,
+            "detail": message,
+        }
     )
 
 # Include Routers
 # HTML Page Router (Dashboard, Login, BOM/BOQ Builders, Approvals, Legacy .php aliases)
-app.include_router(pages_router.router)
+# (HTML pages are hidden from the API docs)
+app.include_router(pages_router.router, include_in_schema=False)
 
 # REST API Routers
 app.include_router(auth_router.router)
@@ -158,6 +176,10 @@ app.include_router(documents_router.router)
 app.include_router(estimates_router.router)
 app.include_router(uploads_router.router)
 app.include_router(logs_router.router)
+app.include_router(api_keys_router.router)
 
 # Legacy PHP API Endpoint Compatibility (/api/document_api.php, /api/user_api.php, etc.)
 app.include_router(legacy_router.router)
+
+# OpenAPI / Swagger UI: security schemes (X-API-Key + Bearer) and auth guide
+install_openapi(app)

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approved Documents for PO</title>
     <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    {% include "partials/head_common.html" %}
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/themes.css">
     <script src="/static/js/app.js"></script>
@@ -782,44 +783,9 @@
         .viewer-content iframe { width: 100%; min-height: 70vh; border: none; }
     </style>
 </head>
-<body>
+<body class="app-layout">
 
-    <!-- Top Navigation Bar -->
-    <nav class="main-navbar" style="position: sticky; top: 0; z-index: 9999; margin-bottom: 20px;">
-        <a href="/" class="nav-brand">
-            <div class="nav-brand-logo">B</div>
-            <div>BOM / BOQ <span style="font-weight: 400; font-size: 14px; color: var(--primary);">Studio</span></div>
-        </a>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">📊 Dashboard</a></li>
-            <li><a href="/bom" class="nav-link">📝 Create BOM</a></li>
-            <li><a href="/boq" class="nav-link">📋 Create BOQ</a></li>
-            <li><a href="/estimate" class="nav-link">💰 Cost Estimates</a></li>
-            <li><a href="/save_bomboq" class="nav-link">📁 Saved Documents</a></li>
-            <li><a href="/price_edit_bomboq" class="nav-link">🏷️ MCE Pricing</a></li>
-            {% if user and user.role in ["department_admin", "admin"] %}
-            <li><a href="/approver" class="nav-link">✅ Approvals</a></li>
-            {% endif %}
-            <li><a href="/approved_for_po" class="nav-link active">📦 Purchase Orders</a></li>
-            {% if user and user.role == "admin" %}
-            <li><a href="/user_logs" class="nav-link">📜 Audit Logs</a></li>
-            <li><a href="/users_admin" class="nav-link">👥 Users</a></li>
-            {% endif %}
-        </ul>
-        <div class="nav-right">
-            <button class="btn btn-secondary btn-sm" onclick="BomThemes.open()">🎨 Themes</button>
-            {% if user %}
-            <div class="user-badge-capsule">
-                <strong>{{ user.username }}</strong>
-                <span class="badge-role {{ user.role }}">{{ user.role.replace("_", " ") }}</span>
-                {% if user.department %}
-                <span class="badge-dept">{{ user.department }}</span>
-                {% endif %}
-            </div>
-            <button class="btn btn-danger btn-sm" onclick="App.logout()">🚪 Logout</button>
-            {% endif %}
-        </div>
-    </nav>
+    {% include "partials/shell_start.html" %}
 
 <div class="container">
     <!-- Header -->
@@ -1612,5 +1578,6 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('DOMContentLoaded', loadDocuments);
 </script>
 <script src="themes.js"></script>
+{% include "partials/shell_end.html" %}
 </body>
 </html>

@@ -15,9 +15,11 @@
         </p>
     </div>
     <div class="page-actions">
+        {% if can_access_builders(user) %}
         <a href="/bom" class="btn btn-primary">+ New BOM</a>
         <a href="/boq" class="btn btn-success">+ New BOQ</a>
         <a href="/estimate" class="btn btn-warning">+ New Estimate</a>
+        {% endif %}
     </div>
 </div>
 
@@ -74,6 +76,7 @@
         <span style="font-size: 12px; color: var(--text-muted);">Select a module to launch</span>
     </div>
     <div class="quick-actions-grid">
+        {% if can_access_builders(user) %}
         <a href="/bom" class="action-tile">
             <div class="action-tile-icon" style="background:#ede9fe; color:#7c3aed;">📝</div>
             <div class="action-tile-content">
@@ -97,6 +100,7 @@
                 <p>Materials, labor, allowances, mobilization & grand totals</p>
             </div>
         </a>
+        {% endif %}
 
         <a href="/save_bomboq" class="action-tile">
             <div class="action-tile-icon" style="background:#dcfce7; color:#15803d;">📂</div>

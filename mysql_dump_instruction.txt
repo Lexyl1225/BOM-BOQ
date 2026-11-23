@@ -1,0 +1,296 @@
+==============================================================================
+ BOM / BOQ Studio Pro: How to make a database dump from the Docker container
+==============================================================================
+
+ Server  : ubuntu@mail
+ Project : ~/docker/bom_finalv1.1.2
+ Service : bom   (container name: bom)
+ App URL : https://bom.ratfish-regulus.ts.net/
+
+------------------------------------------------------------------------------
+ 0. READ FIRST: what you are backing up
+------------------------------------------------------------------------------
+
+ * The database is SQLITE, not MySQL. There is no MySQL server, so
+   `mysqldump` will not work. The SQLite equivalent is ".dump", which writes
+   a .sql file of CREATE TABLE and INSERT statements.
+
+ * The live database file is:
+       inside the container : /app/data/bom_system.db
+       on the server (host) : ~/docker/bom_finalv1.1.2/data/bom_system.db
+   (docker-compose mounts ./data to /app/data.)
+
+ * The image does NOT include the `sqlite3` command-line tool, but it does
+   include Python 3, which has SQLite built in. The commands below use
+   Python, so you don't need to install anything.
+
+ * The uploaded PO attachments (PDF/JPG/PNG) are NOT stored in the
+   database. They are files in data/uploads/. Back them up as well (step 4).
+
+ * A dump contains user password hashes, and (in newer versions) the
+   department API keys. Treat it as confidential: don't email it, don't
+   commit it to git, and keep it in a restricted folder.
+
+ Run every command below on the server, from the project folder:
+
+     cd ~/docker/bom_finalv1.1.2
+     mkdir -p data/backups
+
+ data/backups/ is inside the mounted folder, so the container and the host
+ can both read and write it. It's also covered by .gitignore and
+ .dockerignore, so it never ends up in git or in the image.
+
+
+------------------------------------------------------------------------------
+ 1. Check the container is running
+------------------------------------------------------------------------------
+
+     sudo docker compose ps
+
+ STATUS should read "Up ... (healthy)". The dump commands use
+ `docker exec`, which only works while the container is running.
+
+ To check the database file inside the container:
+
+     sudo docker exec bom ls -lh /app/data/bom_system.db
+
+
+------------------------------------------------------------------------------
+ 2. Make the SQL dump (.sql)  <-- this is the "SQL dump"
+------------------------------------------------------------------------------
+
+ This command produces a plain-text .sql file, timestamped:
+
+     sudo docker exec -e PYTHONIOENCODING=utf-8 bom python3 -c "
+import sqlite3, sys
+con = sqlite3.connect('file:/app/data/bom_system.db?mode=ro', uri=True)
+for line in con.iterdump():
+    sys.stdout.write(line + '\n')
+con.close()
+" > data/backups/bom_dump_$(date +%Y-%m-%d_%H%M).sql
+
+ Notes:
+   * Copy and paste it as-is; it spans several lines.
+   * Don't add `-it` to `docker exec`. A TTY would add carriage returns to
+     the output and corrupt the file.
+   * `mode=ro` opens the database read-only, so the running app is never
+     affected. It's safe to run during working hours.
+   * The `>` redirect runs on the host, so the file is written straight to
+     ~/docker/bom_finalv1.1.2/data/backups/.
+
+ Check the result:
+
+     ls -lh data/backups/
+     head -n 5  data/backups/bom_dump_*.sql      # BEGIN TRANSACTION; in the first lines
+     tail -n 2  data/backups/bom_dump_*.sql      # should end with COMMIT;
+     grep -c "CREATE TABLE" data/backups/bom_dump_*.sql
+
+
+------------------------------------------------------------------------------
+ 3. (Recommended) Also make a binary copy of the database (.db)
+------------------------------------------------------------------------------
+
+ The .sql dump is readable and portable. A binary copy is a ready-to-use
+ replacement for bom_system.db and is the fastest to restore. Use SQLite's
+ online backup API (DON'T just `cp` the file while the app is running: a
+ copy taken mid-write can be corrupt):
+
+     sudo docker exec bom python3 -c "
+import sqlite3, datetime
+stamp = datetime.datetime.now().strftime('%Y-%m-%d_%H%M')
+src = sqlite3.connect('/app/data/bom_system.db')
+dst = sqlite3.connect(f'/app/data/backups/bom_system_{stamp}.db')
+src.backup(dst)
+print('integrity:', dst.execute('PRAGMA integrity_check').fetchone()[0])
+dst.close(); src.close()
+print('saved: /app/data/backups/bom_system_' + stamp + '.db')
+"
+
+ It should print "integrity: ok". The file appears on the host in
+ ~/docker/bom_finalv1.1.2/data/backups/ (owned by root, because the
+ container runs as root).
+
+
+------------------------------------------------------------------------------
+ 4. Back up the uploaded attachments
+------------------------------------------------------------------------------
+
+     sudo tar -czf data/backups/bom_uploads_$(date +%Y-%m-%d_%H%M).tar.gz -C data uploads
+
+ Check the archive:
+
+     tar -tzf data/backups/bom_uploads_*.tar.gz | head
+
+
+------------------------------------------------------------------------------
+ 5. Verify the SQL dump actually restores (optional but wise)
+------------------------------------------------------------------------------
+
+ This loads the dump into a temporary in-memory database inside the
+ container and prints row counts. It doesn't touch the live database.
+ Replace the file name with your dump:
+
+     sudo docker exec -i bom python3 -c "
+import sqlite3, sys
+con = sqlite3.connect(':memory:')
+con.executescript(sys.stdin.read())
+for (t,) in con.execute(\"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name\"):
+    print(f'{t:28} {con.execute(f\"SELECT COUNT(*) FROM [{t}]\").fetchone()[0]:>8} rows')
+" < data/backups/bom_dump_YYYY-MM-DD_HHMM.sql
+
+ You should see tables such as users, documents, cost_estimates and
+ activity_logs, with row counts that match what the app shows.
+
+
+------------------------------------------------------------------------------
+ 6. Copy the backups off the server
+------------------------------------------------------------------------------
+
+ A backup that only exists on the same server isn't a real backup. From
+ your Windows PC (PowerShell), pull the files down:
+
+     scp ubuntu@mail:~/docker/bom_finalv1.1.2/data/backups/bom_dump_*.sql  .
+     scp ubuntu@mail:~/docker/bom_finalv1.1.2/data/backups/bom_system_*.db .
+     scp ubuntu@mail:~/docker/bom_finalv1.1.2/data/backups/bom_uploads_*.tar.gz .
+
+ (Replace "mail" with the server's IP or Tailscale name if your PC can't
+ resolve it.)
+
+
+------------------------------------------------------------------------------
+ 7. How to RESTORE (only when you really need to)
+------------------------------------------------------------------------------
+
+ Restoring replaces the live data. Do it outside working hours and ALWAYS
+ keep the current database first.
+
+ a) Stop the app:
+
+     cd ~/docker/bom_finalv1.1.2
+     sudo docker compose stop bom
+
+ b) Keep the current database, just in case:
+
+     sudo mv data/bom_system.db data/bom_system.db.before_restore_$(date +%Y-%m-%d_%H%M)
+
+ c) Restore ONE of the following:
+
+    Option 1: from the binary copy (.db), simplest:
+
+     sudo cp data/backups/bom_system_YYYY-MM-DD_HHMM.db data/bom_system.db
+
+    Option 2: from the SQL dump (.sql). The container is stopped, so use a
+    one-off container from the same image:
+
+     sudo docker compose run --rm --no-deps -T --entrypoint python3 bom -c "
+import sqlite3, sys
+con = sqlite3.connect('/app/data/bom_system.db')
+con.executescript(sys.stdin.read())
+con.commit(); con.close()
+print('restore complete')
+" < data/backups/bom_dump_YYYY-MM-DD_HHMM.sql
+
+ d) If needed, restore the attachments too:
+
+     sudo tar -xzf data/backups/bom_uploads_YYYY-MM-DD_HHMM.tar.gz -C data
+
+ e) Start the app and check it's healthy:
+
+     sudo docker compose start bom
+     sudo docker compose ps
+     sudo docker compose logs --tail 50 bom
+
+    Then sign in at https://bom.ratfish-regulus.ts.net/ and spot-check a
+    few documents.
+
+ IMPORTANT: if the entrypoint finds NO bom_system.db at startup, it
+ silently copies in the original seed database from the image. Make sure
+ step (c) actually produced data/bom_system.db before step (e):
+
+     ls -lh data/bom_system.db
+
+
+------------------------------------------------------------------------------
+ 8. (Optional) Automatic daily backups with cron
+------------------------------------------------------------------------------
+
+ a) Create the script:
+
+     nano ~/docker/bom_finalv1.1.2/backup_bom.sh
+
+    Paste this in:
+
+#!/bin/sh
+# Daily BOM/BOQ backup: SQL dump + binary copy + uploads, keeping 30 days.
+set -e
+cd /home/ubuntu/docker/bom_finalv1.1.2
+mkdir -p data/backups
+STAMP=$(date +%Y-%m-%d_%H%M)
+
+docker exec -e PYTHONIOENCODING=utf-8 bom python3 -c "
+import sqlite3, sys
+con = sqlite3.connect('file:/app/data/bom_system.db?mode=ro', uri=True)
+for line in con.iterdump():
+    sys.stdout.write(line + '\n')
+" > data/backups/bom_dump_$STAMP.sql
+
+docker exec bom python3 -c "
+import sqlite3
+src = sqlite3.connect('/app/data/bom_system.db')
+dst = sqlite3.connect('/app/data/backups/bom_system_$STAMP.db')
+src.backup(dst); dst.close(); src.close()
+"
+
+tar -czf data/backups/bom_uploads_$STAMP.tar.gz -C data uploads
+
+# Delete backups older than 30 days
+find data/backups -type f -mtime +30 -delete
+
+ b) Make it executable and test it once:
+
+     chmod +x ~/docker/bom_finalv1.1.2/backup_bom.sh
+     sudo ~/docker/bom_finalv1.1.2/backup_bom.sh
+     ls -lh ~/docker/bom_finalv1.1.2/data/backups/
+
+ c) Schedule it every day at 1:00 AM (root's crontab, because Docker needs
+    root):
+
+     sudo crontab -e
+
+    Add this line, then save:
+
+     0 1 * * * /home/ubuntu/docker/bom_finalv1.1.2/backup_bom.sh >> /var/log/bom_backup.log 2>&1
+
+    Check it the next day:
+
+     sudo tail /var/log/bom_backup.log
+     ls -lh ~/docker/bom_finalv1.1.2/data/backups/
+
+
+------------------------------------------------------------------------------
+ Troubleshooting
+------------------------------------------------------------------------------
+
+ "Error: No such container: bom"
+     The container isn't running, or has another name. Check with
+     `sudo docker compose ps` and use the NAME shown there.
+
+ "Permission denied" when writing to data/backups
+     Create the folder as the ubuntu user first (`mkdir -p data/backups`),
+     or prefix the command with sudo and use `sudo sh -c '... > file'`.
+
+ The dump file is empty or very small
+     Check the database exists and has data:
+       sudo docker exec bom ls -lh /app/data/bom_system.db
+     Then run the command in step 2 without the "> file" part to see
+     any error message.
+
+ "database is locked"
+     The app was writing at that moment. Wait a few seconds and run the
+     command again. Read-only dumps (step 2) rarely hit this.
+
+ "sqlite3: command not found"
+     Expected: the image has no sqlite3 CLI. Use the Python commands
+     above instead.
+
+==============================================================================

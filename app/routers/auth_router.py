@@ -176,6 +176,10 @@ async def register(
     db.commit()
     db.refresh(new_user)
 
+    # Register the department (issuing its API key on first use)
+    from app.services.api_key_service import ensure_department
+    ensure_department(db, new_user.department)
+
     log_from_request(
         db, request, "create_account",
         f"User account created: {uname} (Role: {urole}, Dept: {udept})",

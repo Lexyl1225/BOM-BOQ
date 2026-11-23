@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}API Keys &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% block head %}
+<style>
+    .key-metrics { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .key-cell { display: flex; align-items: center; gap: 6px; }
+    .key-mask {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border);
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+    .key-none { color: var(--text-muted); font-style: italic; font-size: 12px; }
+    .key-icon-btn { width: 30px; height: 30px; border-radius: 7px; }
+    .dept-name { font-weight: 600; color: var(--text-primary); }
+    .dept-meta { font-size: 11.5px; color: var(--text-muted); }
+    .pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: 11.5px; font-weight: 600; white-space: nowrap;
+    }
+    .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .pill.active   { background: var(--success-light); color: #047857; }
+    .pill.inactive { background: var(--warning-light); color: #b45309; }
+    .pill.none     { background: var(--bg-subtle); color: var(--text-muted); }
+    .cell-date { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+    .cell-sub  { font-size: 11px; color: var(--text-muted); }
+    .row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+    .row-actions .btn { padding: 6px 10px; white-space: nowrap; }
+    .btn-ghost-danger { background: var(--bg-card); color: var(--danger-hover); border-color: #fecaca; }
+    .btn-ghost-danger:hover { background: var(--danger-light); color: #b91c1c; border-color: #fca5a5; }
+    .info-note {
+        display: flex; gap: 12px; align-items: flex-start;
+        padding: 14px 16px; margin-bottom: 20px;
+        border: 1px solid var(--primary-border); background: var(--primary-light);
+        border-radius: var(--radius-md); color: var(--text-secondary); font-size: 13px;
+    }
+    .info-note .icon { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+    .info-note code { font-family: var(--font-mono); font-size: 12px; background: rgba(255,255,255,0.7); padding: 1px 5px; border-radius: 4px; }
+    .new-key-box {
+        display: flex; gap: 8px; align-items: center;
+        background: var(--bg-subtle); border: 1px solid var(--border);
+        border-radius: 8px; padding: 10px 12px; margin: 14px 0 10px;
+    }
+    .new-key-box code { flex: 1; font-family: var(--font-mono); font-size: 13px; word-break: break-all; color: var(--text-primary); }
+    .warn-text { font-size: 12.5px; color: #b45309; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-eyebrow">{{ icon('shield', 14) }} Security</div>
+        <h1 class="page-title">API Key Management</h1>
+        <p class="page-subtitle">Each department has its own API key. Requests to the API are accepted only with an active key that belongs to the requesting user's department.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-secondary btn-sm" onclick="loadKeys()">{{ icon('refresh', 15) }} Refresh</button>
+    </div>
+</div>
+
+<div class="info-note">
+    {{ icon('key', 18) }}
+    <div>
+        Signed-in users don't need to do anything: the app sends their department's key automatically.
+        External clients must send the key in the <code>X-API-Key</code> header.
+        <strong>Regenerating</strong> or <strong>revoking</strong> a key cuts off that department's API access immediately, and <strong>deactivating</strong> pauses it until you reactivate it.
+    </div>
+</div>
+
+<div class="metrics-grid key-metrics">
+    <div class="metric-card">
+        <div class="metric-icon-box blue">{{ icon('users', 22) }}</div>
+        <div class="metric-info"><h4>Departments</h4><div class="metric-number" id="m-total">–</div></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box green">{{ icon('check', 22) }}</div>
+        <div class="metric-info"><h4>Active keys</h4><div class="metric-number" id="m-active">–</div></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box amber">{{ icon('power', 22) }}</div>
+        <div class="metric-info"><h4>Deactivated</h4><div class="metric-number" id="m-inactive">–</div></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon-box rose">{{ icon('key', 22) }}</div>
+        <div class="metric-info"><h4>No key</h4><div class="metric-number" id="m-none">–</div></div>
+    </div>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="table-responsive" style="border:none;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>API Key</th>
+                    <th>Status</th>
+                    <th>Issued</th>
+                    <th>Last Used</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="keys-tbody">
+                <tr><td colspan="6" class="table-empty">Loading departments…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- New key modal -->
+<div class="modal-overlay" id="newKeyModal" role="dialog" aria-modal="true" aria-labelledby="newKeyTitle">
+    <div class="modal-box" style="max-width:560px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="newKeyTitle">API key</h3>
+            <button class="modal-close" onclick="closeKeyModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="newKeyIntro" style="font-size:13.5px; color:var(--text-secondary);"></p>
+            <div class="new-key-box">
+                <code id="newKeyValue"></code>
+                <button class="btn btn-secondary btn-sm" onclick="copyModalKey()">{{ icon('copy', 15) }} Copy</button>
+            </div>
+            <p class="warn-text">Store this key securely. Anyone with it can call the API as this department.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary btn-sm" onclick="closeKeyModal()">Done</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '/api/admin/api-keys';
+const ICONS = {
+    copy: `{{ icon('copy', 15) }}`,
+    eye: `{{ icon('eye', 15) }}`,
+    refresh: `{{ icon('refresh', 15) }}`,
+    key: `{{ icon('key', 15) }}`,
+    power: `{{ icon('power', 15) }}`,
+    trash: `{{ icon('trash', 15) }}`,
+};
+let departments = [];
+
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fmtDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function relTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+    const s = Math.round((Date.now() - d.getTime()) / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.round(s / 60); if (m < 60) return `${m} min ago`;
+    const h = Math.round(m / 60); if (h < 24) return `${h} hr ago`;
+    const days = Math.round(h / 24); return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+async function request(url, method = 'GET') {
+    const res = await fetch(url, { method, credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) {
+        throw new Error(data.detail || data.message || `Request failed (${res.status})`);
+    }
+    return data;
+}
+
+async function loadKeys() {
+    const tbody = document.getElementById('keys-tbody');
+    try {
+        const data = await request(API);
+        departments = data.departments || [];
+        render();
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-empty error">${esc(err.message)}</td></tr>`;
+    }
+}
+
+function render() {
+    const tbody = document.getElementById('keys-tbody');
+    document.getElementById('m-total').textContent = departments.length;
+    document.getElementById('m-active').textContent = departments.filter(d => d.has_key && d.is_active).length;
+    document.getElementById('m-inactive').textContent = departments.filter(d => d.has_key && !d.is_active).length;
+    document.getElementById('m-none').textContent = departments.filter(d => !d.has_key).length;
+
+    if (!departments.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-empty">No departments found. Departments appear here once a user is assigned to one.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = departments.map(d => {
+        const status = !d.has_key
+            ? '<span class="pill none">No key</span>'
+            : d.is_active ? '<span class="pill active">Active</span>' : '<span class="pill inactive">Deactivated</span>';
+
+        const keyCell = d.has_key
+            ? `<div class="key-cell">
+                   <span class="key-mask">${esc(d.masked_key)}</span>
+                   <button class="icon-btn key-icon-btn" title="Reveal full key" aria-label="Reveal key for ${esc(d.name)}" onclick="revealKey(${d.id})">${ICONS.eye}</button>
+               </div>`
+            : '<span class="key-none">Not issued</span>';
+
+        const issued = d.created_at
+            ? `<div class="cell-date">${esc(fmtDate(d.created_at))}</div>${d.created_by ? `<div class="cell-sub">by ${esc(d.created_by)}</div>` : '<div class="cell-sub">auto-issued</div>'}`
+            : '<span class="cell-sub">—</span>';
+
+        const used = d.last_used_at
+            ? `<div class="cell-date" title="${esc(fmtDate(d.last_used_at))}">${esc(relTime(d.last_used_at))}</div>${d.last_used_ip ? `<div class="cell-sub">${esc(d.last_used_ip)}</div>` : ''}`
+            : '<span class="cell-sub">Never</span>';
+
+        const actions = [];
+        actions.push(d.has_key
+            ? `<button class="btn btn-secondary btn-sm" onclick="generateKey(${d.id}, true)" title="Replace with a new key">${ICONS.refresh} Regenerate</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="generateKey(${d.id}, false)">${ICONS.key} Generate</button>`);
+        if (d.has_key) {
+            actions.push(d.is_active
+                ? `<button class="btn btn-secondary btn-sm" onclick="setActive(${d.id}, false)">${ICONS.power} Deactivate</button>`
+                : `<button class="btn btn-success btn-sm" onclick="setActive(${d.id}, true)">${ICONS.power} Activate</button>`);
+            actions.push(`<button class="btn btn-ghost-danger btn-sm" onclick="revokeKey(${d.id})" title="Permanently revoke">${ICONS.trash} Revoke</button>`);
+        }
+
+        return `
+            <tr>
+                <td>
+                    <div class="dept-name">${esc(d.name)}</div>
+                    <div class="dept-meta">${d.user_count} user${d.user_count === 1 ? '' : 's'}</div>
+                </td>
+                <td>${keyCell}</td>
+                <td>${status}</td>
+                <td>${issued}</td>
+                <td>${used}</td>
+                <td><div class="row-actions">${actions.join('')}</div></td>
+            </tr>`;
+    }).join('');
+}
+
+function deptName(id) {
+    const d = departments.find(x => x.id === id);
+    return d ? d.name : 'this department';
+}
+
+function showKeyModal(title, intro, key) {
+    document.getElementById('newKeyTitle').textContent = title;
+    document.getElementById('newKeyIntro').textContent = intro;
+    document.getElementById('newKeyValue').textContent = key;
+    document.getElementById('newKeyModal').classList.add('open');
+}
+
+function closeKeyModal() {
+    document.getElementById('newKeyModal').classList.remove('open');
+    document.getElementById('newKeyValue').textContent = '';
+}
+
+async function copyModalKey() {
+    const key = document.getElementById('newKeyValue').textContent;
+    try {
+        await navigator.clipboard.writeText(key);
+        App.toast('API key copied to clipboard', 'success');
+    } catch (e) {
+        App.toast('Copy failed. Select the key and copy it manually.', 'warning');
+    }
+}
+
+function generateKey(id, replacing) {
+    const name = deptName(id);
+    const run = async () => {
+        try {
+            const data = await request(`${API}/${id}/generate`, 'POST');
+            showKeyModal(
+                replacing ? 'New API key issued' : 'API key generated',
+                `${name}'s new key is shown below.${replacing ? ' The previous key no longer works.' : ''} Signed-in users of this department will pick it up on their next page load.`,
+                data.api_key
+            );
+            App.toast(data.message, 'success');
+            loadKeys();
+        } catch (err) {
+            App.toast(err.message, 'error');
+        }
+    };
+    if (!replacing) return run();
+    App.confirm('Regenerate API key',
+        `Replace the API key for <strong>${esc(name)}</strong>? The current key stops working immediately, including for any external clients that use it.`,
+        run);
+}
+
+async function setActive(id, active) {
+    const name = deptName(id);
+    const run = async () => {
+        try {
+            const data = await request(`${API}/${id}/${active ? 'activate' : 'deactivate'}`, 'POST');
+            App.toast(data.message, 'success');
+            loadKeys();
+        } catch (err) {
+            App.toast(err.message, 'error');
+        }
+    };
+    if (active) return run();
+    App.confirm('Deactivate API key',
+        `Deactivate the API key for <strong>${esc(name)}</strong>? Users in this department will be unable to load or save data until it is reactivated.`,
+        run);
+}
+
+function revokeKey(id) {
+    const name = deptName(id);
+    App.confirm('Revoke API key',
+        `Permanently revoke the API key for <strong>${esc(name)}</strong>? This cannot be undone. You will need to generate a new key to restore access.`,
+        async () => {
+            try {
+                const data = await request(`${API}/${id}`, 'DELETE');
+                App.toast(data.message, 'success');
+                loadKeys();
+            } catch (err) {
+                App.toast(err.message, 'error');
+            }
+        });
+}
+
+async function revealKey(id) {
+    try {
+        const data = await request(`${API}/${id}/reveal`, 'POST');
+        showKeyModal('API key', `Current API key for ${deptName(id)}. This reveal is recorded in the audit log.`, data.api_key);
+    } catch (err) {
+        App.toast(err.message, 'error');
+    }
+}
+
+document.getElementById('newKeyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'newKeyModal') closeKeyModal();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeKeyModal(); });
+
+loadKeys();
+</script>
+{% endblock %}

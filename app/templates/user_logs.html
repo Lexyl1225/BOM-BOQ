@@ -209,7 +209,16 @@ async function loadLogs(page = 1) {
 
     try {
         const res = await fetch(`/api/logs/?${params.toString()}`, { credentials: 'same-origin' });
-        if (res.status === 401) { window.location.href = '/login'; return; }
+        if (res.status === 401) {
+            const err = await res.clone().json().catch(() => ({}));
+            if (err && typeof err.error === 'string' && err.error.indexOf('api_key') === 0) {
+                setTableMessage(err.message || 'API key rejected.', true, '🔑');
+                updatePagination(1, 1, 0);
+                return;
+            }
+            window.location.href = '/login';
+            return;
+        }
         if (res.status === 403) {
             setTableMessage('Access denied. Audit logs are available to Administrators only.', true, '🔒');
             updatePagination(1, 1, 0);

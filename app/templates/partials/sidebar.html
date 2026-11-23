@@ -1,0 +1,84 @@
+{% from "partials/icons.html" import icon %}
+{% set _dept = ((user.department or '') if user else '')|trim|lower %}
+{% set _is_admin = user and user.role == 'admin' %}
+{% set _is_purchasing = _dept == 'purchasing' %}
+{% set _can_build = can_access_builders(user) %}
+{% macro nav_item(href, page, label, icon_name) -%}
+<li>
+    <a href="{{ href }}" class="side-link{% if active_page == page %} active{% endif %}"{% if active_page == page %} aria-current="page"{% endif %} title="{{ label }}">
+        {{ icon(icon_name) }}<span class="side-label">{{ label }}</span>
+    </a>
+</li>
+{%- endmacro %}
+<aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+    <div class="side-brand">
+        <a href="/" class="side-brand-link" title="BOM / BOQ Studio">
+            <span class="side-brand-logo">B</span>
+            <span class="side-brand-text">
+                <strong>BOM / BOQ</strong>
+                <small>Studio Pro</small>
+            </span>
+        </a>
+        <button type="button" class="side-close" onclick="AppShell.closeSidebar()" aria-label="Close navigation">{{ icon('close') }}</button>
+    </div>
+
+    <nav class="side-nav">
+        <div class="side-section">
+            <div class="side-section-title">Overview</div>
+            <ul>
+                {{ nav_item('/', 'home', 'Dashboard', 'home') }}
+            </ul>
+        </div>
+
+        <div class="side-section">
+            <div class="side-section-title">Documents</div>
+            <ul>
+                {% if _can_build %}
+                {{ nav_item('/bom', 'bom', 'Create BOM', 'bom') }}
+                {{ nav_item('/boq', 'boq', 'Create BOQ', 'boq') }}
+                {{ nav_item('/estimate', 'estimate', 'Cost Estimates', 'estimate') }}
+                {% endif %}
+                {{ nav_item('/save_bomboq', 'save_bomboq', 'Saved Documents', 'folder') }}
+            </ul>
+        </div>
+
+        {% if user and (_is_admin or _is_purchasing or user.role == 'department_admin') %}
+        <div class="side-section">
+            <div class="side-section-title">Workflow</div>
+            <ul>
+                {% if _is_admin or _is_purchasing %}
+                {{ nav_item('/price_edit_bomboq', 'price_edit', 'MCE Pricing', 'tag') }}
+                {% endif %}
+                {% if user.role in ['department_admin', 'admin'] %}
+                {{ nav_item('/approver', 'approver', 'Approvals', 'check') }}
+                {% endif %}
+                {% if _is_admin or _is_purchasing %}
+                {{ nav_item('/approved_for_po', 'po', 'Purchase Orders', 'package') }}
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if _is_admin %}
+        <div class="side-section">
+            <div class="side-section-title">Administration</div>
+            <ul>
+                {{ nav_item('/users_admin', 'users_admin', 'Users', 'users') }}
+                {{ nav_item('/api_keys', 'api_keys', 'API Keys', 'key') }}
+                {{ nav_item('/user_logs', 'logs', 'Audit Logs', 'logs') }}
+            </ul>
+        </div>
+        {% endif %}
+    </nav>
+
+    {% if user %}
+    <div class="side-user">
+        <span class="avatar" aria-hidden="true">{{ user.username[:1]|upper }}</span>
+        <span class="side-user-meta">
+            <strong>{{ user.username }}</strong>
+            <small>{{ user.department or 'No department' }}</small>
+        </span>
+    </div>
+    {% endif %}
+</aside>
+<div class="sidebar-backdrop" onclick="AppShell.closeSidebar()" aria-hidden="true"></div>

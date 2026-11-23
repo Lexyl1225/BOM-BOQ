@@ -23,6 +23,32 @@ class DocumentLockedError(Exception):
         self.document_name = document_name
         super().__init__(message)
 
+# The Purchasing department has view-only access to saved BOM/BOQ documents:
+# it may create new documents and perform MCE price edits, but may not edit or
+# delete existing documents. Administrators are never restricted.
+RESTRICTED_EDIT_DEPARTMENTS = ("purchasing",)
+PURCHASING_EDIT_RESTRICTED_MESSAGE = (
+    "The Purchasing department has view-only access to saved documents and cannot edit them. "
+    "Please contact the document owner or an Administrator."
+)
+PURCHASING_DELETE_RESTRICTED_MESSAGE = (
+    "The Purchasing department has view-only access to saved documents and cannot delete them. "
+    "Please contact the document owner or an Administrator."
+)
+
+class DocumentRestrictedError(DocumentLockedError):
+    """Raised when a user's department is not permitted to edit or delete documents."""
+
+def is_edit_restricted_department(user: User) -> bool:
+    """True when the user's department may not edit or delete saved documents."""
+    if not user or user.role == "admin":
+        return False
+    return (user.department or "").strip().lower() in RESTRICTED_EDIT_DEPARTMENTS
+
+def _ensure_department_may_edit(doc: Optional[Document], user: User) -> None:
+    if doc and is_edit_restricted_department(user):
+        raise DocumentRestrictedError(doc.name, PURCHASING_EDIT_RESTRICTED_MESSAGE)
+
 def is_locked_for_user(doc: Optional[Document], user: User) -> bool:
     """True when the document is locked against modification by this user."""
     return bool(doc and doc.status in LOCKED_STATUSES and user.role != "admin")
@@ -119,6 +145,7 @@ def save_document(
 
     now = datetime.utcnow()
     if doc:
+        _ensure_department_may_edit(doc, user)
         _ensure_editable(doc, user)
         doc.type = document_type.lower()
         doc.items = items_json
@@ -135,6 +162,7 @@ def save_document(
         if existing_any and user.role != "admin":
             # If exists but user has permission to edit via department or admin, update it
             if user.department and existing_any.creator and existing_any.creator.department == user.department:
+                _ensure_department_may_edit(existing_any, user)
                 _ensure_editable(existing_any, user)
                 existing_any.type = document_type.lower()
                 existing_any.items = items_json
@@ -305,6 +333,9 @@ def delete_document(db: Session, document_name: str, user: User) -> bool:
 
     if not (is_admin or is_purchasing or is_owner or same_dept):
         return False
+
+    if is_edit_restricted_department(user):
+        raise DocumentRestrictedError(doc.name, PURCHASING_DELETE_RESTRICTED_MESSAGE)
 
     if is_locked_for_user(doc, user):
         raise DocumentLockedError(doc.name, APPROVED_DELETE_LOCK_MESSAGE)

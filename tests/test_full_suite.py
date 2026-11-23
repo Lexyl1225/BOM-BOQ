@@ -16,6 +16,36 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.database import init_db, SessionLocal
 from app.models import User, Document, DocumentAttachment, CostEstimate, ActivityLog
+from app.config import settings
+from app.auth import decode_access_token
+from app.services.api_key_service import key_for_user
+
+
+class KeyedTestClient(TestClient):
+    """TestClient that attaches the department API key (X-API-Key) of whichever user a
+    request is authenticated as, just like app.js does in the browser."""
+
+    def request(self, method, url, **kwargs):
+        if str(url).startswith("/api/"):
+            headers = dict(kwargs.get("headers") or {})
+            if "X-API-Key" not in headers:
+                token = None
+                auth = headers.get("Authorization", "")
+                if auth.startswith("Bearer "):
+                    token = auth[7:]
+                elif (kwargs.get("cookies") or {}).get(settings.COOKIE_NAME):
+                    token = kwargs["cookies"][settings.COOKIE_NAME]
+                else:
+                    token = self.cookies.get(settings.COOKIE_NAME)
+                payload = decode_access_token(token) if token else None
+                if payload and payload.get("sub"):
+                    with SessionLocal() as db:
+                        user = db.query(User).filter(User.username == payload["sub"]).first()
+                        key = key_for_user(db, user)
+                    if key:
+                        headers["X-API-Key"] = key
+                        kwargs["headers"] = headers
+        return super().request(method, url, **kwargs)
 
 def run_tests():
     print("==================================================")
@@ -35,7 +65,7 @@ def run_tests():
         assert user_count >= 30, f"Expected at least 30 users, got {user_count}"
         assert doc_count >= 10, f"Expected at least 10 documents, got {doc_count}"
 
-    client = TestClient(app, follow_redirects=False)
+    client = KeyedTestClient(app, follow_redirects=False)
 
     # 2. Test Public and Unauthenticated Routes
     print("\n[Step 2] Testing Route Protection & Redirects...")
@@ -346,7 +376,7 @@ def run_tests():
     assert len(logs_res["logs"]) == 5
     print(f"  ✓ GET /api/logs/ retrieved recent logs successfully")
 
-    guest_client = TestClient(app, follow_redirects=False)  # no cookies carried over from earlier logins
+    guest_client = KeyedTestClient(app, follow_redirects=False)  # no cookies carried over from earlier logins
     for path in ("/api/logs/?limit=5", "/api/logs/stats"):
         r = guest_client.get(path, headers=engr_headers)
         assert r.status_code == 403, f"{path} should be admin-only, got {r.status_code}"
@@ -355,6 +385,18 @@ def run_tests():
     r = client.get("/api/logs/stats", headers=admin_headers)
     assert r.status_code == 200 and r.json()["success"] is True
     print("  ✓ Audit Logs API restricted to admins (403 for users, 401 for guests)")
+
+    # Department API key enforcement
+    bare = TestClient(app, follow_redirects=False)
+    r = bare.get("/api/documents/", headers=engr_headers)
+    assert r.status_code == 401 and r.json()["error"] == "api_key_missing", r.text
+    r = bare.get("/api/documents/", headers={**engr_headers, "X-API-Key": "not-a-real-key"})
+    assert r.status_code == 401, r.text
+    with SessionLocal() as db:
+        purch_key = key_for_user(db, db.query(User).filter(User.username == "Mark").first())
+    r = bare.get("/api/documents/", headers={**engr_headers, "X-API-Key": purch_key})
+    assert r.status_code == 403 and r.json()["error"] == "api_key_department_mismatch", r.text
+    print("  ✓ API rejects missing/invalid keys (401) and other departments' keys (403)")
 
     # Client-side activity logging remains available to all sessions (write-only)
     r = client.post("/api/logs/", json={"action": "page_view", "details": "test", "page": "/bom"}, headers=engr_headers)

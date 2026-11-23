@@ -247,6 +247,27 @@ stateDiagram-v2
 
 ## 📡 API & Legacy Compatibility
 
+### 🔑 Department API Keys
+Every `/api/*` request must send a department API key in the `X-API-Key` header.
+
+| Situation | Response |
+|---|---|
+| No key, unknown key, or a deactivated key | `401` (`error`: `api_key_missing` / `api_key_invalid` / `api_key_inactive`) |
+| A valid key from a different department than the signed-in user | `403` (`api_key_department_mismatch`) |
+
+- **One key per department**, stored in the `department_api_keys` table (SHA-256 hash for lookup, plus an encrypted copy). Users without a department share the **Unassigned** key.
+- **Browser users need to do nothing.** Pages render the signed-in user's department key into `<meta name="api-key">`, and `app.js` adds the header to every same-origin `/api` call.
+- **Keys are issued automatically** when a department first appears (at startup, or when a user is created or moved into it). A key an Administrator revoked stays revoked.
+- **Manage keys** at **Administration → API Keys** (`/api_keys`, Administrators only): generate or regenerate, activate or deactivate, revoke, reveal, and see when each key was last used. Every action is written to the audit log.
+- **Endpoints that don't need a key:** `/api/health`, `/api/auth/login`, `/api/auth/register` and `/api/auth/logout`. The Administrator-only `/api/admin/api-keys/*` endpoints are also exempt, so an Administrator can always restore access.
+- **Command line** (uses `generate_api_key()` from `api-key-gen.py`, the same generator the server uses):
+  ```bash
+  python api-key-gen.py --list                     # departments + masked keys
+  python api-key-gen.py --department "Purchasing"  # generate / replace a department's key
+  python api-key-gen.py --all-missing              # issue keys where none exist
+  ```
+- **Encryption secret:** stored keys are encrypted with `API_KEY_ENCRYPTION_KEY`, which defaults to `SECRET_KEY`. If you change that secret, regenerate the keys.
+
 ### RESTful Endpoints
 - **Authentication**: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`, `GET /api/auth/me`
 - **Documents**: `GET /api/documents/`, `POST /api/documents/`, `GET /api/documents/{id}`, `POST /api/documents/{id}/price-edit`, `POST /api/documents/{id}/approve`, `GET /api/documents/approved-for-po`
@@ -265,7 +286,7 @@ stateDiagram-v2
 
 ## 🎨 Themes & Modernized UI
 
-Click the **🎨 Themes** button in the top navigation bar at any time to switch themes. Themes are rendered using CSS variables and persist across browser reloads:
+The app uses a sidebar layout: grouped navigation on the left (it collapses to icons on desktop and slides in as a drawer on phones and tablets), plus a top bar with the page title and an account menu. Click the **palette icon** in the top bar, or **Themes** in the account menu, to switch themes. Themes are rendered using CSS variables and persist across browser reloads:
 
 | Theme | Key Visual Style |
 |:---|:---|

@@ -1,0 +1,6 @@
+{# Shared <head> bits for every app page (base layout and standalone builder pages). #}
+<meta name="api-key" content="{{ api_key_for(user) }}">
+<script>
+    // Restore the collapsed-sidebar preference before first paint (avoids layout jump)
+    try { if (localStorage.getItem('bom_sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+</script>

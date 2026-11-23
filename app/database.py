@@ -47,3 +47,14 @@ def init_db():
         except Exception as e:
             db.rollback()
             logger.error(f"Error normalizing department names: {e}", exc_info=True)
+
+    # Register departments and issue API keys for any department that has none yet
+    from app.services.api_key_service import sync_departments
+    with SessionLocal() as db:
+        try:
+            added = sync_departments(db)
+            if added:
+                logger.info(f"Issued API keys for {added} new department(s).")
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error syncing departments / API keys: {e}", exc_info=True)

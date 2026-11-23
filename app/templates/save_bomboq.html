@@ -9,29 +9,41 @@
         <p class="page-subtitle">Manage, edit, preview, print, and track all your project engineering documents</p>
     </div>
     <div style="display:flex; gap:10px;">
+        {% if can_access_builders(user) %}
         <a href="/bom" class="btn btn-primary">+ Create BOM</a>
         <a href="/boq" class="btn btn-success">+ Create BOQ</a>
+        {% endif %}
         <button class="btn btn-secondary" onclick="loadDocuments()">🔄 Refresh</button>
     </div>
 </div>
+
+{% if user and user.role != 'admin' and (user.department or '')|trim|lower == 'purchasing' %}
+<div class="card" role="note" style="padding: 12px 18px; margin-bottom: 20px; border-left: 4px solid var(--warning, #f59e0b); display:flex; align-items:center; gap:12px;">
+    <span style="font-size:20px;" aria-hidden="true">🔒</span>
+    <div>
+        <div style="font-weight:700; color:var(--text-primary);">View-only access</div>
+        <div style="font-size:12px; color:var(--text-muted);">The Purchasing department can preview, print, and send documents to MCE Price Edit, but cannot edit or delete saved documents. Contact the document owner or an Administrator for changes.</div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Tabs & Search Filter Bar -->
 <div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
     <div class="tab-nav" style="margin-bottom: 14px;">
         <button class="tab-btn active" data-filter="all" onclick="setTab(this, 'all')">
-            All Documents (<span id="count-all">0</span>)
+            📚 All Documents (<span id="count-all">0</span>)
         </button>
         <button class="tab-btn" data-filter="bom" onclick="setTab(this, 'bom')">
-            Bill of Materials (BOM) (<span id="count-bom">0</span>)
+            ⚙️ Bill of Materials (BOM) (<span id="count-bom">0</span>)
         </button>
         <button class="tab-btn" data-filter="boq" onclick="setTab(this, 'boq')">
-            Bill of Quantities (BOQ) (<span id="count-boq">0</span>)
+            📊 Bill of Quantities (BOQ) (<span id="count-boq">0</span>)
         </button>
         <button class="tab-btn" data-filter="unposted" onclick="setTab(this, 'unposted')">
             ⚠️ Unposted for Correction (<span id="count-unposted">0</span>)
         </button>
         <button class="tab-btn" data-filter="posted" onclick="setTab(this, 'posted')">
-            🚀 Posted Documents (<span id="count-posted">0</span>)
+            🗂️ Posted Documents (<span id="count-posted">0</span>)
         </button>
         <button class="tab-btn" data-filter="approved" onclick="setTab(this, 'approved')">
             ✅ Approved for PO (<span id="count-approved">0</span>)
@@ -115,6 +127,13 @@ const APPROVED_DELETE_LOCK_MSG = 'This document has been approved and is locked.
 function isDocLocked(doc) {
     return !!doc && doc.status === 'approved' && !IS_ADMIN;
 }
+
+// The Purchasing department has view-only access: it cannot edit or delete saved documents.
+// (Enforced server-side as well; this only reflects the restriction in the UI.)
+const USER_DEPARTMENT = {{ ((user.department or '') if user else '')|trim|lower|tojson }};
+const IS_EDIT_RESTRICTED_DEPT = !IS_ADMIN && USER_DEPARTMENT === 'purchasing';
+const DEPT_EDIT_RESTRICTED_MSG = 'The Purchasing department has view-only access and cannot edit saved documents.';
+const DEPT_DELETE_RESTRICTED_MSG = 'The Purchasing department has view-only access and cannot delete saved documents.';
 
 let allDocuments = [];
 let currentTab = 'all';
@@ -209,13 +228,17 @@ function renderTable() {
         const editUrl = doc.type === 'bom' ? `/bom?edit=${encodeURIComponent(doc.name)}` : `/boq?edit=${encodeURIComponent(doc.name)}`;
         const locked = isDocLocked(doc);
         const lockIcon = doc.status === 'approved' ? ' <span title="Approved documents are locked (Admin-only changes)">🔒</span>' : '';
-        const editBtn = locked
+        const editBtn = IS_EDIT_RESTRICTED_DEPT
+            ? `<button class="btn btn-secondary btn-sm" disabled title="${DEPT_EDIT_RESTRICTED_MSG}">✏️ Edit</button>`
+            : locked
             ? `<button class="btn btn-secondary btn-sm" disabled title="${APPROVED_LOCK_MSG}">✏️ Edit</button>`
             : `<a href="${editUrl}" class="btn btn-secondary btn-sm" title="Edit in Builder">✏️ Edit</a>`;
         const mceBtn = locked
             ? `<button class="btn btn-warning btn-sm" disabled title="${APPROVED_LOCK_MSG}">📤 MCE</button>`
             : `<button class="btn btn-warning btn-sm" onclick="sendToPriceEdit('${encodeURIComponent(doc.name)}')" title="Send to MCE Price Edit">📤 MCE</button>`;
-        const deleteBtn = locked
+        const deleteBtn = IS_EDIT_RESTRICTED_DEPT
+            ? `<button class="btn btn-danger btn-sm" disabled title="${DEPT_DELETE_RESTRICTED_MSG}">🗑️</button>`
+            : locked
             ? `<button class="btn btn-danger btn-sm" disabled title="${APPROVED_DELETE_LOCK_MSG}">🗑️</button>`
             : `<button class="btn btn-danger btn-sm" onclick="deleteDoc('${encodeURIComponent(doc.name)}')" title="Delete">🗑️</button>`;
 
@@ -799,6 +822,10 @@ async function sendToPriceEdit(docNameEncoded) {
 
 async function deleteDoc(docNameEncoded) {
     const docName = decodeURIComponent(docNameEncoded);
+    if (IS_EDIT_RESTRICTED_DEPT) {
+        App.toast(DEPT_DELETE_RESTRICTED_MSG, 'warning');
+        return;
+    }
     if (isDocLocked(allDocuments.find(d => d.name === docName))) {
         App.toast(APPROVED_DELETE_LOCK_MSG, 'warning');
         return;

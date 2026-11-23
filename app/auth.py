@@ -146,6 +146,18 @@ def require_role(allowed_roles: List[str]):
 require_admin = require_role(["admin"])
 require_department_admin_or_admin = require_role(["department_admin", "admin"])
 
+# Departments that may not use the document builder pages (/bom, /boq, /estimate).
+# Administrators are never restricted.
+BUILDER_RESTRICTED_DEPARTMENTS = ("purchasing",)
+
+def can_access_builder_pages(user: Optional[User]) -> bool:
+    """True when the user may open the BOM, BOQ and Cost Estimate builder pages."""
+    if not user:
+        return False
+    if user.role == "admin":
+        return True
+    return (user.department or "").strip().lower() not in BUILDER_RESTRICTED_DEPARTMENTS
+
 def require_purchasing_or_admin(current_user: User = Depends(get_current_user)) -> User:
     """Allow Admin users OR Users with department='Purchasing'."""
     is_admin = current_user.role == "admin"

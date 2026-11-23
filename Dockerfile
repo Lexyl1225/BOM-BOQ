@@ -35,6 +35,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source code
 COPY app/ /app/app/
 COPY run.py /app/run.py
+# API key generator (the app loads generate_api_key() from it)
+COPY api-key-gen.py /app/api-key-gen.py
 
 # Copy initial database and seed files (used for initial population of data mount if empty)
 COPY bom_system.db /app/bom_system.db_initial

@@ -12,15 +12,35 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models import User, Document, CostEstimate, ActivityLog
-from app.auth import get_current_user_optional
+from app.auth import get_current_user_optional, can_access_builder_pages
+from app.database import SessionLocal
+from app.services.api_key_service import key_for_user
 
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
+# Lets templates hide builder links (BOM/BOQ/Estimate) from restricted departments.
+templates.env.globals["can_access_builders"] = can_access_builder_pages
+
+def _api_key_for(user: Optional[User]) -> str:
+    """Department API key for the signed-in user; rendered into a <meta> tag that
+    app.js attaches as the X-API-Key header on every same-origin /api request."""
+    if not user:
+        return ""
+    with SessionLocal() as db:
+        return key_for_user(db, user) or ""
+
+templates.env.globals["api_key_for"] = _api_key_for
 
 def _require_auth(user: Optional[User]) -> Optional[RedirectResponse]:
     """Helper to redirect unauthenticated users to the login page."""
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    return None
+
+def _require_builder_access(user: User, page: str) -> Optional[RedirectResponse]:
+    """Redirect restricted departments (e.g. Purchasing) away from builder pages."""
+    if not can_access_builder_pages(user):
+        return RedirectResponse(url=f"/?access_denied={page}", status_code=status.HTTP_303_SEE_OTHER)
     return None
 
 # ==========================================
@@ -104,7 +124,7 @@ def bom_page(
     request: Request,
     user: Optional[User] = Depends(get_current_user_optional)
 ):
-    auth_redirect = _require_auth(user)
+    auth_redirect = _require_auth(user) or _require_builder_access(user, "bom")
     if auth_redirect:
         return auth_redirect
     return templates.TemplateResponse(
@@ -120,7 +140,7 @@ def boq_page(
     request: Request,
     user: Optional[User] = Depends(get_current_user_optional)
 ):
-    auth_redirect = _require_auth(user)
+    auth_redirect = _require_auth(user) or _require_builder_access(user, "boq")
     if auth_redirect:
         return auth_redirect
     return templates.TemplateResponse(
@@ -222,7 +242,7 @@ def estimate_page(
     request: Request,
     user: Optional[User] = Depends(get_current_user_optional)
 ):
-    auth_redirect = _require_auth(user)
+    auth_redirect = _require_auth(user) or _require_builder_access(user, "estimate")
     if auth_redirect:
         return auth_redirect
     return templates.TemplateResponse(
@@ -273,4 +293,23 @@ def users_admin_page(
         request=request,
         name="users_admin.html",
         context={"user": user, "active_page": "users_admin"}
+    )
+
+@router.get("/api_keys", response_class=HTMLResponse)
+def api_keys_page(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional)
+):
+    auth_redirect = _require_auth(user)
+    if auth_redirect:
+        return auth_redirect
+
+    # Admin only
+    if user.role != "admin":
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="api_keys.html",
+        context={"user": user, "active_page": "api_keys"}
     )

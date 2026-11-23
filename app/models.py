@@ -111,3 +111,39 @@ class CostEstimate(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     creator = relationship("User", foreign_keys=[created_by], backref="created_estimates")
+
+class Department(Base):
+    """Canonical department registry. User.department stores the display name;
+    `slug` (trimmed, lower-cased) is used for case-insensitive matching."""
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    slug = Column(String(100), unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    api_key = relationship(
+        "DepartmentApiKey", back_populates="department", uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+class DepartmentApiKey(Base):
+    """One API key per department. Only a SHA-256 hash is used for lookup;
+    the encrypted copy lets the web UI attach the key for signed-in users."""
+    __tablename__ = "department_api_keys"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    department_id = Column(Integer, ForeignKey("departments.id", ondelete="CASCADE"),
+                           unique=True, nullable=False, index=True)
+    key_hash = Column(String(64), unique=True, index=True, nullable=False)
+    key_encrypted = Column(Text, nullable=False)
+    key_prefix = Column(String(8), nullable=False)
+    key_last4 = Column(String(4), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+    last_used_ip = Column(String(45), nullable=True)
+
+    department = relationship("Department", back_populates="api_key")
+    creator = relationship("User", foreign_keys=[created_by])

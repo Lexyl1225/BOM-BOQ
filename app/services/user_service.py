@@ -45,7 +45,13 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+    _register_department(db, user.department)
     return user
+
+def _register_department(db: Session, department: Optional[str]) -> None:
+    """Make sure the department exists and has an API key (issued on first use)."""
+    from app.services.api_key_service import ensure_department
+    ensure_department(db, department)
 
 def update_user(db: Session, user_id: int, updates: Dict[str, Any]) -> Optional[User]:
     user = get_user_by_id(db, user_id)
@@ -66,6 +72,8 @@ def update_user(db: Session, user_id: int, updates: Dict[str, Any]) -> Optional[
     user.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
+    if "department" in updates and updates["department"] is not None:
+        _register_department(db, user.department)
     return user
 
 def delete_user(db: Session, user_id: int) -> bool:
