@@ -39,6 +39,8 @@ COPY app/ /app/app/
 COPY run.py /app/run.py
 # API key generator (the app loads generate_api_key() from it)
 COPY api-key-gen.py /app/api-key-gen.py
+# Command-line tool to create or recover an Administrator account
+COPY create-admin.py /app/create-admin.py
 
 # Copy container entrypoint and normalize line endings (prevents Windows CRLF boot errors)
 COPY entrypoint.sh /app/entrypoint.sh
