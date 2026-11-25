@@ -2,60 +2,235 @@
 
 {% block title %}Saved Documents &bull; BOM / BOQ Studio Pro{% endblock %}
 
+{% block head %}
+<style>
+    /* ---- Saved Documents page (scoped; widens only this page) ---- */
+    #main-content.main-wrapper { max-width: 1760px; padding: 28px 32px; }
+
+    .sb-header {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap; margin-bottom: 22px;
+    }
+    .sb-eyebrow {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+        color: var(--primary); margin-bottom: 6px;
+    }
+    .sb-title { font-size: 26px; font-weight: 700; letter-spacing: -.01em; color: var(--text-primary); line-height: 1.2; }
+    .sb-subtitle { margin-top: 6px; font-size: 14px; color: var(--text-secondary); max-width: 760px; }
+    .sb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sb-actions .btn svg, .sb-icon-btn svg, .sb-row-actions .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* Summary cards (double as quick filters) */
+    .sb-stats {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 14px; margin-bottom: 20px;
+    }
+    .sb-stat {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 16px; text-align: left; font: inherit;
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm); cursor: pointer;
+        transition: border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .sb-stat:hover { border-color: var(--tone, var(--primary)); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .sb-stat.active { border-color: var(--tone, var(--primary)); box-shadow: 0 0 0 3px var(--tone-soft, var(--primary-light)); }
+    .sb-stat-icon {
+        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--tone-soft, var(--primary-light)); color: var(--tone, var(--primary));
+    }
+    .sb-stat-icon svg { width: 19px; height: 19px; }
+    .sb-stat-value { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--text-primary); }
+    .sb-stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
+    .tone-slate  { --tone: #475569; --tone-soft: #f1f5f9; }
+    .tone-violet { --tone: #7c3aed; --tone-soft: #f3e8ff; }
+    .tone-blue   { --tone: #2563eb; --tone-soft: #dbeafe; }
+    .tone-red    { --tone: #dc2626; --tone-soft: #fee2e2; }
+    .tone-indigo { --tone: #4f46e5; --tone-soft: #e0e7ff; }
+    .tone-green  { --tone: #059669; --tone-soft: #d1fae5; }
+
+    /* Filter card */
+    .sb-filters { padding: 0 !important; overflow: hidden; }
+    .sb-filters .tab-nav { margin: 0; padding: 0 12px; border-bottom: 1px solid var(--border); gap: 2px; }
+    .sb-filters .tab-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 14px 14px 12px; font-size: 13px;
+    }
+    .sb-count {
+        min-width: 24px; padding: 1px 8px; border-radius: var(--radius-full);
+        background: var(--bg-subtle); color: var(--text-secondary);
+        font-size: 11px; font-weight: 700; text-align: center;
+    }
+    .sb-filters .tab-btn.active .sb-count { background: var(--primary-light); color: var(--primary); }
+    .sb-filter-row {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        padding: 14px 16px; background: var(--bg-card);
+    }
+    .sb-filter-row .search-input-group { flex: 1 1 360px; max-width: 560px; }
+    .sb-filter-row .search-icon { display: inline-flex; }
+    .sb-filter-row .search-icon svg { width: 16px; height: 16px; }
+    .sb-result { margin-left: auto; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+    /* Table */
+    .sb-table-card { padding: 0 !important; overflow: hidden; }
+    .sb-table-card .table-responsive { border: none; border-radius: 0; max-height: calc(100vh - 260px); overflow: auto; }
+    .sb-table-card table.data-table th { position: sticky; top: 0; z-index: 1; }
+    .sb-table-card table.data-table td { padding: 12px 16px; }
+    .sb-table-card table.data-table tbody tr:hover { background: #f8fafc; }
+
+    .sb-doc { display: flex; align-items: center; gap: 12px; min-width: 260px; }
+    .sb-doc-icon {
+        width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 10px; font-weight: 800; letter-spacing: .4px;
+    }
+    .sb-doc-icon.bom { background: #f3e8ff; color: #7c3aed; }
+    .sb-doc-icon.boq { background: #dbeafe; color: #2563eb; }
+    .sb-doc-name { font-weight: 600; color: var(--text-primary); word-break: break-word; }
+    .sb-doc-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .sb-ref { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+    .sb-type {
+        display: inline-block; padding: 3px 9px; border-radius: var(--radius-full);
+        font-size: 11px; font-weight: 700; letter-spacing: .3px;
+    }
+    .sb-type.bom { background: #f3e8ff; color: #6d28d9; }
+    .sb-type.boq { background: #dbeafe; color: #1d4ed8; }
+    .sb-status { display: inline-flex; align-items: center; gap: 6px; }
+    .sb-status .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .sb-lock { color: var(--text-muted); display: inline-flex; }
+    .sb-lock svg { width: 14px; height: 14px; }
+    .sb-dept { font-size: 12px; color: var(--text-secondary); }
+    .sb-user { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 600; }
+    .sb-avatar {
+        width: 26px; height: 26px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--primary-light); color: var(--primary);
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+    }
+    .sb-date { font-size: 12px; color: var(--text-primary); white-space: nowrap; }
+    .sb-date small { display: block; color: var(--text-muted); font-size: 11px; }
+
+    .sb-row-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: nowrap; }
+    .sb-row-actions .btn { padding: 6px 10px; gap: 5px; }
+    .sb-icon-btn { width: 32px; padding: 6px 0 !important; }
+    .btn-ghost-danger { background: var(--bg-card); color: var(--danger-hover); border-color: #fecaca; }
+    .btn-ghost-danger:hover { background: var(--danger-light); color: #b91c1c; border-color: #fca5a5; }
+    .btn-soft-warning { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .btn-soft-warning:hover { background: #fef3c7; color: #92400e; }
+
+    .sb-empty { text-align: center; padding: 56px 20px !important; color: var(--text-muted); }
+    .sb-empty strong { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 4px; }
+    .sb-empty.error, .sb-empty.error strong { color: var(--danger); }
+
+    .sb-notice {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 18px !important; margin-bottom: 20px;
+        border-left: 4px solid var(--warning) !important;
+        background: var(--warning-light) !important;
+    }
+    .sb-notice svg { width: 20px; height: 20px; color: #b45309; flex-shrink: 0; }
+
+    @media (max-width: 900px) {
+        #main-content.main-wrapper { padding: 20px 16px; }
+        .sb-title { font-size: 22px; }
+        .sb-result { margin-left: 0; }
+        .sb-table-card .table-responsive { max-height: none; }
+    }
+
+    /* Dark theme keeps surfaces in step with the app palette */
+    [data-theme="dark"] .sb-stat,
+    [data-theme="dark"] .sb-filter-row { background: var(--theme-surface, #1e293b); border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .sb-title,
+    [data-theme="dark"] .sb-stat-value,
+    [data-theme="dark"] .sb-doc-name { color: #f1f5f9; }
+    [data-theme="dark"] .sb-table-card table.data-table tbody tr:hover { background: rgba(148,163,184,.08); }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="sb-header">
     <div>
-        <h1 class="page-title">📁 Saved BOM & BOQ Documents</h1>
-        <p class="page-subtitle">Manage, edit, preview, print, and track all your project engineering documents</p>
+        <div class="sb-eyebrow">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Document Library
+        </div>
+        <h1 class="sb-title">Saved BOM &amp; BOQ Documents</h1>
+        <p class="sb-subtitle">Manage, edit, preview, print and track every project engineering document in one place.</p>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div class="sb-actions">
         {% if can_access_builders(user) %}
-        <a href="/bom" class="btn btn-primary">+ Create BOM</a>
-        <a href="/boq" class="btn btn-success">+ Create BOQ</a>
+        <a href="/bom" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New BOM
+        </a>
+        <a href="/boq" class="btn btn-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New BOQ
+        </a>
         {% endif %}
-        <button class="btn btn-secondary" onclick="loadDocuments()">🔄 Refresh</button>
+        <button class="btn btn-secondary" onclick="loadDocuments()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+        </button>
     </div>
 </div>
 
 {% if user and user.role != 'admin' and (user.department or '')|trim|lower == 'purchasing' %}
-<div class="card" role="note" style="padding: 12px 18px; margin-bottom: 20px; border-left: 4px solid var(--warning, #f59e0b); display:flex; align-items:center; gap:12px;">
-    <span style="font-size:20px;" aria-hidden="true">🔒</span>
+<div class="card sb-notice" role="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     <div>
         <div style="font-weight:700; color:var(--text-primary);">View-only access</div>
-        <div style="font-size:12px; color:var(--text-muted);">The Purchasing department can preview, print, and send documents to MCE Price Edit, but cannot edit or delete saved documents. Contact the document owner or an Administrator for changes.</div>
+        <div style="font-size:12px; color:var(--text-secondary);">The Purchasing department can preview, print, and send documents to MCE Price Edit, but cannot edit or delete saved documents. Contact the document owner or an Administrator for changes.</div>
     </div>
 </div>
 {% endif %}
 
+<!-- Summary (click a card to filter) -->
+<div class="sb-stats">
+    <button type="button" class="sb-stat tone-slate active" data-filter="all" onclick="setTabByKey('all')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-all">0</span><span class="sb-stat-label" style="display:block;">All documents</span></span>
+    </button>
+    <button type="button" class="sb-stat tone-violet" data-filter="bom" onclick="setTabByKey('bom')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-bom">0</span><span class="sb-stat-label" style="display:block;">Bill of Materials</span></span>
+    </button>
+    <button type="button" class="sb-stat tone-blue" data-filter="boq" onclick="setTabByKey('boq')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-boq">0</span><span class="sb-stat-label" style="display:block;">Bill of Quantities</span></span>
+    </button>
+    <button type="button" class="sb-stat tone-red" data-filter="unposted" onclick="setTabByKey('unposted')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-unposted">0</span><span class="sb-stat-label" style="display:block;">Needs correction</span></span>
+    </button>
+    <button type="button" class="sb-stat tone-indigo" data-filter="posted" onclick="setTabByKey('posted')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-posted">0</span><span class="sb-stat-label" style="display:block;">Posted</span></span>
+    </button>
+    <button type="button" class="sb-stat tone-green" data-filter="approved" onclick="setTabByKey('approved')">
+        <span class="sb-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        <span><span class="sb-stat-value" id="stat-approved">0</span><span class="sb-stat-label" style="display:block;">Approved for PO</span></span>
+    </button>
+</div>
+
 <!-- Tabs & Search Filter Bar -->
-<div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
-    <div class="tab-nav" style="margin-bottom: 14px;">
-        <button class="tab-btn active" data-filter="all" onclick="setTab(this, 'all')">
-            📚 All Documents (<span id="count-all">0</span>)
-        </button>
-        <button class="tab-btn" data-filter="bom" onclick="setTab(this, 'bom')">
-            ⚙️ Bill of Materials (BOM) (<span id="count-bom">0</span>)
-        </button>
-        <button class="tab-btn" data-filter="boq" onclick="setTab(this, 'boq')">
-            📊 Bill of Quantities (BOQ) (<span id="count-boq">0</span>)
-        </button>
-        <button class="tab-btn" data-filter="unposted" onclick="setTab(this, 'unposted')">
-            ⚠️ Unposted for Correction (<span id="count-unposted">0</span>)
-        </button>
-        <button class="tab-btn" data-filter="posted" onclick="setTab(this, 'posted')">
-            🗂️ Posted Documents (<span id="count-posted">0</span>)
-        </button>
-        <button class="tab-btn" data-filter="approved" onclick="setTab(this, 'approved')">
-            ✅ Approved for PO (<span id="count-approved">0</span>)
-        </button>
+<div class="card sb-filters">
+    <div class="tab-nav" role="tablist">
+        <button class="tab-btn active" data-filter="all" onclick="setTab(this, 'all')">All Documents <span class="sb-count" id="count-all">0</span></button>
+        <button class="tab-btn" data-filter="bom" onclick="setTab(this, 'bom')">Bill of Materials (BOM) <span class="sb-count" id="count-bom">0</span></button>
+        <button class="tab-btn" data-filter="boq" onclick="setTab(this, 'boq')">Bill of Quantities (BOQ) <span class="sb-count" id="count-boq">0</span></button>
+        <button class="tab-btn" data-filter="unposted" onclick="setTab(this, 'unposted')">Unposted for Correction <span class="sb-count" id="count-unposted">0</span></button>
+        <button class="tab-btn" data-filter="posted" onclick="setTab(this, 'posted')">Posted <span class="sb-count" id="count-posted">0</span></button>
+        <button class="tab-btn" data-filter="approved" onclick="setTab(this, 'approved')">Approved for PO <span class="sb-count" id="count-approved">0</span></button>
     </div>
 
-    <div class="search-filter-bar" style="margin-bottom: 0;">
+    <div class="sb-filter-row">
         <div class="search-input-group">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="doc-search" class="search-input" placeholder="Search by document name, reference no, department, creator..." oninput="filterDocuments()">
+            <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+            <input type="search" id="doc-search" class="search-input" placeholder="Search by document name, reference no, project, department, creator…" oninput="filterDocuments()" aria-label="Search documents" autocomplete="off">
         </div>
-        <select id="dept-filter" class="select-filter" onchange="filterDocuments()">
+        <select id="dept-filter" class="select-filter" onchange="filterDocuments()" aria-label="Filter by department">
             <option value="">All Departments</option>
             <option value="Design and Construction">Design and Construction</option>
             <option value="Purchasing">Purchasing</option>
@@ -63,16 +238,18 @@
             <option value="Electrical">Electrical</option>
             <option value="Technical">Technical</option>
         </select>
+        <button type="button" class="btn btn-secondary" id="clear-filters" onclick="clearFilters()" hidden>Clear filters</button>
+        <span class="sb-result" id="result-count"></span>
     </div>
 </div>
 
 <!-- Documents Table Card -->
-<div class="card" style="padding: 0; overflow: hidden;">
-    <div class="table-responsive" style="border: none;">
+<div class="card sb-table-card">
+    <div class="table-responsive">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Document Name</th>
+                    <th>Document</th>
                     <th>Ref No</th>
                     <th>Type</th>
                     <th>Status</th>
@@ -83,11 +260,7 @@
                 </tr>
             </thead>
             <tbody id="documents-tbody">
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                        Loading documents from server...
-                    </td>
-                </tr>
+                <tr><td colspan="8" class="sb-empty">Loading documents from server…</td></tr>
             </tbody>
         </table>
     </div>
@@ -95,23 +268,23 @@
 
 <!-- Preview Modal Dialog -->
 <div id="preview-modal" class="modal-overlay">
-    <div class="modal-box" style="max-width: 1240px; width: 96%; max-height: 92vh; display: flex; flex-direction: column;">
+    <div class="modal-box" style="max-width: 1600px; width: 96%; max-height: 94vh; display: flex; flex-direction: column;">
         <div class="modal-header">
             <h3 class="modal-title" id="preview-modal-title">Document Preview</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="btn btn-secondary btn-sm" onclick="openCurrentInNewTab()" title="Open document in a full tab">↗️ Full Tab</button>
-                <button class="btn btn-primary btn-sm" id="modal-print-btn" onclick="printModalDoc()">🖨️ Print</button>
-                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+                <button class="btn btn-secondary btn-sm" onclick="openCurrentInNewTab()" title="Open document in a full tab">Open in new tab</button>
+                <button class="btn btn-primary btn-sm" id="modal-print-btn" onclick="printModalDoc()">Print</button>
+                <button class="modal-close" onclick="closePreviewModal()" aria-label="Close">&times;</button>
             </div>
         </div>
-        <div class="modal-body" id="preview-modal-body" style="background: #eef1f5; padding: 0; overflow: hidden; height: calc(92vh - 120px); flex: 1;">
+        <div class="modal-body" id="preview-modal-body" style="background: #eef1f5; padding: 0; overflow: hidden; height: calc(94vh - 120px); flex: 1;">
             <!-- Document HTML gets inserted here -->
         </div>
         <div class="modal-footer" style="display: flex; justify-content: space-between;">
             <button class="btn btn-secondary btn-sm" onclick="closePreviewModal()">Close</button>
             <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary btn-sm" onclick="openCurrentInNewTab()">↗️ Open Full Tab</button>
-                <button class="btn btn-primary btn-sm" onclick="printModalDoc()">🖨️ Print Document</button>
+                <button class="btn btn-secondary btn-sm" onclick="openCurrentInNewTab()">Open in new tab</button>
+                <button class="btn btn-primary btn-sm" onclick="printModalDoc()">Print Document</button>
             </div>
         </div>
     </div>
@@ -143,9 +316,38 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDocuments();
 });
 
+const SB_ICONS = {
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+};
+
+function escHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function sbMessageRow(title, hint = '', isError = false) {
+    return `<tr><td colspan="8" class="sb-empty${isError ? ' error' : ''}"><strong>${escHtml(title)}</strong>${escHtml(hint)}</td></tr>`;
+}
+
+function formatModified(iso) {
+    if (!iso) return '<span class="sb-date">—</span>';
+    // Server timestamps are UTC without a zone suffix
+    const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
+    if (isNaN(d)) return `<span class="sb-date">${escHtml(iso.substring(0, 19).replace('T', ' '))}</span>`;
+    const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return `<span class="sb-date" title="${escHtml(d.toLocaleString())}">${escHtml(date)}<small>${escHtml(time)}</small></span>`;
+}
+
 async function loadDocuments() {
     const tbody = document.getElementById('documents-tbody');
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-muted);">Loading documents...</td></tr>`;
+    tbody.innerHTML = sbMessageRow('Loading documents…');
 
     try {
         const res = await fetch('/api/documents/');
@@ -156,27 +358,46 @@ async function loadDocuments() {
             updateTabCounts();
             renderTable();
         } else {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--danger);">${data.message || 'Error loading documents'}</td></tr>`;
+            tbody.innerHTML = sbMessageRow(data.message || 'Error loading documents', '', true);
         }
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--danger);">Network error: ${err.message}</td></tr>`;
+        tbody.innerHTML = sbMessageRow('Network error', ' — ' + err.message, true);
     }
 }
 
 function updateTabCounts() {
-    document.getElementById('count-all').textContent = allDocuments.length;
-    document.getElementById('count-bom').textContent = allDocuments.filter(d => d.type === 'bom').length;
-    document.getElementById('count-boq').textContent = allDocuments.filter(d => d.type === 'boq').length;
-    document.getElementById('count-unposted').textContent = allDocuments.filter(d => d.status === 'unposted').length;
-    document.getElementById('count-posted').textContent = allDocuments.filter(d => d.status === 'posted').length;
-    document.getElementById('count-approved').textContent = allDocuments.filter(d => d.status === 'approved').length;
+    const counts = {
+        all: allDocuments.length,
+        bom: allDocuments.filter(d => d.type === 'bom').length,
+        boq: allDocuments.filter(d => d.type === 'boq').length,
+        unposted: allDocuments.filter(d => d.status === 'unposted').length,
+        posted: allDocuments.filter(d => d.status === 'posted').length,
+        approved: allDocuments.filter(d => d.status === 'approved').length
+    };
+    Object.entries(counts).forEach(([key, n]) => {
+        const tab = document.getElementById('count-' + key);
+        const stat = document.getElementById('stat-' + key);
+        if (tab) tab.textContent = n;
+        if (stat) stat.textContent = n;
+    });
 }
 
 function setTab(btn, tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
     currentTab = tab;
+    document.querySelectorAll('.tab-btn, .sb-stat').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === tab);
+    });
     filterDocuments();
+}
+
+function setTabByKey(tab) {
+    setTab(null, tab);
+}
+
+function clearFilters() {
+    document.getElementById('doc-search').value = '';
+    document.getElementById('dept-filter').value = '';
+    setTab(null, 'all');
 }
 
 function filterDocuments() {
@@ -201,65 +422,80 @@ function renderTable() {
 
         // Search query
         if (searchVal) {
-            const matchName = (doc.name || '').toLowerCase().includes(searchVal);
-            const matchRef = (doc.ref_no || '').toLowerCase().includes(searchVal);
-            const matchDept = (doc.department || '').toLowerCase().includes(searchVal);
-            const matchCreator = (doc.created_by_username || doc.username || '').toLowerCase().includes(searchVal);
-            if (!matchName && !matchRef && !matchDept && !matchCreator) return false;
+            const haystack = [doc.name, doc.ref_no, doc.project_name, doc.department, doc.created_by_username || doc.username]
+                .filter(Boolean).join(' ').toLowerCase();
+            if (!haystack.includes(searchVal)) return false;
         }
 
         return true;
     });
 
+    const filtersActive = !!(searchVal || deptVal || currentTab !== 'all');
+    document.getElementById('clear-filters').hidden = !filtersActive;
+    document.getElementById('result-count').textContent = allDocuments.length
+        ? `Showing ${filtered.length} of ${allDocuments.length} document${allDocuments.length === 1 ? '' : 's'}`
+        : '';
+
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:50px; color:var(--text-muted);">No documents match the current filter.</td></tr>`;
+        tbody.innerHTML = allDocuments.length
+            ? sbMessageRow('No documents match the current filter', ' — try a different search or clear the filters.')
+            : sbMessageRow('No documents yet', ' — create a BOM or BOQ to get started.');
         return;
     }
 
     tbody.innerHTML = filtered.map(doc => {
-        const typeBadge = doc.type === 'bom' 
-            ? `<span style="background:#ede9fe; color:#7c3aed; padding:3px 8px; border-radius:4px; font-weight:700; font-size:11px;">BOM</span>`
-            : `<span style="background:#dbeafe; color:#2563eb; padding:3px 8px; border-radius:4px; font-weight:700; font-size:11px;">BOQ</span>`;
+        const isBom = doc.type === 'bom';
+        const typeKey = isBom ? 'bom' : 'boq';
+        const nameEnc = encodeURIComponent(doc.name).replace(/'/g, '%27');
+        const creator = doc.created_by_username || doc.username || '';
 
-        const statusClass = doc.status || 'saved';
-        const statusLabel = doc.status ? doc.status.replace(/_/g, ' ') : 'saved';
-
-        const lastModified = doc.updated_at ? doc.updated_at.substring(0, 19).replace('T', ' ') : '—';
-        const editUrl = doc.type === 'bom' ? `/bom?edit=${encodeURIComponent(doc.name)}` : `/boq?edit=${encodeURIComponent(doc.name)}`;
+        const statusClass = escHtml(doc.status || 'saved');
+        const statusLabel = escHtml(doc.status ? doc.status.replace(/_/g, ' ') : 'saved');
+        const editUrl = `/${typeKey}?edit=${nameEnc}`;
         const locked = isDocLocked(doc);
-        const lockIcon = doc.status === 'approved' ? ' <span title="Approved documents are locked (Admin-only changes)">🔒</span>' : '';
+        const lockIcon = doc.status === 'approved'
+            ? `<span class="sb-lock" title="Approved documents are locked (Admin-only changes)">${SB_ICONS.lock}</span>`
+            : '';
+
         const editBtn = IS_EDIT_RESTRICTED_DEPT
-            ? `<button class="btn btn-secondary btn-sm" disabled title="${DEPT_EDIT_RESTRICTED_MSG}">✏️ Edit</button>`
+            ? `<button class="btn btn-secondary btn-sm" disabled title="${DEPT_EDIT_RESTRICTED_MSG}">${SB_ICONS.edit}Edit</button>`
             : locked
-            ? `<button class="btn btn-secondary btn-sm" disabled title="${APPROVED_LOCK_MSG}">✏️ Edit</button>`
-            : `<a href="${editUrl}" class="btn btn-secondary btn-sm" title="Edit in Builder">✏️ Edit</a>`;
+            ? `<button class="btn btn-secondary btn-sm" disabled title="${APPROVED_LOCK_MSG}">${SB_ICONS.edit}Edit</button>`
+            : `<a href="${editUrl}" class="btn btn-secondary btn-sm" title="Edit in Builder">${SB_ICONS.edit}Edit</a>`;
         const mceBtn = locked
-            ? `<button class="btn btn-warning btn-sm" disabled title="${APPROVED_LOCK_MSG}">📤 MCE</button>`
-            : `<button class="btn btn-warning btn-sm" onclick="sendToPriceEdit('${encodeURIComponent(doc.name)}')" title="Send to MCE Price Edit">📤 MCE</button>`;
+            ? `<button class="btn btn-soft-warning btn-sm" disabled title="${APPROVED_LOCK_MSG}">${SB_ICONS.send}MCE</button>`
+            : `<button class="btn btn-soft-warning btn-sm" onclick="sendToPriceEdit('${nameEnc}')" title="Send to MCE Price Edit">${SB_ICONS.send}MCE</button>`;
         const deleteBtn = IS_EDIT_RESTRICTED_DEPT
-            ? `<button class="btn btn-danger btn-sm" disabled title="${DEPT_DELETE_RESTRICTED_MSG}">🗑️</button>`
+            ? `<button class="btn btn-ghost-danger btn-sm sb-icon-btn" disabled title="${DEPT_DELETE_RESTRICTED_MSG}" aria-label="Delete">${SB_ICONS.trash}</button>`
             : locked
-            ? `<button class="btn btn-danger btn-sm" disabled title="${APPROVED_DELETE_LOCK_MSG}">🗑️</button>`
-            : `<button class="btn btn-danger btn-sm" onclick="deleteDoc('${encodeURIComponent(doc.name)}')" title="Delete">🗑️</button>`;
+            ? `<button class="btn btn-ghost-danger btn-sm sb-icon-btn" disabled title="${APPROVED_DELETE_LOCK_MSG}" aria-label="Delete">${SB_ICONS.trash}</button>`
+            : `<button class="btn btn-ghost-danger btn-sm sb-icon-btn" onclick="deleteDoc('${nameEnc}')" title="Delete" aria-label="Delete">${SB_ICONS.trash}</button>`;
 
         return `
             <tr>
                 <td>
-                    <div style="font-weight:700; color:var(--text-primary);">${doc.name}</div>
-                    ${doc.project_name ? `<div style="font-size:11px; color:var(--text-muted);">${doc.project_name}</div>` : ''}
+                    <div class="sb-doc">
+                        <span class="sb-doc-icon ${typeKey}" aria-hidden="true">${typeKey.toUpperCase()}</span>
+                        <div>
+                            <div class="sb-doc-name">${escHtml(doc.name)}</div>
+                            ${doc.project_name ? `<div class="sb-doc-sub">${escHtml(doc.project_name)}</div>` : ''}
+                        </div>
+                    </div>
                 </td>
-                <td style="font-family:var(--font-mono); font-size:11px;">${doc.ref_no || '—'}</td>
-                <td>${typeBadge}</td>
-                <td><span class="status-badge ${statusClass}">${statusLabel}</span>${lockIcon}</td>
-                <td><span style="font-size:12px;">${doc.department || doc.creator_department || '—'}</span></td>
-                <td><strong>${doc.created_by_username || doc.username || '—'}</strong></td>
-                <td style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${lastModified}</td>
-                <td style="text-align:right; white-space:nowrap;">
-                    ${editBtn}
-                    <button class="btn btn-secondary btn-sm" onclick="previewDoc('${encodeURIComponent(doc.name)}')" title="Quick Preview">👁️ Preview</button>
-                    <button class="btn btn-secondary btn-sm" onclick="printDoc('${encodeURIComponent(doc.name)}')" title="Print">🖨️ Print</button>
-                    ${mceBtn}
-                    ${deleteBtn}
+                <td><span class="sb-ref">${escHtml(doc.ref_no || '—')}</span></td>
+                <td><span class="sb-type ${typeKey}">${typeKey.toUpperCase()}</span></td>
+                <td><span class="sb-status"><span class="status-badge ${statusClass}">${statusLabel}</span>${lockIcon}</span></td>
+                <td><span class="sb-dept">${escHtml(doc.department || doc.creator_department || '—')}</span></td>
+                <td>${creator ? `<span class="sb-user"><span class="sb-avatar">${escHtml(creator.charAt(0))}</span>${escHtml(creator)}</span>` : '—'}</td>
+                <td>${formatModified(doc.updated_at)}</td>
+                <td>
+                    <div class="sb-row-actions">
+                        ${editBtn}
+                        <button class="btn btn-secondary btn-sm" onclick="previewDoc('${nameEnc}')" title="Quick Preview">${SB_ICONS.eye}Preview</button>
+                        <button class="btn btn-secondary btn-sm sb-icon-btn" onclick="printDoc('${nameEnc}')" title="Print" aria-label="Print">${SB_ICONS.print}</button>
+                        ${mceBtn}
+                        ${deleteBtn}
+                    </div>
                 </td>
             </tr>
         `;
