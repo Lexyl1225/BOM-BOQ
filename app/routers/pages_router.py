@@ -4,7 +4,7 @@ Serves rendered Jinja2 templates and provides seamless backward-compatibility re
 """
 
 from typing import Optional
-from fastapi import APIRouter, Request, Depends, status
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from app.models import User, Document, CostEstimate, ActivityLog
 from app.auth import get_current_user_optional, can_access_builder_pages
 from app.database import SessionLocal
 from app.services.api_key_service import key_for_user
+from app.services.settings_service import is_public_help_enabled
 
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
@@ -30,6 +31,13 @@ def _api_key_for(user: Optional[User]) -> str:
         return key_for_user(db, user) or ""
 
 templates.env.globals["api_key_for"] = _api_key_for
+
+def _public_help_enabled() -> bool:
+    """Whether the public Quick Help page is published (Administrator setting)."""
+    with SessionLocal() as db:
+        return is_public_help_enabled(db)
+
+templates.env.globals["public_help_enabled"] = _public_help_enabled
 
 def _require_auth(user: Optional[User]) -> Optional[RedirectResponse]:
     """Redirect unauthenticated users to the login page, and users with a pending
@@ -293,6 +301,33 @@ def help_page(
         name="help.html",
         context={"user": user, "active_page": "help"}
     )
+
+@router.get("/quick-help", response_class=HTMLResponse)
+def public_help_page(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional)
+):
+    """Public, read-only copy of the user manual, linked from /login.
+
+    Security: rendered with no user (no API key, no personal data, no admin-only
+    guides), served with noindex/no-store headers, and returns a plain 404 when an
+    Administrator has hidden it. Signed-in users are sent to the full /help page."""
+    with SessionLocal() as db:
+        enabled = is_public_help_enabled(db)
+    if not enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if user and not user.password_change_required:
+        return RedirectResponse(url="/help", status_code=status.HTTP_303_SEE_OTHER)
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="help.html",
+        context={"user": None, "hide_nav": True, "public_help": True, "active_page": "help"}
+    )
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
 
 @router.get("/user_logs", response_class=HTMLResponse)
 @router.get("/user_logs.php", response_class=HTMLResponse)

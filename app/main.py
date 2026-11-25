@@ -27,7 +27,8 @@ from app.routers import (
     logs_router,
     legacy_router,
     pages_router,
-    api_keys_router
+    api_keys_router,
+    settings_router
 )
 
 # Configure logging
@@ -192,6 +193,7 @@ app.include_router(estimates_router.router)
 app.include_router(uploads_router.router)
 app.include_router(logs_router.router)
 app.include_router(api_keys_router.router)
+app.include_router(settings_router.router)
 
 # Legacy PHP API Endpoint Compatibility (/api/document_api.php, /api/user_api.php, etc.)
 app.include_router(legacy_router.router)

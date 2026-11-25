@@ -66,8 +66,53 @@
                 {{ nav_item('/users_admin', 'users_admin', 'Users', 'users') }}
                 {{ nav_item('/api_keys', 'api_keys', 'API Keys', 'key') }}
                 {{ nav_item('/user_logs', 'logs', 'Audit Logs', 'logs') }}
+                {% set _pub_help = public_help_enabled() %}
+                <li>
+                    <div class="side-link side-toggle" id="publicHelpToggle" role="switch" tabindex="0"
+                         aria-checked="{{ 'true' if _pub_help else 'false' }}"
+                         title="Public Quick Help: {{ 'visible' if _pub_help else 'hidden' }} on the sign-in page (click to change)"
+                         onclick="SidebarSettings.togglePublicHelp(this)"
+                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); SidebarSettings.togglePublicHelp(this); }">
+                        {{ icon('help') }}
+                        <span class="side-label">Public Help</span>
+                        <span class="side-switch" aria-hidden="true"><span class="side-switch-knob"></span></span>
+                    </div>
+                </li>
             </ul>
         </div>
+        <script>
+        window.SidebarSettings = window.SidebarSettings || {
+            busy: false,
+            async togglePublicHelp(el) {
+                if (this.busy) return;
+                const next = el.getAttribute('aria-checked') !== 'true';
+                const msg = next
+                    ? 'Publish the Quick Help manual?\n\nAnyone can then open it from the sign-in page (/quick-help) without signing in.'
+                    : 'Hide the Quick Help manual from the public?\n\nThe link disappears from the sign-in page and /quick-help returns "Page Not Found". Signed-in users keep the Help page.';
+                if (!confirm(msg)) return;
+                this.busy = true;
+                el.classList.add('is-busy');
+                try {
+                    const res = await fetch('/api/admin/settings/public-help', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: next })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.detail || data.message || ('HTTP ' + res.status));
+                    el.setAttribute('aria-checked', data.enabled ? 'true' : 'false');
+                    el.title = 'Public Quick Help: ' + (data.enabled ? 'visible' : 'hidden') + ' on the sign-in page (click to change)';
+                    if (window.App && App.toast) App.toast(data.message, 'success');
+                } catch (err) {
+                    if (window.App && App.toast) App.toast('Could not update Public Help: ' + err.message, 'error');
+                    else alert('Could not update Public Help: ' + err.message);
+                } finally {
+                    this.busy = false;
+                    el.classList.remove('is-busy');
+                }
+            }
+        };
+        </script>
         {% endif %}
 
         {% if user %}

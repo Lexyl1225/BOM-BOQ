@@ -255,6 +255,37 @@ def run_tests():
     assert r.status_code == 303 and r.headers["location"] == "/login"
     print("  ✓ GET /help renders for all signed-in users; anonymous users go to /login")
 
+    # Public Quick Help (/quick-help) and the Administrator switch that publishes / hides it
+    anon = KeyedTestClient(app, follow_redirects=False)
+    r = client.put("/api/admin/settings/public-help", json={"enabled": True}, cookies=admin_cookies)
+    assert r.status_code == 200 and r.json()["enabled"] is True
+    r = anon.get("/quick-help")
+    assert r.status_code == 200 and "User Manual" in r.text
+    assert r.headers.get("x-robots-tag") == "noindex, nofollow" and r.headers.get("cache-control") == "no-store"
+    assert '<meta name="api-key" content="">' in r.text, "public page must not embed an API key"
+    assert 'class="hp-access"' not in r.text and 'id="task-user"' not in r.text, "no personal or admin-only content"
+    assert 'class="app-sidebar"' not in r.text, "no app navigation for anonymous visitors"
+    assert 'href="/quick-help"' in anon.get("/login").text
+    r = client.get("/quick-help", cookies=engr_cookies)
+    assert r.status_code == 303 and r.headers["location"] == "/help"
+    assert 'id="publicHelpToggle"' in client.get("/help", cookies=admin_cookies).text
+    assert 'id="publicHelpToggle"' not in client.get("/help", cookies=engr_cookies).text
+
+    # Only Administrators may change the setting
+    assert client.put("/api/admin/settings/public-help", json={"enabled": False}, cookies=engr_cookies).status_code == 403
+    assert anon.put("/api/admin/settings/public-help", json={"enabled": False}).status_code == 401
+    assert client.put("/api/admin/settings/public-help", json={"enabled": "no"}, cookies=admin_cookies).status_code == 422
+
+    # Hidden: link gone from /login, page is a plain 404, signed-in Help unaffected
+    r = client.put("/api/admin/settings/public-help", json={"enabled": False}, cookies=admin_cookies)
+    assert r.status_code == 200 and r.json()["enabled"] is False
+    assert anon.get("/quick-help").status_code == 404
+    assert 'href="/quick-help"' not in anon.get("/login").text
+    assert client.get("/help", cookies=engr_cookies).status_code == 200
+    assert client.get("/api/admin/settings/public-help", cookies=admin_cookies).json()["enabled"] is False
+    client.put("/api/admin/settings/public-help", json={"enabled": True}, cookies=admin_cookies)
+    print("  ✓ Public Quick Help: no key/personal data, noindex; admin-only switch hides it (404) and the /login link")
+
     # Role protection: Audit Logs page is admin-only (direct URL and legacy .php alias)
     for url in ("/user_logs", "/user_logs.php"):
         r = client.get(url, cookies=engr_cookies)

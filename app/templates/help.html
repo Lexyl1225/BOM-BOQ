@@ -9,8 +9,26 @@
 {% set _is_purchasing = _dept == 'purchasing' %}
 
 {% block head %}
+{% if public_help %}<meta name="robots" content="noindex, nofollow">{% endif %}
 <style>
     #main-content.main-wrapper { max-width: 1480px; }
+
+    /* ---------- Public (signed-out) Quick Help header ---------- */
+    .hp-public-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+    .hp-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text-primary); text-decoration: none; }
+    .hp-brand-logo {
+        width: 34px; height: 34px; border-radius: 9px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--primary); color: #fff; font-weight: 800; font-size: 16px;
+    }
+    .hp-brand strong { display: block; font-size: 14px; line-height: 1.2; }
+    .hp-brand small { display: block; font-size: 11.5px; color: var(--text-muted); }
+    body.no-shell .hp-toc { top: 16px; max-height: calc(100vh - 32px); }
+    body.no-shell .hp-section,
+    body.no-shell .hp-section h3 { scroll-margin-top: 16px; }
 
     /* ---------- Hero ---------- */
     .hp-hero {
@@ -237,6 +255,17 @@
 {% block content %}
 {% from "partials/icons.html" import icon %}
 
+{% if public_help %}
+<!-- Public Quick Help: no app navigation, just a way back to sign in -->
+<div class="hp-public-bar">
+    <a href="/login" class="hp-brand">
+        <span class="hp-brand-logo" aria-hidden="true">B</span>
+        <span><strong>BOM / BOQ Studio Pro</strong><small>Quick Help</small></span>
+    </a>
+    <a href="/login" class="btn btn-primary">{{ icon('logout', 16) }} Sign in</a>
+</div>
+{% endif %}
+
 <!-- Hero -->
 <header class="hp-hero">
     <div>
@@ -345,6 +374,11 @@
                         {% endif %}
                     </ul>
                 </div>
+            </div>
+            {% else %}
+            <div class="hp-callout note">
+                {{ icon('lock', 18) }}
+                <p>What you can do depends on your <strong>role</strong> and <strong>department</strong>; see <a href="#roles">Roles &amp; permissions</a>. After you <a href="/login">sign in</a>, the Help page in the sidebar shows a summary of your own access.</p>
             </div>
             {% endif %}
 

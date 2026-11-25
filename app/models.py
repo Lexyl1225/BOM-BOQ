@@ -159,3 +159,13 @@ class DepartmentApiKey(Base):
 
     department = relationship("Department", back_populates="api_key")
     creator = relationship("User", foreign_keys=[created_by])
+
+class AppSetting(Base):
+    """Simple key/value store for application-wide settings changed by Administrators
+    (e.g. whether the public Quick Help page is published)."""
+    __tablename__ = "app_settings"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
