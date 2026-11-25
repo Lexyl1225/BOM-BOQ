@@ -258,7 +258,9 @@
                 <div class="form-group">
                     <label class="form-label" for="reg-role">Account Role</label>
                     <select id="reg-role" class="form-control" onchange="toggleAuthFields(this.value)">
+                        {% if guest_signup_enabled() %}
                         <option value="guest">Guest (Read-Only)</option>
+                        {% endif %}
                         <option value="user" selected>User (Department Member)</option>
                         <option value="department_admin">Department Admin</option>
                         <option value="admin">System Administrator</option>
@@ -277,17 +279,25 @@
                 </div>
 
                 <!-- Admin Auth Verification fields for privileged accounts -->
-                <div id="admin-auth-section" style="display: none; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); margin-bottom: 16px;">
-                    <div style="font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 8px;">
+                <div id="admin-auth-section" style="padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 4px;">
                         ⚠️ Authorizing Credentials Required
                     </div>
+                    <div id="reg-auth-hint" style="font-size: 11.5px; color: #92400e; margin-bottom: 8px; line-height: 1.4;">
+                        An existing User, Department Admin or Administrator must approve this account.
+                    </div>
                     <div class="form-group" style="margin-bottom: 8px;">
-                        <input type="text" id="reg-auth-user" class="form-control" style="font-size: 12px;" placeholder="Authorizing Username (e.g. Admin)">
+                        <input type="text" id="reg-auth-user" class="form-control" style="font-size: 12px;" placeholder="Authorizing Username" autocomplete="off" required>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <input type="password" id="reg-auth-pass" class="form-control" style="font-size: 12px;" placeholder="Authorizing Password">
+                        <input type="password" id="reg-auth-pass" class="form-control" style="font-size: 12px;" placeholder="Authorizing Password" autocomplete="off" required>
                     </div>
                 </div>
+                {% if not guest_signup_enabled() %}
+                <div style="font-size: 11.5px; color: var(--text-muted); margin: -6px 0 12px;">
+                    Guest account creation is currently disabled by the Administrator.
+                </div>
+                {% endif %}
 
                 <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 8px;" id="reg-submit-btn">
                     Create Account
@@ -295,12 +305,14 @@
             </form>
 
             <!-- Quick Demo Testing Logins -->
+             <!-- Remove this on production server -->
             <div class="demo-users-box">
                 <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
                     ⚡ Quick Demo Test Logins:
                 </div>
-                <span class="demo-pill" onclick="quickFill('Testguest', 'guest123')">👀 Guest</span>
+                <span class="demo-pill" onclick="quickFill('Testguest', '@1234567890ab')">👀 Guest</span>
             </div>
+
             {% if public_help_enabled() %}
             <!-- Quick Help: public, read-only user manual (an Administrator can hide it) -->
             <a href="/quick-help" target="_blank" rel="noopener" class="quick-help-link">
@@ -341,13 +353,13 @@ function switchAuthTab(tab) {
     }
 }
 
+// Every role needs an existing account's authorizing credentials; only who may authorize differs.
 function toggleAuthFields(role) {
-    const authSec = document.getElementById('admin-auth-section');
-    if (role === 'admin' || role === 'department_admin' || role === 'user') {
-        authSec.style.display = 'block';
-    } else {
-        authSec.style.display = 'none';
-    }
+    const hint = document.getElementById('reg-auth-hint');
+    if (!hint) return;
+    hint.textContent = (role === 'admin' || role === 'department_admin')
+        ? 'An existing System Administrator must approve this account.'
+        : 'An existing User, Department Admin or Administrator must approve this account.';
 }
 
 function quickFill(u, p) {

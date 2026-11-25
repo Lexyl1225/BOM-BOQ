@@ -15,7 +15,9 @@ from app.models import User, Document, CostEstimate, ActivityLog
 from app.auth import get_current_user_optional, can_access_builder_pages
 from app.database import SessionLocal
 from app.services.api_key_service import key_for_user
-from app.services.settings_service import is_public_help_enabled
+from app.services.settings_service import (
+    GUEST_SIGNUP_KEY, PUBLIC_HELP_KEY, get_meta, is_guest_signup_enabled, is_public_help_enabled,
+)
 
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
@@ -38,6 +40,13 @@ def _public_help_enabled() -> bool:
         return is_public_help_enabled(db)
 
 templates.env.globals["public_help_enabled"] = _public_help_enabled
+
+def _guest_signup_enabled() -> bool:
+    """Whether Guest accounts may be created from the sign-in page (Administrator setting)."""
+    with SessionLocal() as db:
+        return is_guest_signup_enabled(db)
+
+templates.env.globals["guest_signup_enabled"] = _guest_signup_enabled
 
 def _require_auth(user: Optional[User]) -> Optional[RedirectResponse]:
     """Redirect unauthenticated users to the login page, and users with a pending
@@ -300,6 +309,30 @@ def help_page(
         request=request,
         name="help.html",
         context={"user": user, "active_page": "help"}
+    )
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional)
+):
+    """Administrator settings: Public Help and Guest Sign-up switches."""
+    auth_redirect = _require_auth(user)
+    if auth_redirect:
+        return auth_redirect
+    if user.role != "admin":
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+    with SessionLocal() as db:
+        app_settings = {
+            "public_help": {"enabled": is_public_help_enabled(db), **get_meta(db, PUBLIC_HELP_KEY)},
+            "guest_signup": {"enabled": is_guest_signup_enabled(db), **get_meta(db, GUEST_SIGNUP_KEY)},
+        }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="settings.html",
+        context={"user": user, "active_page": "settings", "app_settings": app_settings}
     )
 
 @router.get("/quick-help", response_class=HTMLResponse)

@@ -268,8 +268,13 @@ def run_tests():
     assert 'href="/quick-help"' in anon.get("/login").text
     r = client.get("/quick-help", cookies=engr_cookies)
     assert r.status_code == 303 and r.headers["location"] == "/help"
-    assert 'id="publicHelpToggle"' in client.get("/help", cookies=admin_cookies).text
-    assert 'id="publicHelpToggle"' not in client.get("/help", cookies=engr_cookies).text
+    # Settings page (Administration -> Settings) holds both switches; admins only
+    r = client.get("/settings", cookies=admin_cookies)
+    assert r.status_code == 200 and 'id="card-public_help"' in r.text and 'id="card-guest_signup"' in r.text
+    assert 'href="/settings"' in r.text
+    r = client.get("/settings", cookies=engr_cookies)
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    assert 'href="/settings"' not in client.get("/help", cookies=engr_cookies).text
 
     # Only Administrators may change the setting
     assert client.put("/api/admin/settings/public-help", json={"enabled": False}, cookies=engr_cookies).status_code == 403
@@ -279,12 +284,49 @@ def run_tests():
     # Hidden: link gone from /login, page is a plain 404, signed-in Help unaffected
     r = client.put("/api/admin/settings/public-help", json={"enabled": False}, cookies=admin_cookies)
     assert r.status_code == 200 and r.json()["enabled"] is False
+    assert r.json()["message"] == "You have disabled the Public Help page on the login page."
     assert anon.get("/quick-help").status_code == 404
     assert 'href="/quick-help"' not in anon.get("/login").text
     assert client.get("/help", cookies=engr_cookies).status_code == 200
     assert client.get("/api/admin/settings/public-help", cookies=admin_cookies).json()["enabled"] is False
     client.put("/api/admin/settings/public-help", json={"enabled": True}, cookies=admin_cookies)
     print("  ✓ Public Quick Help: no key/personal data, noindex; admin-only switch hides it (404) and the /login link")
+
+    # Account creation on /login: every role (now including Guest) needs authorizing credentials
+    def register(role, username, auth_user="", auth_pwd="", dept=""):
+        return anon.post("/api/auth/register", json={
+            "new_username": username, "new_password": "Passw0rd123", "confirm_password": "Passw0rd123",
+            "role": role, "department": dept,
+            "admin_auth_username": auth_user, "admin_auth_password": auth_pwd,
+        })
+    suffix = uuid.uuid4().hex[:6]
+    client.put("/api/admin/settings/guest-signup", json={"enabled": True}, cookies=admin_cookies)
+    assert register("guest", f"guest_noauth_{suffix}").status_code == 403
+    assert register("guest", f"guest_badauth_{suffix}", "Admin", "WrongPassword!").status_code == 403
+    assert register("superuser", f"weird_role_{suffix}").status_code == 400
+    r = register("guest", f"guest_ok_{suffix}", "Admin", "admin123")
+    assert r.status_code == 200 and r.json()["success"], r.text
+    assert 'value="guest"' in anon.get("/login").text
+
+    # A suspended account can't authorize new accounts
+    authorizer = f"authz_{suffix}"
+    assert register("user", authorizer, "Admin", "admin123", dept="Operations").status_code == 200
+    with SessionLocal() as db:
+        db.query(User).filter(User.username == authorizer).update({"is_active": False})
+        db.commit()
+    assert register("guest", f"guest_by_suspended_{suffix}", authorizer, "Passw0rd123").status_code == 403
+
+    # Administrator switch: Guest sign-up disabled -> option hidden and API rejects it
+    assert client.put("/api/admin/settings/guest-signup", json={"enabled": False}, cookies=engr_cookies).status_code == 403
+    r = client.put("/api/admin/settings/guest-signup", json={"enabled": False}, cookies=admin_cookies)
+    assert r.status_code == 200 and r.json()["enabled"] is False
+    assert r.json()["message"] == "You have disabled Guest account creation."
+    assert 'value="guest"' not in anon.get("/login").text
+    r = register("guest", f"guest_off_{suffix}", "Admin", "admin123")
+    assert r.status_code == 403 and "disabled" in r.json()["detail"]
+    assert register("user", f"user_while_off_{suffix}", "Admin", "admin123", dept="Operations").status_code == 200
+    client.put("/api/admin/settings/guest-signup", json={"enabled": True}, cookies=admin_cookies)
+    print("  ✓ Registration: Guest needs authorizing credentials, unknown roles / suspended authorizers rejected, admin switch blocks Guest sign-up")
 
     # Role protection: Audit Logs page is admin-only (direct URL and legacy .php alias)
     for url in ("/user_logs", "/user_logs.php"):

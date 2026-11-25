@@ -393,11 +393,12 @@
             <ol>
                 <li>On the sign-in screen, switch to <strong>Create Account</strong>.</li>
                 <li>Choose a username and password, select your <strong>Account Role</strong> and <strong>Department</strong>.</li>
+                <li>Ask the person approving your account to type their username and password into <strong>Authorizing Credentials</strong>.</li>
                 <li>Submit the form, then sign in with your new account.</li>
             </ol>
             <div class="hp-callout note">
                 {{ icon('lock', 18) }}
-                <p><strong>Administrator accounts</strong> can only be created with an existing Administrator's credentials. If you are unsure which role to choose, pick <strong>User (Department Member)</strong> and ask an Administrator to adjust it.</p>
+                <p><strong>Every new account needs approval.</strong> Guest and User accounts can be authorized by any active User, Department Admin or Administrator. Department Admin and Administrator accounts need an Administrator. The <strong>Guest</strong> role only appears when an Administrator allows Guest sign-ups. If you are unsure which role to choose, pick <strong>User (Department Member)</strong> and ask an Administrator to adjust it.</p>
             </div>
 
             <h3 id="roles">Roles &amp; permissions</h3>
@@ -561,6 +562,12 @@
                 <li><strong>Edit</strong>: change role, department or <strong>account status</strong> (Active / Suspended).</li>
                 <li><strong>Password</strong>: <em>Reset password</em> creates a temporary password, shown once, so copy it. <em>Change password</em> sets a specific one.</li>
                 <li><strong>Delete</strong> removes an account. <strong>Sync to JSON Backup</strong> writes a backup copy of all users.</li>
+            </ul>
+            <h4>Settings</h4>
+            <p>Open <span class="hp-path">Administration → Settings</span>. Each switch takes effect immediately, shows a confirmation message, and is recorded in the Audit Logs.</p>
+            <ul>
+                <li><strong>Sign-in Page → Public Help</strong>: shows or hides the <em>Quick Help</em> link and the public manual on the sign-in page.</li>
+                <li><strong>Account Creation → Guest Sign-up</strong>: allows or blocks creating <strong>Guest</strong> accounts from <em>Create Account</em>. Existing Guest accounts are not affected.</li>
             </ul>
             <h4>API Keys</h4>
             <ul>

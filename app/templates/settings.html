@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Settings &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% macro setting_card(key, api, title, icon_name, state, desc, on_text, off_text, link_href, link_label) -%}
+<div class="st-card" id="card-{{ key }}" data-key="{{ key }}" data-api="{{ api }}">
+    <div class="st-card-main">
+        <span class="st-card-icon" aria-hidden="true">{{ icon(icon_name, 22) }}</span>
+        <div class="st-card-body">
+            <div class="st-card-title-row">
+                <h3 class="st-card-title" id="label-{{ key }}">{{ title }}</h3>
+                <span class="st-pill" data-role="pill">{{ 'On' if state.enabled else 'Off' }}</span>
+            </div>
+            <p class="st-card-desc" id="desc-{{ key }}">{{ desc }}</p>
+            <ul class="st-effects">
+                <li class="st-effect-on"><strong>On:</strong> {{ on_text }}</li>
+                <li class="st-effect-off"><strong>Off:</strong> {{ off_text }}</li>
+            </ul>
+        </div>
+        <label class="st-switch" title="Turn {{ title }} on or off">
+            <input type="checkbox" role="switch" data-role="switch"
+                   aria-labelledby="label-{{ key }}" aria-describedby="desc-{{ key }}"
+                   {% if state.enabled %}checked{% endif %}>
+            <span class="st-switch-track" aria-hidden="true"><span class="st-switch-thumb"></span></span>
+        </label>
+    </div>
+    <div class="st-card-foot">
+        <span class="st-meta" data-role="meta" data-updated="{{ state.updated_at or '' }}" data-by="{{ state.updated_by or '' }}">
+            {% if not state.updated_at %}Default setting, not changed yet{% endif %}
+        </span>
+        {% if link_href %}<a class="st-link" href="{{ link_href }}" target="_blank" rel="noopener">{{ link_label }} &nearr;</a>{% endif %}
+    </div>
+</div>
+{%- endmacro %}
+
+{% block head %}
+<style>
+    .st-page { max-width: 1080px; margin: 0 auto; }
+
+    .st-header { margin-bottom: 28px; }
+    .st-eyebrow {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+        color: var(--primary); margin-bottom: 6px;
+    }
+    .st-title { font-size: 26px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; color: var(--text-primary); }
+    .st-subtitle { margin-top: 6px; font-size: 14px; color: var(--text-secondary); max-width: 680px; line-height: 1.6; }
+
+    /* Section: title on the left, cards on the right */
+    .st-section {
+        display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 28px;
+        padding: 26px 0; border-top: 1px solid var(--border);
+    }
+    .st-section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+    .st-section-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* Card */
+    .st-card {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm); overflow: hidden;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .st-card + .st-card { margin-top: 14px; }
+    .st-card.is-on { border-color: #bbf7d0; }
+    .st-card-main { display: flex; align-items: flex-start; gap: 16px; padding: 20px 22px; }
+    .st-card-icon {
+        width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--bg-subtle); color: var(--text-secondary);
+        transition: background-color .15s ease, color .15s ease;
+    }
+    .st-card.is-on .st-card-icon { background: var(--primary-light); color: var(--primary); }
+    .st-card-body { flex: 1; min-width: 0; }
+    .st-card-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .st-card-title { font-size: 15.5px; font-weight: 700; color: var(--text-primary); margin: 0; }
+    .st-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 2px 10px; border-radius: var(--radius-full);
+        font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+        background: var(--bg-subtle); color: var(--text-secondary);
+    }
+    .st-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .st-card.is-on .st-pill { background: #dcfce7; color: #15803d; }
+    .st-card-desc { margin: 6px 0 10px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+    .st-effects { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .st-effects li { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; padding-left: 14px; position: relative; }
+    .st-effects li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+    .st-effects strong { color: var(--text-secondary); }
+    /* Emphasize the effect that currently applies */
+    .st-card.is-on .st-effect-on, .st-card:not(.is-on) .st-effect-off { color: var(--text-primary); }
+    .st-card.is-on .st-effect-on::before { background: #22c55e; }
+    .st-card:not(.is-on) .st-effect-off::before { background: #94a3b8; }
+
+    .st-card-foot {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+        padding: 11px 22px; border-top: 1px solid var(--border); background: var(--bg-subtle);
+        font-size: 12px; color: var(--text-muted);
+    }
+    .st-link { font-weight: 600; color: var(--primary); text-decoration: none; white-space: nowrap; }
+    .st-link:hover { text-decoration: underline; }
+
+    /* Switch */
+    .st-switch { position: relative; display: inline-flex; flex-shrink: 0; cursor: pointer; margin-top: 2px; }
+    .st-switch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+    .st-switch-track {
+        position: relative; width: 46px; height: 26px; border-radius: var(--radius-full);
+        background: #cbd5e1; transition: background-color .18s ease, box-shadow .18s ease;
+    }
+    .st-switch-thumb {
+        position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+        background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.3);
+        transition: transform .18s ease;
+    }
+    .st-switch input:checked + .st-switch-track { background: var(--success, #10b981); }
+    .st-switch input:checked + .st-switch-track .st-switch-thumb { transform: translateX(20px); }
+    .st-switch input:focus-visible + .st-switch-track { box-shadow: 0 0 0 3px rgba(59,130,246,.35); }
+    .st-switch input:disabled { cursor: progress; }
+    .st-switch input:disabled + .st-switch-track { opacity: .6; }
+
+    @media (max-width: 860px) {
+        .st-section { grid-template-columns: 1fr; gap: 14px; }
+    }
+    @media (max-width: 520px) {
+        .st-card-main { padding: 16px; gap: 12px; }
+        .st-card-icon { width: 38px; height: 38px; }
+        .st-card-foot { padding: 10px 16px; }
+    }
+
+    [data-theme="dark"] .st-card { background: var(--theme-surface, #1e293b); border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .st-card-foot { background: rgba(15,23,42,.45); border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .st-section { border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .st-title,
+    [data-theme="dark"] .st-section-title,
+    [data-theme="dark"] .st-card-title { color: #f1f5f9 !important; }
+    [data-theme="dark"] .st-card-desc,
+    [data-theme="dark"] .st-section-desc { color: #cbd5e1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st-page">
+    <header class="st-header">
+        <div class="st-eyebrow">{{ icon('settings', 13) }} Administration</div>
+        <h1 class="st-title">Settings</h1>
+        <p class="st-subtitle">Control what visitors can see and do on the sign-in page. Changes take effect immediately and are recorded in the Audit Logs.</p>
+    </header>
+
+    <section class="st-section" aria-labelledby="sec-signin">
+        <div>
+            <h2 class="st-section-title" id="sec-signin">Sign-in Page</h2>
+            <p class="st-section-desc">Information shown to people who are not signed in.</p>
+        </div>
+        <div>
+            {{ setting_card('public_help', 'public-help', 'Public Help', 'help', app_settings.public_help,
+                'Shows a Quick Help link on the sign-in page that opens a read-only copy of the user manual, so anyone can read it without an account.',
+                'the link appears on the sign-in page and the manual opens at /quick-help.',
+                'the link is removed and /quick-help shows "Page Not Found". Signed-in users keep the Help page.',
+                '/quick-help', 'Preview Quick Help') }}
+        </div>
+    </section>
+
+    <section class="st-section" aria-labelledby="sec-accounts">
+        <div>
+            <h2 class="st-section-title" id="sec-accounts">Account Creation</h2>
+            <p class="st-section-desc">Which accounts visitors can request from <strong>Create Account</strong> on the sign-in page. Every new account still needs the authorizing credentials of an existing account.</p>
+        </div>
+        <div>
+            {{ setting_card('guest_signup', 'guest-signup', 'Guest Sign-up', 'users', app_settings.guest_signup,
+                'Allows read-only Guest accounts to be created from the sign-in page, with approval from an existing User or Administrator.',
+                'the Guest role is offered on the Create Account form.',
+                'the Guest role is removed from the form and Guest sign-ups are rejected. Existing Guest accounts keep working.',
+                '', '') }}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const MESSAGES = {
+        'public_help': {
+            on: 'You have enabled the Public Help page on the login page.',
+            off: 'You have disabled the Public Help page on the login page.'
+        },
+        'guest_signup': {
+            on: 'You have enabled Guest account creation.',
+            off: 'You have disabled Guest account creation.'
+        }
+    };
+    const CURRENT_USER = {{ (user.username if user else '')|tojson }};
+
+    function renderMeta(el) {
+        const iso = el.dataset.updated;
+        if (!iso) return;
+        const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
+        const when = isNaN(d) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        el.textContent = 'Last changed ' + (el.dataset.by ? 'by ' + el.dataset.by + ' ' : '') + 'on ' + when;
+    }
+
+    function paint(card, enabled) {
+        card.classList.toggle('is-on', enabled);
+        card.querySelector('[data-role="pill"]').textContent = enabled ? 'On' : 'Off';
+        card.querySelector('[data-role="switch"]').checked = enabled;
+    }
+
+    document.querySelectorAll('.st-card').forEach(card => {
+        const input = card.querySelector('[data-role="switch"]');
+        const meta = card.querySelector('[data-role="meta"]');
+        paint(card, input.checked);
+        renderMeta(meta);
+
+        input.addEventListener('change', async () => {
+            const enabled = input.checked;
+            paint(card, enabled);              // reflect the new state immediately
+            input.disabled = true;
+            try {
+                const res = await fetch('/api/admin/settings/' + card.dataset.api, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) throw new Error(data.detail || data.message || ('HTTP ' + res.status));
+
+                paint(card, data.enabled);
+                meta.dataset.updated = new Date().toISOString();
+                meta.dataset.by = CURRENT_USER;
+                renderMeta(meta);
+                const msg = MESSAGES[card.dataset.key];
+                App.toast(data.enabled ? msg.on : msg.off, data.enabled ? 'success' : 'info');
+            } catch (err) {
+                paint(card, !enabled);         // revert: the server did not save the change
+                App.toast('Could not save the setting: ' + err.message, 'error');
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

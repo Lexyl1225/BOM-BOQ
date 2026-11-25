@@ -11,6 +11,7 @@ from app.auth import (
     get_current_user, get_current_user_optional
 )
 from app.services.activity_service import log_from_request
+from app.services.settings_service import is_guest_signup_enabled
 from app.services.user_service import (
     get_user_by_username, update_last_login, password_policy_error, set_user_password,
     PASSWORD_POLICY_TEXT,
@@ -122,7 +123,9 @@ async def register(
     - Admin: requires existing Admin authorization
     - Department Admin: requires existing Admin authorization and department
     - User: requires existing User or Admin authorization and department
-    - Guest: no authorization needed
+    - Guest: requires existing User, Department Admin or Admin authorization, and only
+      while an Administrator allows Guest sign-ups (Administration → Guest Sign-up)
+    Authorizing accounts must be active. Unknown roles are rejected.
     """
     data = await _extract_request_data(request)
     uname = str(data.get("new_username") or "").strip()
@@ -135,6 +138,10 @@ async def register(
 
 
     uname = uname.strip()
+    if urole not in ("admin", "department_admin", "user", "guest"):
+        raise HTTPException(status_code=400, detail="Invalid account role.")
+    if urole == "guest" and not is_guest_signup_enabled(db):
+        raise HTTPException(status_code=403, detail="Guest account creation is currently disabled by the Administrator.")
     if not uname or not pwd:
         raise HTTPException(status_code=400, detail="Username and password are required")
     if pwd != cpwd:
@@ -170,6 +177,17 @@ async def register(
         auth_user = get_user_by_username(db, auth_uname)
         if not auth_user or auth_user.role not in ("user", "admin", "department_admin") or not check_user_password(auth_user, auth_pwd):
             raise HTTPException(status_code=403, detail="Invalid authorization credentials. Only existing users or admins can authorize new User accounts.")
+
+    elif urole == "guest":
+        if not auth_uname or not auth_pwd:
+            raise HTTPException(status_code=403, detail="Authorizing credentials of an existing User or Admin are required to create a Guest account.")
+        auth_user = get_user_by_username(db, auth_uname)
+        if not auth_user or auth_user.role not in ("user", "admin", "department_admin") or not check_user_password(auth_user, auth_pwd):
+            raise HTTPException(status_code=403, detail="Invalid authorization credentials. Only existing users or admins can authorize new Guest accounts.")
+
+    # Suspended / deactivated accounts may not authorize new accounts
+    if not auth_user.is_active:
+        raise HTTPException(status_code=403, detail="The authorizing account is inactive and cannot approve new accounts.")
 
     # Create user
     pw_hash = get_password_hash(pwd)
