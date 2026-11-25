@@ -124,6 +124,7 @@ graph TD
 │       ├── save_bomboq.html      # Saved documents manager with search and status tabs
 │       ├── price_edit_bomboq.html# Purchasing MCE unit price editor, document rename and department posting
 │       ├── help.html             # In-app Help / User Manual (/help), available to all signed-in users
+│       ├── settings.html         # Administrator Settings (/settings): Public Help and Guest Sign-up switches
 │       ├── approver.html         # Department Admin approval review interface
 │       ├── approved_for_po.html  # Purchasing PO hub with drag-and-drop file upload
 │       ├── estimate.html         # Project cost estimate calculator (Materials, Labor, Allowances)
@@ -221,7 +222,19 @@ python run.py
 | **`user`** in **Purchasing** | Purchasing | MCE unit price editing, renaming and posting (`/price_edit_bomboq`), unposting for correction, and the PO hub with attachments (`/approved_for_po`). Saved documents are **view-only**, and the BOM / BOQ / Estimate builders are not available. |
 | **`guest`** | — | Read-only: browse and preview documents; cannot save, edit, post or delete. |
 
-* Accounts are created by an Administrator at **Administration → Users** (`/users_admin`), or through **Create Account** on the sign-in page. Administrator accounts can only be created with an existing Administrator's credentials.
+* Accounts are created by an Administrator at **Administration → Users** (`/users_admin`), or through **Create Account** on the sign-in page.
+* **Create Account always needs Authorizing Credentials** from an existing, **active** account:
+
+  | New account's role | Who can authorize it |
+  |:---|:---|
+  | `guest`, `user` | Any `user`, `department_admin` or `admin` |
+  | `department_admin`, `admin` | An `admin` only |
+
+  Unknown role names are rejected (`400`).
+* **Guest Sign-up switch:** Administrators can allow or block Guest sign-ups with the **Guest Sign-up** switch on **Administration → Settings** (`/settings`), or with `GET` / `PUT /api/admin/settings/guest-signup` and `{"enabled": true|false}`. It is on by default.
+  * When it is off, the Guest role disappears from the form and `/api/auth/register` rejects Guest sign-ups with `403`.
+  * Existing Guest accounts are not affected.
+  * Every change is written to the audit log (`guest_signup_enabled` / `guest_signup_disabled`).
 * A full, role-aware explanation of every page is available in the app at **Support → Help** (`/help`).
 
 ### 🔒 Password Management
@@ -292,7 +305,7 @@ The manual has a sticky table of contents that follows your scroll position, and
 
 ### Public Quick Help (`/quick-help`)
 - The sign-in page shows a **Quick Help** link to a public, read-only copy of the manual, so people can read it before they have an account.
-- **Administrators control it** with the **Public Help** switch in the sidebar (**Administration → Public Help**), or through `GET` / `PUT /api/admin/settings/public-help` with `{"enabled": true|false}`. It is on by default. Every change is written to the audit log (`public_help_enabled` / `public_help_disabled`).
+- **Administrators control it** with the **Public Help** switch on **Administration → Settings** (`/settings`), or through `GET` / `PUT /api/admin/settings/public-help` with `{"enabled": true|false}`. It is on by default. Every change is written to the audit log (`public_help_enabled` / `public_help_disabled`).
 - When it is **hidden**, the link disappears from `/login` and `/quick-help` returns the normal 404, the same as any URL that doesn't exist. Signed-in users still have `/help`.
 - **Security:**
   - The public page is rendered with no user, so it contains no API key, no personal "Your access" summary and none of the admin-only guides. It makes no API calls.
