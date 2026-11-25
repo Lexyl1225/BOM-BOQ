@@ -16,7 +16,7 @@ from app.auth import get_current_user_optional, require_purchasing_or_admin
 from app.services.activity_service import log_from_request
 from app.services.document_service import (
     save_document, get_document, list_documents_for_user,
-    update_document_status, save_price_edit, delete_document,
+    update_document_status, save_price_edit, delete_document, rename_document,
     list_documents_for_approval, approve_document, list_approved_documents
 )
 from app.services.estimate_service import (
@@ -105,6 +105,14 @@ async def _handle_legacy_document_api(request: Request, user: Optional[User], db
             if data.get("targetDepartment"):
                 details += f" posted to department: {data.get('targetDepartment')}"
             log_from_request(db, request, "save_price_edit", details, user=user)
+        return res
+
+    elif action == "rename":
+        old_name = data.get("documentName", "")
+        new_name = data.get("newName", "")
+        res = rename_document(db, old_name, new_name, user)
+        if res["success"] and old_name.strip() != new_name.strip():
+            log_from_request(db, request, "rename", f'Renamed document "{old_name}" to "{new_name}"', user=user)
         return res
 
     elif action == "delete":

@@ -320,6 +320,44 @@ def save_price_edit(
     db.commit()
     return {"success": True, "message": "Document updated successfully"}
 
+PRICE_EDIT_STATUSES = ("pending_price_edit", "posted", "unposted")
+
+def rename_document(db: Session, old_name: str, new_name: str, user: User) -> Dict[str, Any]:
+    """Rename a document. Names act as the document key across the app, so they must stay unique."""
+    old_name = (old_name or "").strip()
+    new_name = (new_name or "").strip()
+    if not old_name or not new_name:
+        return {"success": False, "message": "Both the current and the new document name are required"}
+    if len(new_name) > 255:
+        return {"success": False, "message": "Document name must be 255 characters or fewer"}
+    if new_name == old_name:
+        return {"success": True, "message": "Document name unchanged", "name": new_name}
+
+    doc = db.query(Document).filter(Document.name == old_name).first()
+    if not doc:
+        return {"success": False, "message": "Document not found"}
+
+    is_admin = user.role == "admin"
+    is_purchasing = (user.department or "").strip().lower() == "purchasing"
+    is_owner = doc.created_by == user.id
+    same_dept = bool(user.department and doc.creator and doc.creator.department == user.department)
+    if not (is_admin or is_purchasing or is_owner or same_dept):
+        return {"success": False, "message": "You are not allowed to rename this document"}
+
+    # Purchasing may only rename documents that are in the MCE price-edit workflow.
+    if doc.status not in PRICE_EDIT_STATUSES:
+        _ensure_department_may_edit(doc, user)
+    _ensure_editable(doc, user)
+
+    clash = db.query(Document).filter(Document.name == new_name, Document.id != doc.id).first()
+    if clash:
+        return {"success": False, "message": f'A document named "{new_name}" already exists'}
+
+    doc.name = new_name
+    doc.updated_at = datetime.utcnow()
+    db.commit()
+    return {"success": True, "message": "Document renamed successfully", "name": new_name}
+
 def delete_document(db: Session, document_name: str, user: User) -> bool:
     """Delete document with permission check."""
     doc = db.query(Document).filter(Document.name == document_name).first()

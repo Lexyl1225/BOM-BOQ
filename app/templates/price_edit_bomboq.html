@@ -3,249 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Price Edit - BOM & BOQ Documents</title>
+    <title>MCE Price Editor - BOM & BOQ</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* ==========================================================
+           MCE Price Editor — page styles (built on main.css tokens)
+           ========================================================== */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-            font-size: 12px;
+            font-family: var(--font-family, 'Inter', 'Segoe UI', Arial, sans-serif);
+            background-color: var(--bg-page, #f4f6fa);
+            font-size: 13px;
+            color: var(--text-primary, #0f172a);
         }
 
-        .container {
-            max-width: 1000px;
+        .pe-page.container {
+            width: 100%;
+            max-width: 1680px;
             margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 28px 32px 36px;
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: var(--radius-lg, 16px);
+            box-shadow: var(--shadow-sm);
         }
 
-        .header {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .button-container {
+        /* ---------- Header ---------- */
+        .pe-header {
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding-bottom: 22px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+        }
+        .pe-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+            color: var(--primary, #2563eb);
+            margin-bottom: 6px;
+        }
+        .pe-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            line-height: 1.2;
+            color: var(--text-primary, #0f172a);
+        }
+        .pe-subtitle {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--text-secondary, #475569);
+            max-width: 760px;
+        }
+        .pe-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 5px 12px 5px 6px;
+            border-radius: var(--radius-full, 9999px);
+            background: var(--bg-subtle, #f1f5f9);
+            font-size: 12px;
+            color: var(--text-secondary, #475569);
+        }
+        .pe-user-avatar {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: var(--primary, #2563eb);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .pe-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* ---------- Buttons ---------- */
+        .pe-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.2;
+            border-radius: var(--radius-sm, 6px);
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+        }
+        .pe-btn:focus-visible { outline: 2px solid var(--border-focus, #3b82f6); outline-offset: 2px; }
+        .pe-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .pe-btn-sm { padding: 6px 10px; font-size: 12px; }
+        .pe-btn-secondary { background: var(--bg-card, #fff); color: var(--text-secondary, #475569); border-color: var(--border, #e2e8f0); }
+        .pe-btn-secondary:hover { background: var(--bg-subtle, #f1f5f9); color: var(--text-primary, #0f172a); }
+        .pe-btn-primary { background: var(--primary, #2563eb); color: #fff; }
+        .pe-btn-primary:hover { background: var(--primary-hover, #1d4ed8); }
+        .pe-btn-success { background: var(--success, #10b981); color: #fff; }
+        .pe-btn-success:hover { background: var(--success-hover, #059669); }
+        .pe-btn-warning { background: var(--warning, #f59e0b); color: #fff; }
+        .pe-btn-warning:hover { background: var(--warning-hover, #d97706); }
+        .pe-btn-danger-ghost { background: var(--bg-card, #fff); color: var(--danger-hover, #dc2626); border-color: #fecaca; }
+        .pe-btn-danger-ghost:hover { background: var(--danger-light, #fef2f2); border-color: #fca5a5; }
+        .pe-btn-danger { background: var(--danger, #ef4444); color: #fff; }
+        .pe-btn-danger:hover { background: var(--danger-hover, #dc2626); }
+
+        /* ---------- Stats ---------- */
+        .pe-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
             margin-bottom: 20px;
         }
+        .pe-stat {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: var(--radius-md, 12px);
+            background: var(--bg-card, #fff);
+        }
+        .pe-stat-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .pe-stat-icon svg { width: 20px; height: 20px; }
+        .pe-stat-value { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--text-primary, #0f172a); }
+        .pe-stat-label { font-size: 12px; color: var(--text-secondary, #475569); margin-top: 2px; }
+        .tone-warning .pe-stat-icon { background: var(--warning-light, #fffbeb); color: var(--warning-hover, #d97706); }
+        .tone-success .pe-stat-icon { background: var(--success-light, #ecfdf5); color: var(--success-hover, #059669); }
+        .tone-primary .pe-stat-icon { background: var(--primary-light, #eff6ff); color: var(--primary, #2563eb); }
+        .tone-info .pe-stat-icon { background: var(--info-light, #ecfeff); color: var(--info-hover, #0891b2); }
 
-        .back-button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #666;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        /* ---------- Toolbar ---------- */
+        .pe-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+        .pe-search {
+            position: relative;
+            flex: 1 1 320px;
+            max-width: 460px;
+        }
+        .pe-search svg {
+            position: absolute;
+            left: 12px; top: 50%;
+            transform: translateY(-50%);
+            width: 16px; height: 16px;
+            color: var(--text-muted, #94a3b8);
+            pointer-events: none;
+        }
+        .pe-search input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            font: inherit;
             font-size: 13px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: var(--radius-sm, 6px);
+            background: var(--bg-card, #fff);
+            color: var(--text-primary, #0f172a);
         }
+        .pe-search input:focus { outline: none; border-color: var(--border-focus, #3b82f6); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+        .pe-hint { font-size: 12px; color: var(--text-muted, #94a3b8); }
 
-        .back-button:hover {
-            background-color: #000;
-        }
-
-        .back-button.approver-btn {
-            background-color: #1f5a96;
-        }
-
-        .back-button.approver-btn:hover {
-            background-color: #163f6b;
-        }
-
+        /* ---------- Section cards ---------- */
         .documents-section {
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: var(--radius-md, 12px);
+            background: var(--bg-card, #fff);
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
-
-        .documents-section table {
-            margin-bottom: 0;
-            border: none;
-            border-radius: 0;
+        .pe-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: var(--bg-subtle, #f8fafc);
+            border-left: 4px solid var(--accent, var(--primary, #2563eb));
         }
-
-        .section-title {
-            background-color: #FFFF00 !important;
-            color: #000 !important;
-            padding: 12px 15px;
-            margin-bottom: 0;
-            border-radius: 0;
-            font-weight: bold !important;
-            font-size: 14px;
-            opacity: 1 !important;
-            visibility: visible !important;
-            border-bottom: 1px solid #ccc;
+        .pe-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary, #0f172a);
         }
-        
+        .pe-section-desc { font-size: 12px; font-weight: 400; color: var(--text-secondary, #475569); }
+        .pe-count {
+            min-width: 26px;
+            padding: 2px 9px;
+            border-radius: var(--radius-full, 9999px);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            background: var(--accent-soft, var(--primary-light, #eff6ff));
+            color: var(--accent, var(--primary, #2563eb));
+        }
+        .accent-warning { --accent: var(--warning-hover, #d97706); --accent-soft: var(--warning-light, #fffbeb); }
+        .accent-success { --accent: var(--success-hover, #059669); --accent-soft: var(--success-light, #ecfdf5); }
+        .accent-primary { --accent: var(--primary, #2563eb); --accent-soft: var(--primary-light, #eff6ff); }
+        .accent-info { --accent: var(--info-hover, #0891b2); --accent-soft: var(--info-light, #ecfeff); }
 
-        table {
+        .pe-table-wrap { overflow-x: auto; }
+        .pe-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-            border: 1px solid #ccc;
-        }
-
-        table thead {
-            background-color: #f5f5f5;
-        }
-
-        table th {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #ccc;
-            font-weight: bold;
-            color: #333;
             font-size: 13px;
-            background-color: #f0f0f0;
         }
-
-        table td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-        }
-
-        table tbody tr:hover {
-            background-color: #f0f4ff;
-        }
-
-        table tbody tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-
-        .view-btn {
-            display: inline-flex;
-            padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .view-btn:hover {
-            background-color: #45a049;
-        }
-
-        .delete-btn {
-            display: inline-flex;
-            padding: 8px 16px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .delete-btn:hover {
-            background-color: #da190b;
-        }
-
-        .print-btn {
-            display: inline-flex;
-            padding: 8px 16px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .print-btn:hover {
-            background-color: #1976D2;
-        }
-        .post-btn {
-            display: inline-flex;
-            padding: 8px 16px;
-            background-color: #FF9800;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .post-btn:hover {
-            background-color: #F57C00;
-        }
-
-        .post-btn.posted {
-            background-color: #9E9E9E;
-            cursor: not-allowed;
-        }
-
-        .unpost-btn {
-            display: inline-flex;
-            padding: 8px 16px;
-            background-color: #FF9800;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-        .unpost-btn:hover {
-            background-color: #f50000;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
+        .pe-table thead th {
+            position: sticky;
+            top: 0;
+            padding: 11px 16px;
+            text-align: left;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: var(--text-secondary, #475569);
+            background: var(--bg-card, #fff);
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            white-space: nowrap;
+        }
+        .pe-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            vertical-align: middle;
+            color: var(--text-primary, #0f172a);
+        }
+        .pe-table tbody tr:last-child td { border-bottom: 0; }
+        .pe-table tbody tr:hover td { background: var(--bg-subtle, #f8fafc); }
+        .pe-table .col-actions { text-align: right; }
+        .pe-ref { font-family: var(--font-mono, Consolas, monospace); font-size: 12px; color: var(--text-secondary, #475569); }
+        .document-date { color: var(--text-secondary, #475569); font-size: 12px; white-space: nowrap; }
+
+        .button-cell {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
-        .posted-po-section {
-            border-color: #4CAF50;
+        /* ---------- Document name + inline rename ---------- */
+        .doc-name-cell { min-width: 260px; }
+        .doc-name-row { display: flex; align-items: center; gap: 6px; }
+        .doc-name { font-weight: 600; color: var(--text-primary, #0f172a); word-break: break-word; }
+        .doc-meta { margin-top: 3px; font-size: 12px; color: var(--text-muted, #94a3b8); display: flex; gap: 10px; flex-wrap: wrap; }
+        .doc-meta .dept { color: var(--primary, #2563eb); font-weight: 600; }
+        .rename-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 26px; height: 26px;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted, #94a3b8);
+            cursor: pointer;
+            flex-shrink: 0;
+            opacity: .55;
+            transition: opacity .15s, background-color .15s, color .15s;
         }
+        .rename-btn svg { width: 14px; height: 14px; }
+        tr:hover .rename-btn, .rename-btn:focus-visible { opacity: 1; }
+        .rename-btn:hover { background: var(--primary-light, #eff6ff); color: var(--primary, #2563eb); border-color: var(--primary-border, #bfdbfe); }
+        .rename-form { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .rename-input {
+            flex: 1 1 220px;
+            min-width: 180px;
+            padding: 7px 10px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid var(--border-focus, #3b82f6);
+            border-radius: var(--radius-sm, 6px);
+            background: var(--bg-card, #fff);
+            color: var(--text-primary, #0f172a);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+        }
+        .rename-input:focus { outline: none; }
+        .rename-error { flex-basis: 100%; font-size: 12px; color: var(--danger-hover, #dc2626); }
 
+        /* ---------- Badges ---------- */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: var(--radius-full, 9999px);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            white-space: nowrap;
+        }
+        .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .badge-type { background: var(--primary-light, #eff6ff); color: var(--primary-hover, #1d4ed8); text-transform: uppercase; }
+        .badge-type::before { display: none; }
+        .badge-pending { background: var(--warning-light, #fffbeb); color: #b45309; }
+        .badge-unposted { background: #fef2f2; color: #b91c1c; }
+        .badge-posted { background: var(--success-light, #ecfdf5); color: #047857; }
+
+        .no-documents {
+            text-align: center;
+            padding: 44px 20px !important;
+            color: var(--text-muted, #94a3b8);
+            font-size: 13px;
+        }
+        .no-documents strong { display: block; color: var(--text-secondary, #475569); font-size: 14px; margin-bottom: 4px; }
+
+        /* ---------- Unit cost inputs (inside edit modal) ---------- */
         .unit-cost-input {
             width: 100%;
             padding: 8px;
@@ -256,7 +346,6 @@
             font-size: 12px;
             font-weight: bold;
         }
-
         .material-unit-cost-input, .labor-unit-cost-input {
             width: 100%;
             padding: 8px;
@@ -267,226 +356,205 @@
             font-weight: bold;
         }
 
-        .no-documents {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-            font-size: 14px;
-        }
-
-        .document-date {
-            color: #999;
-            font-size: 12px;
-        }
-
-        .button-cell {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            align-items: center;
-            justify-content: flex-start;
-            flex-wrap: nowrap;
-        }
-
-        /* Modal Styles for View */
+        /* ---------- Modals ---------- */
         .modal {
             display: none;
             position: fixed;
             z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.55);
             overflow: auto;
-            justify-content: center;
-            align-items: center;
         }
-
-        .modal.show {
-            display: block;
-        }
-
-        /* Department Modal specific styles */
-        #departmentModal {
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #departmentModal .modal-content {
-            width: auto;
-            height: auto;
-            max-width: 450px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            margin: auto;
-        }
+        .modal.show { display: block; }
 
         .modal-content {
-            background-color: white;
-            margin: 0;
-            padding: 0;
+            background-color: var(--bg-card, #fff);
             width: 100%;
             height: 100%;
-            border-radius: 0;
-            box-shadow: none;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
-
         .modal-header {
-            background-color: #2196F3;
-            color: white;
-            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #ddd;
+            gap: 12px;
+            padding: 16px 24px;
+            background: var(--bg-card, #fff);
+            border-bottom: 1px solid var(--border, #e2e8f0);
         }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 18px;
-        }
-
-        .modal-body {
-            padding: 20px;
-            height: calc(100% - 120px);
-            overflow-y: auto;
-            background-color: #f9f9f9;
-        }
-
-        .modal-footer {
-            background-color: #f5f5f5;
-            padding: 15px 20px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
+        .modal-header h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary, #0f172a); }
+        .modal-close {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px;
+            border: 0; border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary, #475569);
+            font-size: 24px; line-height: 1;
             cursor: pointer;
+        }
+        .modal-close:hover { background: var(--bg-subtle, #f1f5f9); color: var(--text-primary, #0f172a); }
+        .modal-body {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background-color: var(--bg-page, #f4f6fa);
+        }
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            padding: 14px 24px;
+            background: var(--bg-card, #fff);
+            border-top: 1px solid var(--border, #e2e8f0);
+        }
+
+        #departmentModal { justify-content: center; align-items: center; padding: 16px; }
+        #departmentModal .modal-content {
+            width: 100%;
+            max-width: 480px;
+            height: auto;
+            border-radius: var(--radius-md, 12px);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            margin: auto;
+        }
+        #departmentModal .modal-body { background: var(--bg-card, #fff); flex: none; }
+        .pe-field-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--text-primary, #0f172a); }
+        .pe-select {
+            width: 100%;
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 14px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: var(--radius-sm, 6px);
+            background: var(--bg-card, #fff);
+            color: var(--text-primary, #0f172a);
+        }
+        .pe-select:focus { outline: none; border-color: var(--border-focus, #3b82f6); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+        .pe-doc-chip {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm, 6px);
+            background: var(--success-light, #ecfdf5);
+            color: #065f46;
             font-size: 13px;
-            font-weight: bold;
-        }
-
-        .modal-close-btn {
-            background-color: #666;
-            color: white;
-        }
-
-        .modal-close-btn:hover {
-            background-color: #000;
-        }
-
-        .modal-pdf-btn {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .modal-pdf-btn:hover {
-            background-color: #da190b;
-        }
-
-        .modal-print-btn {
-            background-color: #2196F3;
-            color: white;
-        }
-
-        .modal-print-btn:hover {
-            background-color: #1976D2;
-        }
-
-        .document-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .document-content table tbody tr td:first-child,
-        .document-content table tbody tr td:nth-child(1) {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
             word-break: break-word;
-            white-space: pre-wrap;
-            overflow: visible;
-            max-width: 100%;
         }
 
-        .document-content textarea {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-            max-width: 100%;
-            overflow: visible;
+        /* ---------- Rendered document (view/edit modal) ---------- */
+        .document-content {
+            background-color: #fff;
+            color: #111;
+            padding: 32px;
+            border-radius: var(--radius-md, 12px);
+            box-shadow: var(--shadow-sm);
+            max-width: 1600px;
+            margin: 0 auto;
         }
-
+        .document-content table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #ccc; }
+        .document-content table th { padding: 12px; text-align: left; border: 1px solid #ccc; font-weight: bold; color: #333; font-size: 13px; background-color: #f0f0f0; }
+        .document-content table td { padding: 12px; border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; white-space: normal; }
+        .document-content table tbody tr:nth-child(even) { background-color: #fafafa; }
+        .document-content table tbody tr td:first-child {
+            word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;
+            white-space: pre-wrap; overflow: visible; max-width: 100%;
+        }
+        .document-content textarea { word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; max-width: 100%; overflow: visible; }
         .document-content input[type="text"],
         .document-content input[type="number"],
-        .document-content input[type="date"] {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            max-width: 100%;
-            overflow: visible;
-        }
+        .document-content input[type="date"] { word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; overflow: visible; }
 
         /* Signature block layout for documents rendered inline (e.g. the "Edit UNIT
            COST" modal). The saved document HTML doesn't carry its own rules for
-           these classes, so without this the signature blocks stack vertically
-           instead of the intended side-by-side grid used everywhere else. */
-        .document-content .signatures {
-            margin-top: 30px;
-            font-size: 10px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 30px;
-            row-gap: 30px;
+           these classes, so without this the signature blocks stack vertically. */
+        .document-content .signatures { margin-top: 30px; font-size: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 30px; row-gap: 30px; }
+        .document-content .signature-row { display: contents; }
+        .document-content .signature-block { text-align: center; display: flex; flex-direction: column; align-items: center; min-height: 140px; justify-content: flex-start; }
+        .document-content .signature-label { font-weight: 700; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; line-height: 1.4; }
+        .document-content .signature-line { border-top: 1.5px solid #000; width: 140px; margin: 0 auto 5px auto; }
+        .document-content .signature-name { font-weight: 700; margin-top: 8px; font-size: 11px; }
+        .document-content .signature-title { font-size: 9px; margin-top: 2px; font-weight: 500; }
+
+        .pe-edit-notice {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: var(--radius-sm, 6px);
+            background: var(--warning-light, #fffbeb);
+            border-left: 4px solid var(--warning, #f59e0b);
+            color: #78350f;
+            font-size: 13px;
+            line-height: 1.6;
         }
-        .document-content .signature-row {
-            display: contents;
-        }
-        .document-content .signature-block {
-            text-align: center;
+        .pe-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; }
+        .pe-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .pe-legend i { width: 12px; height: 12px; border-radius: 3px; border: 2px solid; display: inline-block; }
+        .pe-edit-bar {
+            position: sticky;
+            bottom: 0;
+            margin: 24px -32px -32px;
+            padding: 14px 32px;
+            border-radius: 0 0 var(--radius-md, 12px) var(--radius-md, 12px);
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 140px;
-            justify-content: flex-start;
+            justify-content: flex-end;
+            gap: 8px;
+            background: var(--bg-card, #fff);
+            border-top: 1px solid var(--border, #e2e8f0);
         }
-        .document-content .signature-label {
-            font-weight: 700;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            font-size: 10px;
-            letter-spacing: 0.5px;
-            line-height: 1.4;
+
+        /* ---------- Toast ---------- */
+        .pe-toast {
+            position: fixed;
+            right: 24px; bottom: 24px;
+            z-index: 11000;
+            max-width: 420px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm, 6px);
+            background: #0f172a;
+            color: #fff;
+            font-size: 13px;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s, transform .2s;
+            pointer-events: none;
         }
-        .document-content .signature-line {
-            border-top: 1.5px solid #000;
-            width: 140px;
-            margin: 0 auto 5px auto;
-        }
-        .document-content .signature-name {
-            font-weight: 700;
-            margin-top: 8px;
-            font-size: 11px;
-        }
-        .document-content .signature-title {
-            font-size: 9px;
-            margin-top: 2px;
-            font-weight: 500;
+        .pe-toast.show { opacity: 1; transform: none; }
+        .pe-toast.error { background: var(--danger-hover, #dc2626); }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 900px) {
+            .pe-page.container { padding: 20px 16px 24px; }
+            .pe-title { font-size: 22px; }
+            .button-cell { justify-content: flex-start; }
+            .pe-table .col-actions { text-align: left; }
         }
 
         @media print {
-            .back-button, .view-btn, .delete-btn, .modal-footer, .modal-header {
-                display: none !important;
-            }
+            .pe-actions, .pe-toolbar, .pe-stats, .button-cell, .rename-btn, .modal-footer, .modal-header { display: none !important; }
         }
+
+        /* Dark theme: keep page surfaces in step with the app's dark palette */
+        [data-theme="dark"] .pe-section-head,
+        [data-theme="dark"] .pe-table thead th,
+        [data-theme="dark"] .pe-stat,
+        [data-theme="dark"] .documents-section,
+        [data-theme="dark"] .modal-header,
+        [data-theme="dark"] .modal-footer,
+        [data-theme="dark"] .pe-edit-bar,
+        [data-theme="dark"] #departmentModal .modal-body,
+        [data-theme="dark"] .modal-content { background: var(--theme-surface, #1e293b); border-color: var(--theme-border, #334155); }
+        [data-theme="dark"] .pe-table tbody td,
+        [data-theme="dark"] .pe-header { border-color: var(--theme-border, #334155); }
+        [data-theme="dark"] .pe-table tbody tr:hover td { background: rgba(148,163,184,.08); }
+        [data-theme="dark"] .pe-title,
+        [data-theme="dark"] .pe-section-title,
+        [data-theme="dark"] .pe-stat-value,
+        [data-theme="dark"] .doc-name,
+        [data-theme="dark"] .pe-table tbody td,
+        [data-theme="dark"] .modal-header h2 { color: #f1f5f9; }
+        [data-theme="dark"] .modal-body { background: var(--theme-bg, #0f172a); }
     </style>
     <script>try{var t=localStorage.getItem('bom_theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 
@@ -500,150 +568,222 @@
 
     {% include "partials/shell_start.html" %}
 
-    <div class="container">
-        <div class="button-container">
-            <button class="back-button" onclick="goBack()"> Back</button>
-            <button class="back-button" onclick="backToHome()">Back to Home</button>
-            {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
-            <button class="back-button" onclick="window.location.href='/approved_for_po'">Approved for PO</button>
+    {% set show_saved = user and (user.department or "").lower() != "purchasing" %}
+    <div class="container pe-page">
+        <!-- Page header -->
+        <header class="pe-header">
+            <div>
+                <div class="pe-eyebrow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    Purchasing &middot; MCE Pricing
+                </div>
+                <h1 class="pe-title">MCE Price Editor</h1>
+                <p class="pe-subtitle">Set verified vendor unit costs on quotation documents, rename them if needed, and post them to the requesting department.</p>
+                {% if user %}
+                <div class="pe-user">
+                    <span class="pe-user-avatar">{{ user.username[:1] }}</span>
+                    Signed in as <strong>{{ user.username }}</strong> &middot; {{ user.department or user.role }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="pe-actions">
+                <button class="pe-btn pe-btn-secondary" onclick="goBack()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                    Back
+                </button>
+                <button class="pe-btn pe-btn-secondary" onclick="backToHome()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Home
+                </button>
+                {% if user and (user.role == "admin" or (user.department and user.department.lower() == "purchasing")) %}
+                <button class="pe-btn pe-btn-secondary" onclick="window.location.href='/approved_for_po'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Approved for PO
+                </button>
+                {% endif %}
+                {% if user and user.role in ["department_admin", "admin"] %}
+                <button class="pe-btn pe-btn-primary" onclick="window.location.href='/approver'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                    Approver
+                </button>
+                {% endif %}
+                <button class="pe-btn pe-btn-danger-ghost" onclick="logout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Summary -->
+        <div class="pe-stats">
+            <div class="pe-stat tone-warning">
+                <span class="pe-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                <div><div class="pe-stat-value" id="statPending">0</div><div class="pe-stat-label">Pending price edit</div></div>
+            </div>
+            <div class="pe-stat tone-success">
+                <span class="pe-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+                <div><div class="pe-stat-value" id="statPosted">0</div><div class="pe-stat-label">Posted to departments</div></div>
+            </div>
+            {% if show_saved %}
+            <div class="pe-stat tone-primary">
+                <span class="pe-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                <div><div class="pe-stat-value" id="statBom">0</div><div class="pe-stat-label">Saved BOM documents</div></div>
+            </div>
+            <div class="pe-stat tone-info">
+                <span class="pe-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
+                <div><div class="pe-stat-value" id="statBoq">0</div><div class="pe-stat-label">Saved BOQ documents</div></div>
+            </div>
             {% endif %}
-            {% if user and user.role in ["department_admin", "admin"] %}
-            <button class="back-button approver-btn" onclick="window.location.href='/approver'">Approver</button>
-            {% endif %}
-            <button class="back-button" style="background-color: #d32f2f; margin-left: auto;" onclick="logout()"> Logout</button>
         </div>
 
-        <div class="header">
-            <h1>Price Editor - For Quotation Documents</h1>
-            <p>Edit UNIT COST for posted documents from Save BOM/BOQ page</p>
-            {% if user %}
-                <p style="color: #1f5a96; font-size: 12px; margin-top: 5px;">Logged in as: <strong>{{ user.username }}</strong> ({{ user.department or user.role }})</p>
-            {% endif %}
+        <!-- Toolbar -->
+        <div class="pe-toolbar">
+            <label class="pe-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" id="docSearch" placeholder="Search by document name, reference no. or department…" aria-label="Search documents" autocomplete="off">
+            </label>
+            <span class="pe-hint">Tip: click the pencil next to a document name to rename it.</span>
         </div>
 
-        {% if user and (user.department or "").lower() != "purchasing" %}
-<!-- BOM Documents Section -->
-        <div class="documents-section">
-            <div class="section-title">Bill of Materials (BOM)</div>
-            <table id="bomTable">
-                <thead>
-                    <tr>
-                        <th style="width: 40%;">Document Name</th>
-                        <th style="width: 30%;">Reference No</th>
-                        <th style="width: 20%;">Date Created</th>
-                        <th style="width: 10%;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="bomBody">
-                </tbody>
-            </table>
-        </div>
+        <!-- Pending Price Edit -->
+        <section class="documents-section accent-warning">
+            <div class="pe-section-head">
+                <div class="pe-section-title">Pending Price Edit <span class="pe-count" id="countPending">0</span></div>
+                <span class="pe-section-desc">Unit cost is editable</span>
+            </div>
+            <div class="pe-table-wrap">
+                <table class="pe-table" id="pendingTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 34%;">Document Name</th>
+                            <th style="width: 14%;">Reference No</th>
+                            <th style="width: 7%;">Type</th>
+                            <th style="width: 10%;">Date</th>
+                            <th style="width: 10%;">Status</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingBody"></tbody>
+                </table>
+            </div>
+        </section>
 
-        <!-- BOQ Documents Section -->
-        <div class="documents-section">
-            <div class="section-title">Bill of Quantities (BOQ)</div>
-            <table id="boqTable">
-                <thead>
-                    <tr>
-                        <th style="width: 40%;">Document Name</th>
-                        <th style="width: 30%;">Reference No</th>
-                        <th style="width: 20%;">Date Created</th>
-                        <th style="width: 10%;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="boqBody">
-                </tbody>
-            </table>
-        </div>
-{% endif %}
-        <!-- Pending Price Edit Documents Section -->
-        <div class="documents-section">
-            <div class="section-title" style="background-color: #FF9800 !important; color: white !important;">Pending Price Edit (UNIT COST Editable)</div>
-            <table id="pendingTable">
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">Document Name</th>
-                        <th style="width: 12%;">Reference No</th>
-                        <th style="width: 8%;">Type</th>
-                        <th style="width: 12%;">Date</th>
-                        <th style="width: 10%;">Status</th>
-                        <th style="width: 38%;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="pendingBody">
-                </tbody>
-            </table>
-        </div>
+        <!-- Posted files for PO -->
+        <section class="documents-section accent-success posted-po-section">
+            <div class="pe-section-head">
+                <div class="pe-section-title">Posted for PO <span class="pe-count" id="countPosted">0</span></div>
+                <span class="pe-section-desc">Completed &amp; sent to the department's Save page</span>
+            </div>
+            <div class="pe-table-wrap">
+                <table class="pe-table" id="postedPOTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 34%;">Document Name</th>
+                            <th style="width: 14%;">Reference No</th>
+                            <th style="width: 7%;">Type</th>
+                            <th style="width: 10%;">Posted Date</th>
+                            <th style="width: 10%;">Status</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postedPOBody"></tbody>
+                </table>
+            </div>
+        </section>
 
-        <!-- Posted files for PO Section -->
-        <div class="documents-section posted-po-section">
-            <div class="section-title" style="background-color: #4CAF50 !important; color: white !important;">Posted files for PO (Completed & Sent to Department Save Page)</div>
-            <table id="postedPOTable">
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">Document Name</th>
-                        <th style="width: 12%;">Reference No</th>
-                        <th style="width: 8%;">Type</th>
-                        <th style="width: 12%;">Posted Date</th>
-                        <th style="width: 10%;">Status</th>
-                        <th style="width: 38%;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="postedPOBody">
-                </tbody>
-            </table>
-        </div>
+        {% if show_saved %}
+        <!-- Saved BOM -->
+        <section class="documents-section accent-primary">
+            <div class="pe-section-head">
+                <div class="pe-section-title">Bill of Materials (BOM) <span class="pe-count" id="countBom">0</span></div>
+                <span class="pe-section-desc">Saved documents</span>
+            </div>
+            <div class="pe-table-wrap">
+                <table class="pe-table" id="bomTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 44%;">Document Name</th>
+                            <th style="width: 20%;">Reference No</th>
+                            <th style="width: 14%;">Date Created</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bomBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Saved BOQ -->
+        <section class="documents-section accent-info">
+            <div class="pe-section-head">
+                <div class="pe-section-title">Bill of Quantities (BOQ) <span class="pe-count" id="countBoq">0</span></div>
+                <span class="pe-section-desc">Saved documents</span>
+            </div>
+            <div class="pe-table-wrap">
+                <table class="pe-table" id="boqTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 44%;">Document Name</th>
+                            <th style="width: 20%;">Reference No</th>
+                            <th style="width: 14%;">Date Created</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boqBody"></tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
     </div>
 
     <!-- Department Selection Modal for Posting -->
-    <div id="departmentModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
-                <h2 style="margin: 0; color: white;">Post Document</h2>
-                <span id="closeDeptModalBtn" style="cursor: pointer; font-size: 28px; font-weight: bold; color: white;">&times;</span>
+    <div id="departmentModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="deptModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="deptModalTitle">Post document to department</h2>
+                <button type="button" id="closeDeptModalBtn" class="modal-close" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 25px;">
-                <p style="margin-bottom: 15px; color: #333; font-size: 14px;">Select the department where this document should be posted:</p>
-                <div style="margin-bottom: 20px;">
-                    <label for="targetDepartmentSelect" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">Target Department:</label>
-                    <select id="targetDepartmentSelect" style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 5px; font-size: 14px; background-color: #f9f9f9;">
-                        <option value="">-- Select Department --</option>
-                        <option value="Purchasing">Purchasing</option>
-                        <option value="Design and Construction">Design and Construction</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Technical">Technical</option>
-                        <option value="Admin">Admin (All Departments)</option>
-                    </select>
-                </div>
-                <div id="postDocInfo" style="background-color: #E8F5E9; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
+            <div class="modal-body">
+                <label for="targetDepartmentSelect" class="pe-field-label">Target department</label>
+                <select id="targetDepartmentSelect" class="pe-select">
+                    <option value="">-- Select Department --</option>
+                    <option value="Purchasing">Purchasing</option>
+                    <option value="Design and Construction">Design and Construction</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Admin">Admin (All Departments)</option>
+                </select>
+                <div id="postDocInfo" class="pe-doc-chip">
                     <strong>Document:</strong> <span id="postDocName"></span>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 15px 25px; background-color: #f5f5f5; border-top: 1px solid #ddd;">
-                <button id="confirmPostBtn" style="padding: 12px 25px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; margin-right: 10px;">Post to Department</button>
-                <button id="cancelPostBtn" style="padding: 12px 25px; background-color: #666; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">Cancel</button>
+            <div class="modal-footer">
+                <button type="button" id="cancelPostBtn" class="pe-btn pe-btn-secondary">Cancel</button>
+                <button type="button" id="confirmPostBtn" class="pe-btn pe-btn-success">Post to Department</button>
             </div>
         </div>
     </div>
 
-    <!-- Document Viewer Modal -->
-    <div id="viewerModal" class="modal">
+    <!-- Document Viewer / Unit Cost Editor Modal -->
+    <div id="viewerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Document Viewer</h2>
-                <span id="closeModalBtn" style="cursor: pointer; font-size: 28px; font-weight: bold;">&times;</span>
+                <button type="button" id="closeModalBtn" class="modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="documentContent" class="document-content"></div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-print-btn" onclick="printDocument()">Print</button>
-                <button class="modal-btn modal-pdf-btn" onclick="downloadPDF()">Download PDF</button>
-                <button class="modal-btn modal-close-btn" onclick="closeViewer()">Close</button>
+                <button class="pe-btn pe-btn-secondary" onclick="printDocument()">Print</button>
+                <button class="pe-btn pe-btn-secondary" onclick="downloadPDF()">Download PDF</button>
+                <button class="pe-btn pe-btn-secondary" onclick="closeViewer()">Close</button>
             </div>
         </div>
     </div>
+
+    <div id="peToast" class="pe-toast" role="status" aria-live="polite"></div>
 
     <!-- Include Document Sync Library -->
     <script src="document_sync.js"></script>
@@ -807,109 +947,217 @@
             }
         }
 
-        // Display BOM documents
+        // ── Rendering helpers ────────────────────────────────────────────
+        const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+        const canRename = userRole !== 'guest';
+        let searchQuery = '';
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('peToast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.toggle('error', !!isError);
+            toast.classList.add('show');
+            clearTimeout(showToast._timer);
+            showToast._timer = setTimeout(() => toast.classList.remove('show'), 3200);
+        }
+
+        function getDocList(listKey) {
+            switch (listKey) {
+                case 'bom': return savedDocuments.bom;
+                case 'boq': return savedDocuments.boq;
+                case 'pending': return pendingPriceEdit;
+                case 'posted': return postedPODocuments;
+                default: return [];
+            }
+        }
+
+        function matchesSearch(doc) {
+            if (!searchQuery) return true;
+            const haystack = [doc.name, doc.refNo, doc.department, doc.targetDepartment, doc.projectName, doc.createdBy, doc.type]
+                .filter(Boolean).join(' ').toLowerCase();
+            return haystack.includes(searchQuery);
+        }
+
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        function updateCounts() {
+            setText('statPending', pendingPriceEdit.length);
+            setText('statPosted', postedPODocuments.length);
+            setText('statBom', savedDocuments.bom.length);
+            setText('statBoq', savedDocuments.boq.length);
+            setText('countPending', pendingPriceEdit.length);
+            setText('countPosted', postedPODocuments.length);
+            setText('countBom', savedDocuments.bom.length);
+            setText('countBoq', savedDocuments.boq.length);
+        }
+
+        function emptyRow(colspan, title, hint) {
+            return `<tr><td colspan="${colspan}" class="no-documents"><strong>${escapeHtml(title)}</strong>${escapeHtml(hint || '')}</td></tr>`;
+        }
+
+        function nameCell(listKey, index, doc, extraMeta = '') {
+            const renameBtn = canRename
+                ? `<button type="button" class="rename-btn" data-action="rename" data-list="${listKey}" data-index="${index}" title="Rename document" aria-label="Rename ${escapeHtml(doc.name)}">${ICON_PENCIL}</button>`
+                : '';
+            const creator = isAdminUser && doc.createdBy ? `<span>by ${escapeHtml(doc.createdBy)}</span>` : '';
+            const meta = (creator || extraMeta) ? `<div class="doc-meta">${extraMeta}${creator}</div>` : '';
+            return `
+                <td class="doc-name-cell">
+                    <div class="doc-name-row"><span class="doc-name">${escapeHtml(doc.name)}</span>${renameBtn}</div>
+                    ${meta}
+                </td>`;
+        }
+
+        // Shared renderer for the saved BOM / BOQ tables
+        function renderSavedTable(listKey, tbodyId, label) {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return; // hidden for the Purchasing department
+            const docs = getDocList(listKey);
+            if (docs.length === 0) {
+                tbody.innerHTML = emptyRow(4, `No saved ${label} documents`);
+                return;
+            }
+            const rows = docs.map((doc, index) => matchesSearch(doc) ? `
+                <tr>
+                    ${nameCell(listKey, index, doc)}
+                    <td><span class="pe-ref">${escapeHtml(doc.refNo)}</span></td>
+                    <td><span class="document-date">${escapeHtml(doc.date)}</span></td>
+                    <td class="col-actions">
+                        <div class="button-cell">
+                            <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="view" data-list="${listKey}" data-index="${index}">View</button>
+                            <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="print" data-list="${listKey}" data-index="${index}">Print</button>
+                            <button class="pe-btn pe-btn-danger-ghost pe-btn-sm" data-action="delete" data-list="${listKey}" data-index="${index}">Delete</button>
+                        </div>
+                    </td>
+                </tr>` : '').join('');
+            tbody.innerHTML = rows || emptyRow(4, 'No matching documents', ' — try a different search.');
+        }
+
         function displayBOMDocuments() {
-            const tbody = document.getElementById('bomBody');
-
-            // Skip if element doesn't exist (hidden for Purchasing dept)
-            if (!tbody) return;
-
-            if (savedDocuments.bom.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="no-documents">No saved BOM documents</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = savedDocuments.bom.map((doc, index) => `
-                <tr>
-                    <td><strong>${doc.name}</strong></td>
-                    <td>${doc.refNo}</td>
-                    <td><span class="document-date">${doc.date}</span></td>
-                    <td>
-                        <div class="button-cell">
-                            <button class="view-btn" data-type="bom" data-index="${index}">View</button>
-                            <button class="print-btn" data-type="bom" data-index="${index}">Print</button>
-                            <button class="delete-btn" data-type="bom" data-index="${index}">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Add event listeners to BOM view buttons
-            document.querySelectorAll('#bomBody .view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    viewSavedDocument(savedDocuments.bom[index]);
-                });
-            });
-            
-            // Add event listeners to BOM print buttons
-            document.querySelectorAll('#bomBody .print-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    printSavedDocument(savedDocuments.bom[index]);
-                });
-            });
-
-            // Add event listeners to BOM delete buttons
-            document.querySelectorAll('#bomBody .delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    deleteSavedDocument('bom', index);
-                });
-            });
+            renderSavedTable('bom', 'bomBody', 'BOM');
+            updateCounts();
         }
 
-        // Display BOQ documents
         function displayBOQDocuments() {
-            const tbody = document.getElementById('boqBody');
+            renderSavedTable('boq', 'boqBody', 'BOQ');
+            updateCounts();
+        }
 
-            // Skip if element doesn't exist (hidden for Purchasing dept)
-            if (!tbody) return;
+        function renderAllTables() {
+            displayBOMDocuments();
+            displayBOQDocuments();
+            displayPendingDocuments();
+            displayPostedPODocuments();
+        }
 
-            if (savedDocuments.boq.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="no-documents">No saved BOQ documents</td></tr>';
-                return;
-            }
+        // ── Inline document rename ───────────────────────────────────────
+        function startRename(listKey, index, button) {
+            const doc = getDocList(listKey)[index];
+            const cell = button.closest('.doc-name-cell');
+            if (!doc || !cell) return;
+            const row = cell.querySelector('.doc-name-row');
 
-            tbody.innerHTML = savedDocuments.boq.map((doc, index) => `
-                <tr>
-                    <td><strong>${doc.name}</strong></td>
-                    <td>${doc.refNo}</td>
-                    <td><span class="document-date">${doc.date}</span></td>
-                    <td>
-                        <div class="button-cell">
-                            <button class="view-btn" data-type="boq" data-index="${index}">View</button>
-                            <button class="print-btn" data-type="boq" data-index="${index}">Print</button>
-                            <button class="delete-btn" data-type="boq" data-index="${index}">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Add event listeners to BOQ view buttons
-            document.querySelectorAll('#boqBody .view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    viewSavedDocument(savedDocuments.boq[index]);
-                });
+            row.outerHTML = `
+                <form class="rename-form" data-list="${listKey}" data-index="${index}" novalidate>
+                    <input type="text" class="rename-input" maxlength="255" value="${escapeHtml(doc.name)}" aria-label="New document name" required>
+                    <button type="submit" class="pe-btn pe-btn-primary pe-btn-sm">Save</button>
+                    <button type="button" class="pe-btn pe-btn-secondary pe-btn-sm" data-action="rename-cancel">Cancel</button>
+                    <div class="rename-error" hidden></div>
+                </form>`;
+
+            const form = cell.querySelector('.rename-form');
+            const input = form.querySelector('.rename-input');
+            input.focus();
+            input.select();
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitRename(listKey, index, form);
             });
-            
-            // Add event listeners to BOQ print buttons
-            document.querySelectorAll('#boqBody .print-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    printSavedDocument(savedDocuments.boq[index]);
-                });
-            });
-
-            // Add event listeners to BOQ delete buttons
-            document.querySelectorAll('#boqBody .delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    deleteSavedDocument('boq', index);
-                });
+            form.querySelector('[data-action="rename-cancel"]').addEventListener('click', renderAllTables);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); renderAllTables(); }
             });
         }
+
+        async function submitRename(listKey, index, form) {
+            const doc = getDocList(listKey)[index];
+            const input = form.querySelector('.rename-input');
+            const errorEl = form.querySelector('.rename-error');
+            const newName = input.value.trim();
+            const showError = (msg) => { errorEl.textContent = msg; errorEl.hidden = false; input.focus(); };
+
+            if (!doc) return renderAllTables();
+            if (!newName) return showError('Document name cannot be empty.');
+            if (newName === doc.name) return renderAllTables();
+
+            form.querySelectorAll('button, input').forEach(el => el.disabled = true);
+            try {
+                const response = await fetch('api/document_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'rename', documentName: doc.name, newName: newName })
+                });
+                let result = {};
+                try { result = await response.json(); } catch (_) { /* non-JSON error page */ }
+
+                if (!result.success) {
+                    form.querySelectorAll('button, input').forEach(el => el.disabled = false);
+                    return showError(result.message || result.detail || ('Rename failed (HTTP ' + response.status + ').'));
+                }
+
+                const oldName = doc.name;
+                doc.name = result.name || newName;
+                renderAllTables();
+                showToast(`Renamed "${oldName}" to "${doc.name}"`);
+            } catch (error) {
+                form.querySelectorAll('button, input').forEach(el => el.disabled = false);
+                showError('Could not reach the server: ' + error.message);
+            }
+        }
+
+        // ── Delegated table actions & search (wired once) ────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const handlers = {
+                rename: (list, i, btn) => startRename(list, i, btn),
+                view: (list, i) => viewSavedDocument(getDocList(list)[i]),
+                print: (list, i) => printSavedDocument(getDocList(list)[i]),
+                delete: (list, i) => (list === 'posted' ? deletePostedPODocument(i) : deleteSavedDocument(list, i)),
+                edit: (list, i) => editUnitCost(pendingPriceEdit[i], i),
+                post: (list, i) => postBackToSave(i),
+                unpost: (list, i) => unpostDocument(i)
+            };
+
+            ['bomBody', 'boqBody', 'pendingBody', 'postedPOBody'].forEach(id => {
+                const tbody = document.getElementById(id);
+                if (!tbody) return;
+                tbody.addEventListener('click', function(e) {
+                    const btn = e.target.closest('button[data-action]');
+                    if (!btn || !tbody.contains(btn)) return;
+                    const handler = handlers[btn.dataset.action];
+                    if (!handler) return;
+                    handler(btn.dataset.list, parseInt(btn.dataset.index, 10), btn);
+                });
+            });
+
+            const search = document.getElementById('docSearch');
+            if (search) {
+                search.addEventListener('input', function() {
+                    searchQuery = this.value.trim().toLowerCase();
+                    renderAllTables();
+                });
+            }
+        });
 
         // Print saved document directly
         function printSavedDocument(doc) {
@@ -1728,53 +1976,37 @@
         // Display pending price edit documents
         function displayPendingDocuments() {
             const tbody = document.getElementById('pendingBody');
-            
             if (!tbody) return;
-            
+            updateCounts();
+
             if (pendingPriceEdit.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="no-documents">No pending documents for price editing</td></tr>';
+                tbody.innerHTML = emptyRow(6, 'No documents waiting for price editing', ' — new ones appear here when posted from Save BOM/BOQ.');
                 return;
             }
 
-            tbody.innerHTML = pendingPriceEdit.map((doc, index) => {
-                // Show creator info for Admin users
-                const creatorInfo = isAdminUser && doc.createdBy ? ` <small style="color: #666;">(by: ${doc.createdBy})</small>` : '';
+            const rows = pendingPriceEdit.map((doc, index) => {
+                if (!matchesSearch(doc)) return '';
+                const statusBadge = doc.status === 'unposted'
+                    ? '<span class="status-badge badge-unposted">Unposted</span>'
+                    : '<span class="status-badge badge-pending">Pending Edit</span>';
+                const deptMeta = doc.department ? `<span class="dept">${escapeHtml(doc.department)}</span>` : '';
                 return `
                 <tr>
-                    <td><strong>${doc.name}</strong>${creatorInfo}</td>
-                    <td>${doc.refNo}</td>
-                    <td><span class="status-badge" style="background-color: #E3F2FD; color: #1565C0;">${doc.type || doc.originalType?.toUpperCase() || 'BOM'}</span></td>
-                    <td><span class="document-date">${doc.date}</span></td>
-                    <td><span class="status-badge" style="background-color: #FFF3E0; color: #E65100;">Pending Edit</span></td>
-                    <td>
+                    ${nameCell('pending', index, doc, deptMeta)}
+                    <td><span class="pe-ref">${escapeHtml(doc.refNo)}</span></td>
+                    <td><span class="status-badge badge-type">${escapeHtml(doc.type || 'bom')}</span></td>
+                    <td><span class="document-date">${escapeHtml(doc.date)}</span></td>
+                    <td>${statusBadge}</td>
+                    <td class="col-actions">
                         <div class="button-cell">
-                            <button class="view-btn" data-type="pending" data-index="${index}">View</button>
-                            <button class="view-btn" data-type="pending" data-index="${index}" style="background-color: #2196F3;">Edit UNIT COST</button>
-                            <button class="post-btn" data-type="pending" data-index="${index}">Post</button>
+                            <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="view" data-list="pending" data-index="${index}">View</button>
+                            <button class="pe-btn pe-btn-primary pe-btn-sm" data-action="edit" data-list="pending" data-index="${index}">Edit Unit Cost</button>
+                            <button class="pe-btn pe-btn-success pe-btn-sm" data-action="post" data-list="pending" data-index="${index}">Post</button>
                         </div>
                     </td>
-                </tr>
-            `}).join('');
-
-            // Add event listeners to pending view buttons
-            document.querySelectorAll('#pendingBody .view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    if (this.textContent.includes('Edit')) {
-                        editUnitCost(pendingPriceEdit[index], index);
-                    } else {
-                        viewSavedDocument(pendingPriceEdit[index]);
-                    }
-                });
-            });
-
-            // Add event listeners to pending post buttons
-            document.querySelectorAll('#pendingBody .post-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    postBackToSave(index);
-                });
-            });
+                </tr>`;
+            }).join('');
+            tbody.innerHTML = rows || emptyRow(6, 'No matching documents', ' — try a different search.');
         }
 
         // Edit Unit Cost for a document
@@ -1786,20 +2018,24 @@
             const modalTitle = document.getElementById('modalTitle');
             const documentContent = document.getElementById('documentContent');
 
-            modalTitle.textContent = 'Edit UNIT COST - ' + doc.name;
+            modalTitle.textContent = 'Edit Unit Cost — ' + doc.name;
 
             // Create editable content from the document's HTML
             let editableContent = doc.htmlContent || '';
 
             documentContent.innerHTML = `
-                <div id="editingNotice" style="margin-bottom: 15px; padding: 15px; background-color: #FFF3E0; border-radius: 5px; border-left: 4px solid #FF9800;">
-                    <strong style="color: #E65100;">Editing Mode:</strong> Modify UNIT COST values in the highlighted fields. Totals will recalculate automatically.
-                    <br><span style="color: #2196F3;">Blue = Unit Cost (BOM)</span> | <span style="color: #1565C0;">Dark Blue = Material Cost (BOQ)</span> | <span style="color: #E65100;">Orange = Labor Cost (BOQ)</span>
+                <div id="editingNotice" class="pe-edit-notice">
+                    <strong>Editing mode:</strong> change the unit cost values in the highlighted fields — totals recalculate automatically.
+                    <div class="pe-legend">
+                        <span><i style="border-color:#2196F3;background:#E3F2FD"></i>Unit cost (BOM)</span>
+                        <span><i style="border-color:#1565C0;background:#E3F2FD"></i>Material cost (BOQ)</span>
+                        <span><i style="border-color:#FF9800;background:#FFF3E0"></i>Labor cost (BOQ)</span>
+                    </div>
                 </div>
                 <div id="editableDocContent">${editableContent}</div>
-                <div id="saveButtonsDiv" style="margin-top: 20px; text-align: center; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
-                    <button onclick="saveUnitCostChanges()" style="padding: 12px 30px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px; font-size: 14px;">Save Changes</button>
-                    <button onclick="closeViewer()" style="padding: 12px 30px; background-color: #666; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">Cancel</button>
+                <div id="saveButtonsDiv" class="pe-edit-bar">
+                    <button type="button" class="pe-btn pe-btn-secondary" onclick="closeViewer()">Cancel</button>
+                    <button type="button" class="pe-btn pe-btn-success" onclick="saveUnitCostChanges()">Save Changes</button>
                 </div>
             `;
 
@@ -2217,72 +2453,40 @@
         // Display Posted PO Documents
         function displayPostedPODocuments() {
             const tbody = document.getElementById('postedPOBody');
-
             if (!tbody) return;
+            updateCounts();
 
             if (postedPODocuments.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="no-documents">No posted PO documents yet</td></tr>';
+                tbody.innerHTML = emptyRow(6, 'No posted documents yet', ' — documents you post to a department will be listed here.');
                 return;
             }
 
-            tbody.innerHTML = postedPODocuments.map((doc, index) => {
-                // Show Unpost button for Admin and Purchasing users
-                const unpostBtn = (isPurchasingUser || isAdminUser) ? `<button class="unpost-btn" data-type="postedPO" data-index="${index}" style="background-color: #FF9800; color: white;">Unpost</button>` : '';
-                // Show creator info for Admin users
-                const creatorInfo = isAdminUser && doc.createdBy ? ` <small style="color: #666;">(by: ${doc.createdBy})</small>` : '';
-                // Show target department
+            const rows = postedPODocuments.map((doc, index) => {
+                if (!matchesSearch(doc)) return '';
+                // Unpost is available to Admin and Purchasing users
+                const unpostBtn = (isPurchasingUser || isAdminUser)
+                    ? `<button class="pe-btn pe-btn-warning pe-btn-sm" data-action="unpost" data-list="posted" data-index="${index}">Unpost</button>`
+                    : '';
                 const targetDept = doc.targetDepartment || doc.department || '';
-                const deptBadge = targetDept ? `<br><small style="color: #1565C0; font-weight: bold;">→ ${targetDept}</small>` : '';
+                const deptMeta = targetDept ? `<span class="dept">&rarr; ${escapeHtml(targetDept)}</span>` : '';
                 return `
                 <tr>
-                    <td><strong>${doc.name}</strong>${creatorInfo}${deptBadge}</td>
-                    <td>${doc.refNo}</td>
-                    <td><span class="status-badge" style="background-color: #E8F5E9; color: #2E7D32;">${doc.type || doc.originalType?.toUpperCase() || 'BOM'}</span></td>
-                    <td><span class="document-date">${doc.completedDate || doc.date}</span></td>
-                    <td><span class="status-badge" style="background-color: #E8F5E9; color: #2E7D32;">Posted</span></td>
-                    <td>
+                    ${nameCell('posted', index, doc, deptMeta)}
+                    <td><span class="pe-ref">${escapeHtml(doc.refNo)}</span></td>
+                    <td><span class="status-badge badge-type">${escapeHtml(doc.type || 'bom')}</span></td>
+                    <td><span class="document-date">${escapeHtml(doc.completedDate || doc.date)}</span></td>
+                    <td><span class="status-badge badge-posted">Posted</span></td>
+                    <td class="col-actions">
                         <div class="button-cell">
-                            <button class="view-btn" data-type="postedPO" data-index="${index}">View</button>
-                            <button class="print-btn" data-type="postedPO" data-index="${index}">Print</button>
+                            <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="view" data-list="posted" data-index="${index}">View</button>
+                            <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="print" data-list="posted" data-index="${index}">Print</button>
                             ${unpostBtn}
-                            <button class="delete-btn" data-type="postedPO" data-index="${index}" style="background-color: #f44336;">Remove</button>
+                            <button class="pe-btn pe-btn-danger-ghost pe-btn-sm" data-action="delete" data-list="posted" data-index="${index}">Remove</button>
                         </div>
                     </td>
-                </tr>
-                `;
+                </tr>`;
             }).join('');
-
-            // Add event listeners to posted PO view buttons
-            document.querySelectorAll('#postedPOBody .view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    viewSavedDocument(postedPODocuments[index]);
-                });
-            });
-
-            // Add event listeners to posted PO print buttons
-            document.querySelectorAll('#postedPOBody .print-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    printSavedDocument(postedPODocuments[index]);
-                });
-            });
-
-            // Add event listeners to posted PO delete buttons
-            document.querySelectorAll('#postedPOBody .delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    deletePostedPODocument(index);
-                });
-            });
-            
-            // Add event listeners to posted PO unpost buttons (Purchasing only)
-            document.querySelectorAll('#postedPOBody .unpost-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    unpostDocument(index);
-                });
-            });
+            tbody.innerHTML = rows || emptyRow(6, 'No matching documents', ' — try a different search.');
         }
 
         // Delete Posted PO Document
