@@ -191,6 +191,59 @@
     };
     const CURRENT_USER = {{ (user.username if user else '')|tojson }};
 
+    // "Are you sure?" text for each switch: [turning OFF, turning ON]
+    const CONFIRM = {
+        'public_help': {
+            off: ['Disable Public Help?', 'The Quick Help link will be removed from the login page, and /quick-help will show "Page Not Found". Signed-in users keep the Help page.'],
+            on:  ['Enable Public Help?', 'A Quick Help link will appear on the login page. Anyone will be able to read the user manual at /quick-help without signing in.']
+        },
+        'guest_signup': {
+            off: ['Disable Guest account creation?', 'The Guest role will be removed from Create Account on the login page and new Guest sign-ups will be rejected. Existing Guest accounts are not affected.'],
+            on:  ['Enable Guest account creation?', 'Visitors will be able to request Guest accounts from the login page. Each request still needs the authorizing credentials of an existing User or Administrator.']
+        }
+    };
+
+    // Promise-based confirmation dialog (styled like App.confirm, but reports Cancel too)
+    function askConfirm(title, message, confirmLabel, danger) {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay open';
+            overlay.innerHTML = `
+                <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="st-confirm-title" aria-describedby="st-confirm-msg" style="max-width: 460px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="st-confirm-title"></h3>
+                        <button type="button" class="modal-close" data-act="cancel" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">Are you sure?</p>
+                        <p id="st-confirm-msg" style="font-size:14px; color:#475569; line-height:1.6;"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-act="cancel">Cancel</button>
+                        <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'} btn-sm" data-act="ok"></button>
+                    </div>
+                </div>`;
+            overlay.querySelector('#st-confirm-title').textContent = title;
+            overlay.querySelector('#st-confirm-msg').textContent = message;
+            overlay.querySelector('[data-act="ok"]').textContent = confirmLabel;
+
+            const close = (answer) => {
+                document.removeEventListener('keydown', onKey);
+                overlay.remove();
+                resolve(answer);
+            };
+            const onKey = (e) => { if (e.key === 'Escape') close(false); };
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) return close(false);          // click outside the box
+                const act = e.target.closest('[data-act]');
+                if (act) close(act.dataset.act === 'ok');
+            });
+            document.addEventListener('keydown', onKey);
+            document.body.appendChild(overlay);
+            overlay.querySelector('[data-act="cancel"].btn').focus();     // safe default
+        });
+    }
+
     function renderMeta(el) {
         const iso = el.dataset.updated;
         if (!iso) return;
@@ -213,7 +266,13 @@
 
         input.addEventListener('change', async () => {
             const enabled = input.checked;
-            paint(card, enabled);              // reflect the new state immediately
+            paint(card, !enabled);             // nothing changes until the admin confirms
+
+            const [title, message] = CONFIRM[card.dataset.key][enabled ? 'on' : 'off'];
+            const ok = await askConfirm(title, message, enabled ? 'Yes, enable' : 'Yes, disable', !enabled);
+            if (!ok) { input.focus(); return; }
+
+            paint(card, enabled);              // confirmed: reflect the new state immediately
             input.disabled = true;
             try {
                 const res = await fetch('/api/admin/settings/' + card.dataset.api, {
