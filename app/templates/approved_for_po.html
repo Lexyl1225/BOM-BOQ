@@ -804,7 +804,7 @@
     <div class="button-container">
         <a href="/price_edit_bomboq" class="nav-button btn-back">&#8592; Price Edit Page</a>
         <button class="nav-button btn-refresh" onclick="loadDocuments()">&#8635; Refresh</button>
-        <a href="/approved_for_po/login" class="nav-button btn-logout" style="margin-left:auto;">Logout</a>
+        <button type="button" class="nav-button btn-logout" style="margin-left:auto;" onclick="if (confirm('Are you sure you want to logout?')) App.logout();">Logout</button>
     </div>
 
     <!-- Stats -->
