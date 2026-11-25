@@ -17,8 +17,9 @@ All historical data (37 user accounts, 14 engineering documents, 4 file attachme
 - [🏛️ System Architecture](#️-system-architecture)
 - [📁 Project Directory Structure](#-project-directory-structure)
 - [🚀 Quickstart & Installation](#-quickstart--installation)
-- [👥 Demo Accounts & Role Hierarchy](#-demo-accounts--role-hierarchy)
+- [👥 Role Hierarchy](#-role-hierarchy)
 - [🔄 Engineering Document Lifecycle](#-engineering-document-lifecycle)
+- [📖 In-App Help / User Manual](#-in-app-help--user-manual)
 - [📡 API & Legacy Compatibility](#-api--legacy-compatibility)
 - [🎨 Themes & Modernized UI](#-themes--modernized-ui)
 - [🧪 Testing & Verification](#-testing--verification)
@@ -117,11 +118,12 @@ graph TD
 │   └── templates/
 │       ├── base.html             # Master layout with navigation bar, user capsule, theme selector
 │       ├── index.html            # Dashboard with real-time KPI metrics & recent activity
-│       ├── login.html            # Split-screen auth with role-based registration & quick logins
+│       ├── login.html            # Split-screen sign-in and role-based registration
 │       ├── bom.html              # Interactive Bill of Materials editor with live cost calculation
 │       ├── boq.html              # Interactive Bill of Quantities editor with labor breakdown
 │       ├── save_bomboq.html      # Saved documents manager with search and status tabs
-│       ├── price_edit_bomboq.html# Purchasing MCE unit price editor and department posting
+│       ├── price_edit_bomboq.html# Purchasing MCE unit price editor, document rename and department posting
+│       ├── help.html             # In-app Help / User Manual (/help), available to all signed-in users
 │       ├── approver.html         # Department Admin approval review interface
 │       ├── approved_for_po.html  # Purchasing PO hub with drag-and-drop file upload
 │       ├── estimate.html         # Project cost estimate calculator (Materials, Labor, Allowances)
@@ -209,20 +211,18 @@ python run.py
 
 ---
 
-## 👥 Demo Accounts & Role Hierarchy
+## 👥 Role Hierarchy
 
-| Username | Role | Department | Password | Permissions & Purpose |
-|:---|:---|:---|:---|:---|
-| **`Admin`** | `admin` | Admin | `admin123` / `T0ms1234` | Full system access, user administration, global approvals |
-| **`Engr. Alex`** | `user` | Engineering | `123456` | BOM/BOQ creation, cost estimate builder, departmental files |
-| **`Mark`** | `user` | Purchasing | `123456` | MCE unit price editing, PO attachment uploads, PO hub |
-| **`Edward`** | `department_admin` | Ops | `123456` | Review and approve documents posted to Ops department |
-| **`Ryan`** | `department_admin` | DAC | `123456` | Review and approve documents posted to DAC department |
-| **`Testguest`** | `guest` | — | `guest123` | Read-only exploration access |
+| Role | Typical department | Permissions & Purpose |
+|:---|:---|:---|
+| **`admin`** (System Administrator) | Admin | Full system access: every page, user administration, API keys, audit logs and approvals for all departments. The only role that can edit, send back or delete **approved** documents, and remove posted documents. |
+| **`department_admin`** (Department Admin) | Any | Everything a `user` can do, plus reviewing and approving documents posted to **their own** department (`/approver`). |
+| **`user`** (Department Member) | Engineering, Operations, Electrical, Technical, … | Create BOMs, BOQs and cost estimates; edit, delete and send their department's documents to MCE. |
+| **`user`** in **Purchasing** | Purchasing | MCE unit price editing, renaming and posting (`/price_edit_bomboq`), unposting for correction, and the PO hub with attachments (`/approved_for_po`). Saved documents are **view-only**, and the BOM / BOQ / Estimate builders are not available. |
+| **`guest`** | — | Read-only: browse and preview documents; cannot save, edit, post or delete. |
 
-*Quick login buttons are available directly on the login screen (`/login`) for instant one-click testing.*
-
-> The demo passwords above only work until a user sets a password of their own. Non-admin accounts are asked to do that the first time they sign in.
+* Accounts are created by an Administrator at **Administration → Users** (`/users_admin`), or through **Create Account** on the sign-in page. Administrator accounts can only be created with an existing Administrator's credentials.
+* A full, role-aware explanation of every page is available in the app at **Support → Help** (`/help`).
 
 ### 🔒 Password Management
 
@@ -260,6 +260,36 @@ stateDiagram-v2
 3. **Department Approval**: Department Admin reviews line items in Approvals (`/approver`) and approves the final amounts.
 4. **Purchase Order Execution**: Document appears in Approved for PO (`/approved_for_po`), where purchasing attaches vendor quotations, drawings, and purchase requisitions.
 
+### MCE Pricing page (`/price_edit_bomboq`)
+- Full-width layout with summary cards (pending / posted / saved counts) and a search box that filters every table.
+- **Pending Price Edit** → *View*, *Edit Unit Cost* (highlighted cost fields, live totals), *Post* (choose the target department).
+- **Posted for PO** → *View*, *Print*, *Unpost* (back to Pending as `unposted` for correction) and *Remove*.
+- **Remove permanently deletes the document** and is shown to **Administrators only**. If the server refuses a delete, the page shows the error and keeps the row instead of reporting success.
+- **Rename a document**: click the pencil icon next to its name, type the new name, press <kbd>Enter</kbd> (<kbd>Esc</kbd> cancels).
+  - Names are the document key across the app, so a name already used by another document is rejected.
+  - Allowed for Administrators, Purchasing, the owner and the owner's department. Purchasing may rename only documents in the MCE workflow (`pending_price_edit`, `posted`, `unposted`). Approved documents can be renamed by Administrators only.
+  - Every rename is written to the audit log (`rename`). Attachments stay linked, because they reference the document ID.
+
+### Saved Documents page (`/save_bomboq`)
+- Wider page (up to 1760px) with clickable summary cards that double as filters, tabs with count badges, search across name / reference no. / project / department / creator, a department filter and **Clear filters**.
+- Table with BOM/BOQ markers, status badges with a lock icon for approved documents, the creator, and the last-modified time shown in the viewer's local time zone.
+- Document names are HTML-escaped, and names containing apostrophes no longer break the row actions.
+
+---
+
+## 📖 In-App Help / User Manual
+
+Every signed-in user has a **Help** item in the sidebar (**Support → Help**, `/help`). It opens a full user manual:
+
+1. Introduction, workflow and document statuses
+2. Getting started: signing in, creating an account, the roles & permissions matrix and navigation, with a personalized **"Your access"** summary for the signed-in user
+3. Every page and feature, button by button
+4. Step-by-step guides (expandable). The admin-only guides appear only for Administrators.
+5. Tips & best practices
+6. Troubleshooting
+
+The manual has a sticky table of contents that follows your scroll position, and a search box that filters and highlights topics. It supports the dark theme and prints cleanly.
+
 ---
 
 ## 📡 API & Legacy Compatibility
@@ -294,7 +324,8 @@ Every `/api/*` request must send a department API key in the `X-API-Key` header.
 - **Users**: `GET /api/users/`, `POST /api/users/`, `PUT /api/users/{id}`, `POST /api/users/sync`
 
 ### Legacy PHP Endpoints (100% Maintained)
-- `POST /api/document_api.php` (supports `save`, `load`, `list`, `update_status`, `save_price_edit`, `delete`, `list_for_approval`, `approve`, `list_approved`, `sync`)
+- `POST /api/document_api.php` (supports `save`, `load`, `list`, `update_status`, `save_price_edit`, `rename`, `delete`, `list_for_approval`, `approve`, `list_approved`, `sync`, `get_attachments`, `delete_attachment`)
+  - `rename` takes `documentName` (current) and `newName` and returns `{success, message, name}`. A duplicate name, a missing document or a lack of permission returns `success: false`. Locked or restricted documents return `403`.
 - `POST /api/user_api.php` (supports `status`, `list`, `sync_to_json`)
 - `POST /api/estimate_api.php` (supports `list`, `save`, `update`, `delete`)
 - `POST /api/upload_api.php` (multipart file upload with original response payload)
@@ -303,7 +334,9 @@ Every `/api/*` request must send a department API key in the `X-API-Key` header.
 
 ## 🎨 Themes & Modernized UI
 
-The app uses a sidebar layout: grouped navigation on the left (it collapses to icons on desktop and slides in as a drawer on phones and tablets), plus a top bar with the page title and an account menu. Click the **palette icon** in the top bar, or **Themes** in the account menu, to switch themes. Themes are rendered using CSS variables and persist across browser reloads:
+The app uses a sidebar layout: grouped navigation on the left (**Overview**, **Documents**, **Workflow**, **Administration**, **Support → Help**). It collapses to icons on desktop and slides in as a drawer on phones and tablets. There is also a top bar with the page title and an account menu.
+
+The working pages use wide layouts so large documents fit on screen: `/price_edit_bomboq`, `/approver`, `/approved_for_po` and `/estimate` go up to 1680px, `/save_bomboq` up to 1760px, and document preview windows up to 1400–1600px. The **Logout** button on `/approver` signs out through `/api/auth/logout` and returns to `/login`, like the rest of the app. Click the **palette icon** in the top bar, or **Themes** in the account menu, to switch themes. Themes are rendered using CSS variables and persist across browser reloads:
 
 | Theme | Key Visual Style |
 |:---|:---|
@@ -326,11 +359,17 @@ An end-to-end automated test suite verifies all layers of the application:
 ./venv/bin/python tests/test_full_suite.py
 ```
 
+> ⚠️ The suite writes to the database it runs against, which is `bom_system.db` by default. Point it at a throwaway database to keep real data untouched:
+> ```bash
+> DATABASE_URL="sqlite:////tmp/bom_test.db" PYTHONIOENCODING=utf-8 ./venv/bin/python tests/test_full_suite.py
+> ```
+> On Windows, `PYTHONIOENCODING=utf-8` avoids a `UnicodeEncodeError` from the emoji in the test output.
+
 ### Verified Test Suites:
 1. **Database Schema & Data Seeding**: 37 users, 15 documents, 4 attachments, 480+ logs verified.
 2. **Route Protection**: Unauthenticated requests redirect to `/login`; authenticated requests serve 200 OK.
 3. **Authentication**: Reject bad passwords, issue JWT tokens, set HTTP-only cookies, `/api/auth/me`.
-4. **HTML Pages**: All 10 views rendered with Jinja2; role protection redirects non-authorized users.
+4. **HTML Pages**: All views rendered with Jinja2, including the Help page (`/help`, open to every signed-in user). Role protection redirects non-authorized users.
 5. **Document REST APIs**: Create, retrieve, and list documents.
 6. **Workflow Cycle**: Purchasing price edit -> Department Admin approval -> Approved for PO hub.
 7. **Cost Estimates API**: Full calculation and CRUD operations.
