@@ -290,6 +290,16 @@ Every signed-in user has a **Help** item in the sidebar (**Support → Help**, `
 
 The manual has a sticky table of contents that follows your scroll position, and a search box that filters and highlights topics. It supports the dark theme and prints cleanly.
 
+### Public Quick Help (`/quick-help`)
+- The sign-in page shows a **Quick Help** link to a public, read-only copy of the manual, so people can read it before they have an account.
+- **Administrators control it** with the **Public Help** switch in the sidebar (**Administration → Public Help**), or through `GET` / `PUT /api/admin/settings/public-help` with `{"enabled": true|false}`. It is on by default. Every change is written to the audit log (`public_help_enabled` / `public_help_disabled`).
+- When it is **hidden**, the link disappears from `/login` and `/quick-help` returns the normal 404, the same as any URL that doesn't exist. Signed-in users still have `/help`.
+- **Security:**
+  - The public page is rendered with no user, so it contains no API key, no personal "Your access" summary and none of the admin-only guides. It makes no API calls.
+  - It is served with `X-Robots-Tag: noindex, nofollow`, `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
+  - Signed-in visitors are redirected to the full `/help`.
+  - The setting is stored in the new `app_settings` table, which is created automatically on startup.
+
 ---
 
 ## 📡 API & Legacy Compatibility
