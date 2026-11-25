@@ -152,6 +152,14 @@ graph TD
 
 Deploy with integrated **Tailscale Funnel**, making the application accessible worldwide over HTTPS at **`https://bom.ratfish-regulus.ts.net`**, with automatic host reboot recovery and persistent data mounts:
 
+### First Administrator on an empty database
+If you deploy without the initial `bom_system.db`, nobody can sign in, because creating an Admin from the login page needs an existing Admin's credentials. Create the first Administrator from the server:
+```bash
+docker compose exec bom python create-admin.py            # prompts for username and password
+docker compose exec bom python create-admin.py --username Admin --reset   # reset a forgotten Admin password
+```
+Without Docker, run `python create-admin.py` from the project folder (with the same `DATABASE_URL` / `DATA_DIR` as the app). The password is never accepted on the command line; for unattended setups, set `BOM_ADMIN_PASSWORD` in the environment instead.
+
 ### 1. Quick Launch
 ```bash
 # 1. Copy environment template
