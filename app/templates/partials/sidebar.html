@@ -69,6 +69,15 @@
             </ul>
         </div>
         {% endif %}
+
+        {% if user %}
+        <div class="side-section">
+            <div class="side-section-title">Support</div>
+            <ul>
+                {{ nav_item('/help', 'help', 'Help', 'help') }}
+            </ul>
+        </div>
+        {% endif %}
     </nav>
 
     {% if user %}

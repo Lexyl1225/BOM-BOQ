@@ -950,6 +950,9 @@
         // ── Rendering helpers ────────────────────────────────────────────
         const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
         const canRename = userRole !== 'guest';
+        // Purchasing has view-only rights on documents and cannot delete them (enforced
+        // server-side), so "Remove" is shown to Administrators only.
+        const canRemoveDocs = userRole === 'admin';
         let searchQuery = '';
 
         function escapeHtml(value) {
@@ -2481,7 +2484,7 @@
                             <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="view" data-list="posted" data-index="${index}">View</button>
                             <button class="pe-btn pe-btn-secondary pe-btn-sm" data-action="print" data-list="posted" data-index="${index}">Print</button>
                             ${unpostBtn}
-                            <button class="pe-btn pe-btn-danger-ghost pe-btn-sm" data-action="delete" data-list="posted" data-index="${index}">Remove</button>
+                            ${canRemoveDocs ? `<button class="pe-btn pe-btn-danger-ghost pe-btn-sm" data-action="delete" data-list="posted" data-index="${index}">Remove</button>` : ''}
                         </div>
                     </td>
                 </tr>`;
@@ -2511,11 +2514,13 @@
             try {
                 // Sync delete to server
                 const serverResult = await DocumentSync.deleteDocument(doc.name, 'posted');
-                
+
+                // Only drop the row when the server actually deleted the document
                 if (!serverResult.success) {
-                    console.warn('Server delete warning:', serverResult.message);
+                    alert('Could not remove "' + doc.name + '": ' + (serverResult.message || serverResult.detail || 'the server refused the request.'));
+                    return;
                 }
-                
+
                 postedPODocuments.splice(index, 1);
                 localStorage.setItem('postedPODocuments', JSON.stringify(postedPODocuments));
                 displayPostedPODocuments();

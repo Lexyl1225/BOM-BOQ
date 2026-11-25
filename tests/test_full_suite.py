@@ -247,6 +247,14 @@ def run_tests():
     assert r.headers["location"] == "/"
     print("  ✓ Role protection: Non-admin redirected away from /users_admin")
 
+    # Help / user manual: open to every signed-in user, linked from the sidebar
+    for cookies in (admin_cookies, engr_cookies):
+        r = client.get("/help", cookies=cookies)
+        assert r.status_code == 200 and "User Manual" in r.text and 'href="/help"' in r.text
+    r = KeyedTestClient(app, follow_redirects=False).get("/help")
+    assert r.status_code == 303 and r.headers["location"] == "/login"
+    print("  ✓ GET /help renders for all signed-in users; anonymous users go to /login")
+
     # Role protection: Audit Logs page is admin-only (direct URL and legacy .php alias)
     for url in ("/user_logs", "/user_logs.php"):
         r = client.get(url, cookies=engr_cookies)

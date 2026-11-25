@@ -1,0 +1,913 @@
+{% extends "base.html" %}
+
+{% block title %}Help &amp; User Manual &bull; BOM / BOQ Studio Pro{% endblock %}
+
+{% set _dept = ((user.department or '') if user else '')|trim|lower %}
+{% set _is_admin = user and user.role == 'admin' %}
+{% set _is_dept_admin = user and user.role == 'department_admin' %}
+{% set _is_guest = user and user.role == 'guest' %}
+{% set _is_purchasing = _dept == 'purchasing' %}
+
+{% block head %}
+<style>
+    #main-content.main-wrapper { max-width: 1480px; }
+
+    /* ---------- Hero ---------- */
+    .hp-hero {
+        display: flex; justify-content: space-between; align-items: flex-end;
+        gap: 20px; flex-wrap: wrap;
+        padding: 28px 30px; margin-bottom: 24px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+        color: #fff;
+        box-shadow: var(--shadow-md);
+    }
+    .hp-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; opacity: .8; margin-bottom: 6px; }
+    .hp-hero h1 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; color: #fff; }
+    .hp-hero p { margin-top: 8px; font-size: 14px; max-width: 680px; opacity: .92; line-height: 1.6; }
+    .hp-search { flex: 0 1 340px; }
+    .hp-search-field { position: relative; display: flex; align-items: center; }
+    .hp-search-field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748b; pointer-events: none; z-index: 1; }
+    .hp-search input {
+        width: 100%; padding: 11px 12px 11px 38px;
+        border: 0; border-radius: var(--radius-sm);
+        font: inherit; font-size: 13px; color: #0f172a; background: #fff;
+        box-shadow: 0 2px 8px rgba(15,23,42,.18);
+    }
+    .hp-search input:focus { outline: 3px solid rgba(255,255,255,.45); }
+    .hp-search-hint { display: block; margin-top: 6px; font-size: 12px; opacity: .85; }
+
+    /* ---------- Layout ---------- */
+    .hp-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; align-items: start; }
+    .hp-toc {
+        position: sticky; top: calc(var(--topbar-h, 64px) + 16px);
+        max-height: calc(100vh - var(--topbar-h, 64px) - 32px); overflow-y: auto;
+        padding: 16px 12px; border: 1px solid var(--border); border-radius: var(--radius-md);
+        background: var(--bg-card);
+    }
+    .hp-toc-title { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); padding: 0 10px 8px; }
+    .hp-toc ol { list-style: none; margin: 0; padding: 0; }
+    .hp-toc a {
+        display: block; padding: 6px 10px; border-radius: 6px;
+        font-size: 13px; color: var(--text-secondary); text-decoration: none; line-height: 1.35;
+    }
+    .hp-toc a:hover { background: var(--bg-subtle); color: var(--text-primary); }
+    .hp-toc a.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .hp-toc .sub a { padding-left: 24px; font-size: 12.5px; }
+
+    /* ---------- Content ---------- */
+    .hp-content { min-width: 0; }
+    .hp-section {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+        padding: 28px 32px; margin-bottom: 22px; scroll-margin-top: calc(var(--topbar-h, 64px) + 16px);
+    }
+    .hp-section[hidden] { display: none; }
+    .hp-section > h2 {
+        display: flex; align-items: center; gap: 12px;
+        font-size: 21px; font-weight: 700; color: var(--text-primary);
+        padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border);
+    }
+    .hp-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+        background: var(--primary-light); color: var(--primary); font-size: 14px; font-weight: 700;
+    }
+    .hp-section h3 {
+        font-size: 16px; font-weight: 700; color: var(--text-primary);
+        margin: 26px 0 10px; scroll-margin-top: calc(var(--topbar-h, 64px) + 16px);
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .hp-section h3:first-of-type { margin-top: 4px; }
+    .hp-section h4 { font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin: 16px 0 6px; }
+    .hp-section p, .hp-section li { font-size: 14px; line-height: 1.7; color: var(--text-secondary); }
+    .hp-section p { margin-bottom: 10px; }
+    .hp-section ul, .hp-section ol { margin: 0 0 12px 22px; }
+    .hp-section li { margin-bottom: 4px; }
+    .hp-section li strong, .hp-section p strong { color: var(--text-primary); }
+    .hp-section code, .hp-kbd {
+        font-family: var(--font-mono); font-size: 12.5px;
+        background: var(--bg-subtle); color: var(--text-primary);
+        border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+    }
+    .hp-path { font-weight: 600; color: var(--text-primary); }
+
+    .hp-who {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 11px; font-weight: 600; letter-spacing: .2px;
+        padding: 2px 9px; border-radius: var(--radius-full);
+        background: var(--bg-subtle); color: var(--text-secondary);
+    }
+    .hp-who.all { background: #dcfce7; color: #15803d; }
+    .hp-who.purch { background: #fef3c7; color: #b45309; }
+    .hp-who.dadmin { background: #e0e7ff; color: #4338ca; }
+    .hp-who.admin { background: #fee2e2; color: #b91c1c; }
+
+    /* Callouts */
+    .hp-callout {
+        display: flex; gap: 12px; padding: 14px 16px; margin: 14px 0;
+        border-radius: var(--radius-sm); border-left: 4px solid; font-size: 13.5px; line-height: 1.6;
+    }
+    .hp-callout svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+    .hp-callout p { margin: 0; font-size: 13.5px; color: inherit; }
+    .hp-callout strong { color: inherit !important; }
+    .hp-callout.tip { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+    .hp-callout.note { background: #eff6ff; border-color: #3b82f6; color: #1e3a8a; }
+    .hp-callout.warn { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+
+    /* Workflow */
+    .hp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 16px 0 8px; counter-reset: flow; }
+    .hp-flow-step {
+        position: relative; padding: 14px 14px 14px 16px;
+        border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-page);
+    }
+    .hp-flow-step::before {
+        counter-increment: flow; content: counter(flow);
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border-radius: 50%;
+        background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; margin-bottom: 8px;
+    }
+    .hp-flow-step strong { display: block; font-size: 13.5px; color: var(--text-primary); margin-bottom: 4px; }
+    .hp-flow-step span { display: block; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+    .hp-flow-step em { display: block; margin-top: 6px; font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--primary); }
+
+    /* Tables */
+    .hp-table-wrap { overflow-x: auto; margin: 12px 0 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .hp-table th {
+        text-align: left; padding: 10px 14px; background: var(--bg-subtle);
+        font-size: 11.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+        color: var(--text-secondary); border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .hp-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; line-height: 1.55; }
+    .hp-table tr:last-child td { border-bottom: 0; }
+    .hp-table td:first-child { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+    .hp-yes { color: #059669; font-weight: 700; }
+    .hp-no { color: #94a3b8; }
+
+    /* Status chips */
+    .hp-status { display: inline-block; padding: 2px 9px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+    .hp-status.saved { background: #e0f2fe; color: #0369a1; }
+    .hp-status.pending { background: #fef3c7; color: #b45309; }
+    .hp-status.posted { background: #e0e7ff; color: #4338ca; }
+    .hp-status.approved { background: #dcfce7; color: #15803d; }
+    .hp-status.unposted { background: #fee2e2; color: #b91c1c; }
+
+    /* Personal access card */
+    .hp-access {
+        display: flex; gap: 16px; align-items: flex-start;
+        padding: 16px 18px; margin: 6px 0 4px;
+        border: 1px solid var(--primary-border); border-radius: var(--radius-sm); background: var(--primary-light);
+    }
+    .hp-access-avatar {
+        width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; text-transform: uppercase;
+    }
+    .hp-access p { margin: 0 0 4px; color: #1e3a8a; }
+    .hp-access ul { margin: 6px 0 0 18px; }
+    .hp-access li { color: #1e3a8a; font-size: 13.5px; }
+
+    /* Task cards */
+    .hp-task { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; background: var(--bg-card); }
+    .hp-task > summary {
+        list-style: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 14px 18px; font-size: 14.5px; font-weight: 600; color: var(--text-primary);
+    }
+    .hp-task > summary::-webkit-details-marker { display: none; }
+    .hp-task > summary::after {
+        content: ''; width: 8px; height: 8px; flex-shrink: 0;
+        border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted);
+        transform: rotate(45deg); transition: transform .15s;
+    }
+    .hp-task[open] > summary::after { transform: rotate(-135deg); }
+    .hp-task[open] > summary { border-bottom: 1px solid var(--border); }
+    .hp-task > summary .hp-who { margin-left: auto; }
+    .hp-task-body { padding: 14px 18px 6px; }
+    .hp-task-body ol { margin-left: 20px; }
+    .hp-task:hover { border-color: var(--primary-border); }
+
+    .hp-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 12px 0; }
+    .hp-card { padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-page); }
+    .hp-card h4 { margin-top: 0; }
+    .hp-card ul { margin-bottom: 0; }
+
+    .hp-empty { display: none; text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 14px; }
+    .hp-empty.show { display: block; }
+    mark.hp-hl { background: #fde68a; color: inherit; padding: 0 1px; border-radius: 2px; }
+
+    .hp-footer { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 8px 0 24px; }
+
+    @media (max-width: 1024px) {
+        .hp-layout { grid-template-columns: 1fr; }
+        .hp-toc { position: static; max-height: none; }
+    }
+    @media (max-width: 640px) {
+        .hp-hero { padding: 22px 18px; }
+        .hp-hero h1 { font-size: 22px; }
+        .hp-section { padding: 20px 16px; }
+        .hp-search { flex-basis: 100%; }
+    }
+    @media print {
+        .hp-toc, .hp-search, .app-sidebar, .app-topbar, .app-footer { display: none !important; }
+        .hp-layout { display: block; }
+        .hp-task { break-inside: avoid; }
+        .hp-task:not([open]) .hp-task-body { display: block; }
+    }
+
+    [data-theme="dark"] .hp-section,
+    [data-theme="dark"] .hp-toc,
+    [data-theme="dark"] .hp-task { background: var(--theme-surface, #1e293b); border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .hp-section > h2,
+    [data-theme="dark"] .hp-section h3,
+    [data-theme="dark"] .hp-section h4,
+    [data-theme="dark"] .hp-task > summary,
+    [data-theme="dark"] .hp-section li strong,
+    [data-theme="dark"] .hp-section p strong,
+    [data-theme="dark"] .hp-flow-step strong { color: #f1f5f9 !important; }
+    [data-theme="dark"] .hp-section p,
+    [data-theme="dark"] .hp-section li,
+    [data-theme="dark"] .hp-table td { color: #cbd5e1; }
+    [data-theme="dark"] .hp-flow-step,
+    [data-theme="dark"] .hp-card { background: rgba(15,23,42,.5); border-color: var(--theme-border, #334155); }
+    [data-theme="dark"] .hp-hero h1 { color: #fff !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% from "partials/icons.html" import icon %}
+
+<!-- Hero -->
+<header class="hp-hero">
+    <div>
+        <div class="hp-eyebrow">Help &amp; User Manual</div>
+        <h1>How to use BOM / BOQ Studio Pro</h1>
+        <p>Everything you need to create bills of materials and quantities, price them, get them approved, and turn them into purchase orders, explained step by step.</p>
+    </div>
+    <div class="hp-search">
+        <div class="hp-search-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="hpSearch" placeholder="Search the manual… e.g. approve, password" aria-label="Search the manual" autocomplete="off">
+        </div>
+        <span class="hp-search-hint" id="hpSearchHint">Type to filter topics.</span>
+    </div>
+</header>
+
+<div class="hp-layout">
+    <!-- Table of contents -->
+    <nav class="hp-toc" aria-label="Manual contents">
+        <div class="hp-toc-title">Contents</div>
+        <ol id="hpToc">
+            <li><a href="#introduction">1. Introduction</a></li>
+            <li><a href="#getting-started">2. Getting Started</a></li>
+            <li class="sub"><a href="#roles">Roles &amp; permissions</a></li>
+            <li class="sub"><a href="#layout">Finding your way around</a></li>
+            <li><a href="#features">3. Pages &amp; Features</a></li>
+            <li class="sub"><a href="#f-dashboard">Dashboard</a></li>
+            <li class="sub"><a href="#f-bom">Create BOM</a></li>
+            <li class="sub"><a href="#f-boq">Create BOQ</a></li>
+            <li class="sub"><a href="#f-saved">Saved Documents</a></li>
+            <li class="sub"><a href="#f-estimate">Cost Estimates</a></li>
+            <li class="sub"><a href="#f-mce">MCE Pricing</a></li>
+            <li class="sub"><a href="#f-approvals">Approvals</a></li>
+            <li class="sub"><a href="#f-po">Purchase Orders</a></li>
+            <li class="sub"><a href="#f-admin">Administration</a></li>
+            <li class="sub"><a href="#f-account">Your account &amp; themes</a></li>
+            <li><a href="#tasks">4. Step-by-Step Guides</a></li>
+            <li><a href="#tips">5. Tips &amp; Best Practices</a></li>
+            <li><a href="#troubleshooting">6. Troubleshooting</a></li>
+        </ol>
+    </nav>
+
+    <div class="hp-content" id="hpContent">
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="introduction">
+            <h2><span class="hp-num">1</span>Introduction</h2>
+
+            <p><strong>BOM / BOQ Studio Pro</strong> is the company's tool for preparing engineering cost documents and moving them through review, pricing, approval and purchasing, all in one place, with every step recorded.</p>
+
+            <ul>
+                <li>A <strong>Bill of Materials (BOM)</strong> lists the materials a project needs: description, unit, quantity, unit cost and total.</li>
+                <li>A <strong>Bill of Quantities (BOQ)</strong> is similar, but splits each line into <strong>materials</strong> and <strong>labor</strong> costs.</li>
+                <li>A <strong>Cost Estimate</strong> combines a document's material total with labor, allowances and other costs into one project figure.</li>
+                <li><strong>MCE</strong> (Materials Cost Estimate) is the Purchasing step where verified supplier prices are entered.</li>
+            </ul>
+
+            <h3>How a document moves through the system</h3>
+            <div class="hp-flow">
+                <div class="hp-flow-step"><strong>Create &amp; save</strong><span>An engineer builds a BOM or BOQ and saves it.</span><em>Status: Saved</em></div>
+                <div class="hp-flow-step"><strong>Send to MCE</strong><span>The document is sent to Purchasing for pricing.</span><em>Status: Pending price edit</em></div>
+                <div class="hp-flow-step"><strong>Price &amp; post</strong><span>Purchasing enters unit costs and posts it to a department.</span><em>Status: Posted</em></div>
+                <div class="hp-flow-step"><strong>Approve</strong><span>The department's admin reviews and approves it.</span><em>Status: Approved</em></div>
+                <div class="hp-flow-step"><strong>Purchase order</strong><span>Purchasing attaches quotations and PO files.</span><em>Approved for PO</em></div>
+            </div>
+
+            <h3>Document statuses</h3>
+            <div class="hp-table-wrap">
+                <table class="hp-table">
+                    <thead><tr><th>Status</th><th>What it means</th><th>Who acts next</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="hp-status saved">Saved</span></td><td>Created and stored, still editable by its department.</td><td>The creator sends it to MCE when ready.</td></tr>
+                        <tr><td><span class="hp-status pending">Pending price edit</span></td><td>Waiting for Purchasing to enter unit costs.</td><td>Purchasing (MCE Pricing page).</td></tr>
+                        <tr><td><span class="hp-status unposted">Unposted</span></td><td>Pulled back from a department for correction.</td><td>Purchasing re-prices it, or the department corrects it.</td></tr>
+                        <tr><td><span class="hp-status posted">Posted</span></td><td>Priced and sent to a department for approval.</td><td>That department's Department Admin.</td></tr>
+                        <tr><td><span class="hp-status approved">Approved</span></td><td>Final and <strong>locked</strong>. Only an Administrator can change it.</td><td>Purchasing prepares the purchase order.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="getting-started">
+            <h2><span class="hp-num">2</span>Getting Started</h2>
+
+            <h3>Your access</h3>
+            {% if user %}
+            <div class="hp-access">
+                <span class="hp-access-avatar">{{ user.username[:1] }}</span>
+                <div>
+                    <p>You are signed in as <strong>{{ user.username }}</strong>, role <strong>{{ user.role.replace('_', ' ')|title }}</strong>{% if user.department %}, department <strong>{{ user.department }}</strong>{% endif %}.</p>
+                    <ul>
+                        {% if _is_admin %}
+                        <li>You have full access to every page, including Users, API Keys and Audit Logs.</li>
+                        <li>You are the only role that can change, send back or delete <strong>approved</strong> documents.</li>
+                        {% elif _is_guest %}
+                        <li>Guests have <strong>read-only</strong> access: you can browse and preview, but not save, edit, post or delete.</li>
+                        {% elif _is_purchasing %}
+                        <li>You price documents in <strong>MCE Pricing</strong> and manage <strong>Purchase Orders</strong>.</li>
+                        <li>Saved documents are <strong>view-only</strong> for Purchasing, and the BOM, BOQ and Cost Estimate builders are not available to your department.</li>
+                        {% if _is_dept_admin %}<li>As a Department Admin you can also approve documents posted to Purchasing.</li>{% endif %}
+                        {% elif _is_dept_admin %}
+                        <li>You can create and manage your department's documents, and <strong>approve</strong> documents posted to {{ user.department or 'your department' }}.</li>
+                        {% else %}
+                        <li>You can create BOMs, BOQs and Cost Estimates, and manage your department's saved documents.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <h3>Signing in</h3>
+            <ol>
+                <li>Open the application. You are taken to the <span class="hp-path">Sign In</span> screen.</li>
+                <li>Enter your <strong>username</strong> and <strong>password</strong>, then click <strong>Sign In</strong>.</li>
+                <li>If this is your first sign-in (or an Administrator reset your password), you are asked to <strong>set a new password</strong> before you can continue. See <a href="#task-password">Change your password</a>.</li>
+            </ol>
+
+            <h3>Creating an account</h3>
+            <ol>
+                <li>On the sign-in screen, switch to <strong>Create Account</strong>.</li>
+                <li>Choose a username and password, select your <strong>Account Role</strong> and <strong>Department</strong>.</li>
+                <li>Submit the form, then sign in with your new account.</li>
+            </ol>
+            <div class="hp-callout note">
+                {{ icon('lock', 18) }}
+                <p><strong>Administrator accounts</strong> can only be created with an existing Administrator's credentials. If you are unsure which role to choose, pick <strong>User (Department Member)</strong> and ask an Administrator to adjust it.</p>
+            </div>
+
+            <h3 id="roles">Roles &amp; permissions</h3>
+            <p>What you see in the sidebar depends on your role and department. Pages you cannot use are simply hidden.</p>
+            <div class="hp-table-wrap">
+                <table class="hp-table">
+                    <thead>
+                        <tr><th>Feature</th><th>Guest</th><th>User</th><th>Purchasing</th><th>Department Admin</th><th>Administrator</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Dashboard, Saved Documents (view)</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>Create BOM / BOQ / Cost Estimates</td><td class="hp-no">View only</td><td class="hp-yes">✓</td><td class="hp-no">—</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>Edit / delete saved documents</td><td class="hp-no">—</td><td class="hp-yes">Own dept.</td><td class="hp-no">—</td><td class="hp-yes">Own dept.</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>Send to MCE (price edit)</td><td class="hp-no">—</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>MCE Pricing &amp; posting</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-yes">✓</td><td class="hp-no">—</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>Approvals</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-yes">Own dept.</td><td class="hp-yes">All</td></tr>
+                        <tr><td>Purchase Orders &amp; attachments</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-yes">✓</td><td class="hp-no">—</td><td class="hp-yes">✓</td></tr>
+                        <tr><td>Users, API Keys, Audit Logs</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-no">—</td><td class="hp-yes">✓</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 id="layout">Finding your way around</h3>
+            <div class="hp-grid-2">
+                <div class="hp-card">
+                    <h4>Sidebar (left)</h4>
+                    <ul>
+                        <li>Pages are grouped into <strong>Overview</strong>, <strong>Documents</strong>, <strong>Workflow</strong>, <strong>Administration</strong> and <strong>Support</strong>.</li>
+                        <li>The highlighted item is the page you are on.</li>
+                        <li>Click the <strong>menu</strong> button in the top bar to collapse it to icons, or to open it on phones and tablets.</li>
+                    </ul>
+                </div>
+                <div class="hp-card">
+                    <h4>Top bar</h4>
+                    <ul>
+                        <li>Shows the current section and page name.</li>
+                        <li>The <strong>palette</strong> icon changes the colour theme.</li>
+                        <li>Your <strong>name</strong> (top right) opens the account menu: <em>Change password</em>, <em>Themes</em> and <em>Sign out</em>.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="features">
+            <h2><span class="hp-num">3</span>Pages &amp; Features</h2>
+            <p>A tour of every page, what it is for, and what each button does.</p>
+
+            <h3 id="f-dashboard">Dashboard <span class="hp-who all">Everyone</span></h3>
+            <p>Your starting point after signing in.</p>
+            <ul>
+                <li><strong>Quick buttons</strong>: <em>New BOM</em>, <em>New BOQ</em> and <em>New Estimate</em>.</li>
+                <li><strong>Summary cards</strong>: total documents, pending price edits, documents posted for approval, approved for PO, cost estimates and active users.</li>
+                <li><strong>Quick Actions &amp; Workflows</strong>: shortcut tiles to each page you can use, plus links to the Accomplishment Report and the DAC Department Portal.</li>
+                <li><strong>Recent System Activity</strong>: the latest actions in the system. Administrators can click <em>View Full Log</em>.</li>
+            </ul>
+
+            <h3 id="f-bom">Create BOM <span class="hp-who all">Users, Dept. Admins, Admins</span></h3>
+            <p>An interactive Bill of Materials form with live totals.</p>
+            <h4>Project information</h4>
+            <ul>
+                <li><strong>Department</strong>, <strong>Project Name</strong>, <strong>Location</strong>, <strong>Total Floor Area</strong> and <strong>Date</strong>.</li>
+                <li><strong>Reference no.</strong> is generated automatically (for example <code>MCE-20261125143005</code>) and cannot be edited.</li>
+            </ul>
+            <h4>Sections and rows</h4>
+            <ul>
+                <li>The form starts with standard sections: Panel Board &amp; Circuit Breakers, Wires &amp; Cables, Lighting Fixtures, Auxiliary Lighting, Convenience Outlets &amp; Switches, Conduit &amp; Fittings, and Miscellaneous.</li>
+                <li>Each row has <strong>Item Description</strong>, <strong>Unit</strong>, <strong>Qty</strong> and <strong>Unit Cost</strong>. <strong>Total Cost</strong> = Qty × Unit Cost and updates as you type.</li>
+                <li>Under every section: <strong>+ Add Row</strong>, <strong>− Remove Row</strong> (removes the last row), <strong>Delete Section</strong>, and <strong>+ Add Section</strong> (pick a section type from the list).</li>
+                <li>The <strong>Grand Total</strong> and the <strong>signature blocks</strong> (Prepared by, Checked by, Approved by…) are at the bottom.</li>
+            </ul>
+            <h4>Toolbar buttons</h4>
+            <ul>
+                <li><strong>Print</strong>: prints the form.</li>
+                <li><strong>Clear Form</strong>: resets the form to start over.</li>
+                <li><strong>Create BOQ</strong>: switches to the BOQ builder.</li>
+                <li><strong>Save</strong>: asks for a document name and saves it.</li>
+                <li><strong>View Save Files</strong> / <strong>View MCE</strong>: jump to Saved Documents or MCE Pricing.</li>
+            </ul>
+            <div class="hp-callout note">
+                {{ icon('edit', 18) }}
+                <p><strong>Edit mode:</strong> when you open a saved document with <em>Edit</em>, a blue <strong>EDIT MODE</strong> banner appears at the top. Use <strong>Update Document</strong> to save your changes to the same document, or <strong>Cancel</strong> to go back without saving. The normal Save button is hidden so you don't create a duplicate by accident.</p>
+            </div>
+
+            <h3 id="f-boq">Create BOQ <span class="hp-who all">Users, Dept. Admins, Admins</span></h3>
+            <p>Works exactly like the BOM builder, with the same project fields, sections and buttons, but each row has separate cost columns:</p>
+            <ul>
+                <li><strong>Materials</strong>: Unit Cost and Total Cost.</li>
+                <li><strong>Labor</strong>: Unit Cost and Total Cost.</li>
+                <li><strong>Total Cost</strong> = materials total + labor total for the row, and the Grand Total adds up every row.</li>
+            </ul>
+
+            <h3 id="f-saved">Saved Documents <span class="hp-who all">Everyone</span></h3>
+            <p>The library of every BOM and BOQ you are allowed to see.</p>
+            <ul>
+                <li><strong>Summary cards</strong> and <strong>tabs</strong> filter the list: All, BOM, BOQ, Unposted for Correction, Posted, Approved for PO.</li>
+                <li><strong>Search</strong> by name, reference no., project, department or creator, and filter by <strong>department</strong>. Use <em>Clear filters</em> to reset.</li>
+                <li>Row actions:
+                    <ul>
+                        <li><strong>Edit</strong>: opens the document in its builder (Edit mode).</li>
+                        <li><strong>Preview</strong>: opens a clean, printable view in a new tab.</li>
+                        <li><strong>Print</strong>: opens the print dialog straight away.</li>
+                        <li><strong>MCE</strong>: sends the document to Purchasing for pricing.</li>
+                        <li><strong>Delete</strong>: permanently deletes the document (you are asked to confirm).</li>
+                    </ul>
+                </li>
+                <li>A <strong>lock icon</strong> marks approved documents. Their Edit, MCE and Delete buttons are disabled for everyone except Administrators.</li>
+            </ul>
+
+            <h3 id="f-estimate">Cost Estimates <span class="hp-who all">Users, Dept. Admins, Admins</span></h3>
+            <p>Builds a full project cost from a priced document plus other costs.</p>
+            <ul>
+                <li><strong>Source Documents</strong>: lists <span class="hp-status posted">Posted</span> documents (read-only). Choose one in the drop-down, and its total becomes the <strong>Total Materials Cost Estimate</strong>.</li>
+                <li><strong>Cost Breakdown</strong>: enter the <strong>Estimate / Project Name</strong>, then Labor, Meal Allowance, Transportation Allowance and Mobilization / Demobilization.</li>
+                <li><strong>+ Add Item</strong> adds your own lines (for example permits or equipment rental).</li>
+                <li>The <strong>Grand Total Cost Estimate</strong> (in ₱) updates automatically.</li>
+                <li><strong>Save Estimate</strong> stores it. <strong>Recent Estimates</strong> lets you View, Print, Edit or Delete saved estimates.</li>
+                <li><strong>Print / Export</strong> produces a printable report (choose "Save as PDF" in the print dialog for a PDF).</li>
+            </ul>
+
+            <h3 id="f-mce">MCE Pricing <span class="hp-who purch">Purchasing &amp; Admins</span></h3>
+            <p>Where Purchasing enters verified supplier prices and sends documents on for approval.</p>
+            <ul>
+                <li><strong>Summary cards</strong> show pending and posted counts. <strong>Search</strong> filters every table.</li>
+                <li><strong>Pending Price Edit</strong>: documents waiting for pricing.
+                    <ul>
+                        <li><strong>View</strong>: open a read-only copy.</li>
+                        <li><strong>Edit Unit Cost</strong>: opens the document with the cost fields highlighted (blue = BOM unit cost, dark blue = BOQ material cost, orange = BOQ labor cost). Totals recalculate as you type. Click <strong>Save Changes</strong>.</li>
+                        <li><strong>Post</strong>: choose the <strong>target department</strong> and confirm. The document moves to <em>Posted for PO</em> and appears in that department's Approvals.</li>
+                    </ul>
+                </li>
+                <li><strong>Posted for PO</strong>: documents already posted, showing their target department. Actions: View, Print, <strong>Unpost</strong> (moves it back to Pending for correction) and, for Administrators only, <strong>Remove</strong>.</li>
+                <li><strong>Rename</strong>: click the <strong>pencil icon</strong> beside any document name, type the new name and press <span class="hp-kbd">Enter</span> (or <span class="hp-kbd">Esc</span> to cancel). Names must be unique.</li>
+                <li>Administrators also see the saved BOM and BOQ lists on this page.</li>
+            </ul>
+            <div class="hp-callout warn">
+                {{ icon('trash', 18) }}
+                <p><strong>Remove deletes the document permanently</strong>, not just from this list, so it is available to Administrators only. To send a document back for changes, use <strong>Unpost</strong> instead.</p>
+            </div>
+
+            <h3 id="f-approvals">Approvals <span class="hp-who dadmin">Department Admins &amp; Admins</span></h3>
+            <ul>
+                <li>Lists documents <span class="hp-status posted">Posted</span> to your department (Administrators see every department).</li>
+                <li>Cards at the top show pending, approved and total counts. Use <strong>Refresh</strong> to reload.</li>
+                <li><strong>View</strong> opens the document in a preview window, which you can <strong>Print</strong>.</li>
+                <li><strong>Approve</strong> asks for confirmation, then locks the document and sends it to Purchase Orders.</li>
+            </ul>
+
+            <h3 id="f-po">Purchase Orders <span class="hp-who purch">Purchasing &amp; Admins</span></h3>
+            <ul>
+                <li>Lists every <span class="hp-status approved">Approved</span> document with who approved it and when.</li>
+                <li><strong>View</strong> / <strong>Print</strong>: open or print the final document.</li>
+                <li><strong>Attach File</strong>: upload quotations, drawings or purchase requisitions. Click or drag files onto the upload area. Accepted: <strong>PDF, JPG, PNG</strong>, up to <strong>10 MB</strong> each.</li>
+                <li>Each attachment can be <strong>previewed</strong>, <strong>downloaded</strong>, opened in a new tab, or <strong>deleted</strong>.</li>
+            </ul>
+
+            <h3 id="f-admin">Administration <span class="hp-who admin">Administrators</span></h3>
+            <h4>Users</h4>
+            <ul>
+                <li><strong>+ Add New User</strong>: username, role, department, optional email and an initial password. New users must change it at first sign-in.</li>
+                <li><strong>Edit</strong>: change role, department or <strong>account status</strong> (Active / Suspended).</li>
+                <li><strong>Password</strong>: <em>Reset password</em> creates a temporary password, shown once, so copy it. <em>Change password</em> sets a specific one.</li>
+                <li><strong>Delete</strong> removes an account. <strong>Sync to JSON Backup</strong> writes a backup copy of all users.</li>
+            </ul>
+            <h4>API Keys</h4>
+            <ul>
+                <li>Every department has its own API key. Browser users don't need to do anything, because the app sends the key automatically.</li>
+                <li>You can <strong>Generate</strong>, <strong>Regenerate</strong>, <strong>Deactivate / Activate</strong>, <strong>Revoke</strong> or reveal and <strong>Copy</strong> a key, and see when it was last used.</li>
+            </ul>
+            <div class="hp-callout warn">
+                {{ icon('key', 18) }}
+                <p>Deactivating or revoking a department's key stops <strong>everyone in that department</strong> from loading or saving data until it is reactivated or regenerated.</p>
+            </div>
+            <h4>Audit Logs</h4>
+            <ul>
+                <li>A complete record of sign-ins, saves, edits, postings, approvals, uploads and admin actions.</li>
+                <li>Filter by <strong>search text</strong>, <strong>user</strong>, <strong>action</strong> and <strong>date</strong>, then <strong>Apply</strong>. Use Previous / Next to page through.</li>
+                <li><strong>Export CSV</strong> or <strong>Export JSON</strong> to download the results.</li>
+            </ul>
+
+            <h3 id="f-account">Your account &amp; themes <span class="hp-who all">Everyone</span></h3>
+            <ul>
+                <li><strong>Change password</strong>: account menu (top right) → <em>Change password</em>.</li>
+                <li><strong>Themes</strong>: click the palette icon. Choose from Default, Dark, Light, Corporate, Glassmorphism, Cyberpunk, Sci-Fi, Neon and Anime. Your choice is remembered on this browser.</li>
+                <li><strong>Sign out</strong>: account menu → <em>Sign out</em>, or the <em>Logout</em> button on pages that have one.</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="tasks">
+            <h2><span class="hp-num">4</span>Step-by-Step Guides</h2>
+            <p>Click a task to expand it.</p>
+
+            <details class="hp-task" id="task-create">
+                <summary>Create and save a new BOM or BOQ <span class="hp-who all">Users</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>In the sidebar, click <span class="hp-path">Documents → Create BOM</span> (or <span class="hp-path">Create BOQ</span>).</li>
+                        <li>Fill in the project information: Department, Project Name, Location, Floor Area and Date.</li>
+                        <li>For each section, type the item descriptions, units and quantities. Enter unit costs if you know them (Purchasing can set them later).</li>
+                        <li>Use <strong>+ Add Row</strong> for more lines, and <strong>+ Add Section</strong> for another category. Remove what you don't need with <strong>Delete Section</strong>.</li>
+                        <li>Check the Grand Total and fill in the signature names.</li>
+                        <li>Click <strong>Save</strong>, type a clear document name and confirm.</li>
+                        <li>The document now appears in <span class="hp-path">Saved Documents</span> with status <span class="hp-status saved">Saved</span>.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-edit">
+                <summary>Edit a saved document <span class="hp-who all">Users</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Saved Documents</span> and find the document (use search or the tabs).</li>
+                        <li>Click <strong>Edit</strong>. The builder opens with the blue <strong>EDIT MODE</strong> banner.</li>
+                        <li>Make your changes, then click <strong>Update Document</strong> in the banner.</li>
+                        <li>To leave without saving, click <strong>Cancel</strong>.</li>
+                    </ol>
+                    <p>Approved documents can only be edited by an Administrator.</p>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-send-mce">
+                <summary>Send a document to Purchasing for pricing <span class="hp-who all">Users</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>In <span class="hp-path">Saved Documents</span>, find the finished document.</li>
+                        <li>Click <strong>MCE</strong> and confirm.</li>
+                        <li>The status changes to <span class="hp-status pending">Pending price edit</span>, and Purchasing sees it in <span class="hp-path">MCE Pricing</span>.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-price">
+                <summary>Price a document and post it to a department <span class="hp-who purch">Purchasing</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Workflow → MCE Pricing</span>.</li>
+                        <li>In <strong>Pending Price Edit</strong>, click <strong>Edit Unit Cost</strong> on the document.</li>
+                        <li>Enter the verified supplier prices in the highlighted fields. Row totals and the grand total update automatically.</li>
+                        <li>Click <strong>Save Changes</strong>.</li>
+                        <li>Click <strong>Post</strong>, choose the <strong>Target department</strong>, and click <strong>Post to Department</strong>.</li>
+                        <li>The document moves to <strong>Posted for PO</strong> and appears in that department's Approvals.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-rename">
+                <summary>Rename a document <span class="hp-who purch">Purchasing &amp; Admins</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>On <span class="hp-path">MCE Pricing</span>, hover over the document and click the <strong>pencil icon</strong> next to its name.</li>
+                        <li>Type the new name and press <span class="hp-kbd">Enter</span> or click <strong>Save</strong>.</li>
+                        <li>If the name is already used by another document you'll see a message. Choose a different name.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-correct">
+                <summary>Send a posted document back for correction <span class="hp-who purch">Purchasing &amp; Admins</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>On <span class="hp-path">MCE Pricing</span>, find the document under <strong>Posted for PO</strong>.</li>
+                        <li>Click <strong>Unpost</strong> and confirm.</li>
+                        <li>The document returns to <strong>Pending Price Edit</strong> with status <span class="hp-status unposted">Unposted</span>. Re-price it and post again.</li>
+                        <li>The owning department also sees it under <span class="hp-path">Saved Documents → Unposted for Correction</span>.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-approve">
+                <summary>Review and approve a document <span class="hp-who dadmin">Department Admins</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Workflow → Approvals</span>.</li>
+                        <li>Click <strong>View</strong> to check the line items, quantities and prices.</li>
+                        <li>If everything is correct, click <strong>Approve</strong> and confirm.</li>
+                        <li>The document becomes <span class="hp-status approved">Approved</span>, is locked, and goes to Purchase Orders.</li>
+                    </ol>
+                    <p>If something is wrong, don't approve it. Ask Purchasing to <strong>Unpost</strong> it for correction.</p>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-po">
+                <summary>Attach purchase order files <span class="hp-who purch">Purchasing</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Workflow → Purchase Orders</span>.</li>
+                        <li>Find the approved document and click <strong>Attach File</strong> (or <strong>+ Attach More</strong>).</li>
+                        <li>Drag your files onto the upload area, or click it to browse. Only PDF, JPG and PNG up to 10 MB are accepted.</li>
+                        <li>The files appear under the document, where you can preview, download or delete them.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-estimate">
+                <summary>Build a project cost estimate <span class="hp-who all">Users</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Documents → Cost Estimates</span>.</li>
+                        <li>Under <strong>Source Documents</strong>, choose a posted document from the drop-down. Its total fills in the materials cost.</li>
+                        <li>Enter an <strong>Estimate / Project Name</strong>.</li>
+                        <li>Fill in Labor, Meal and Transportation allowances, and Mobilization / Demobilization.</li>
+                        <li>Add any extra costs with <strong>+ Add Item</strong>.</li>
+                        <li>Check the <strong>Grand Total</strong>, then click <strong>Save Estimate</strong>.</li>
+                        <li>Use <strong>Print / Export</strong> for a printable report.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-print">
+                <summary>Print a document or save it as PDF <span class="hp-who all">Everyone</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>From <span class="hp-path">Saved Documents</span>, click the <strong>Print</strong> icon (or <strong>Preview</strong>, then Print).</li>
+                        <li>In your browser's print dialog, pick a printer, or choose <strong>Save as PDF</strong> as the destination.</li>
+                        <li>For best results use A4 or Letter, and enable <em>Background graphics</em> so the coloured headers print.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="hp-task" id="task-password">
+                <summary>Change your password <span class="hp-who all">Everyone</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Click your name in the top-right corner and choose <strong>Change password</strong>.</li>
+                        <li>Enter your current password, then the new password twice.</li>
+                        <li>Passwords need <strong>at least 8 characters</strong>, with at least <strong>one letter and one number</strong>, and must differ from your username.</li>
+                    </ol>
+                    <p>Changing your password signs you out of your other sessions.</p>
+                </div>
+            </details>
+
+            {% if _is_admin %}
+            <details class="hp-task" id="task-user">
+                <summary>Add a user or reset a password <span class="hp-who admin">Administrators</span></summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Open <span class="hp-path">Administration → Users</span>.</li>
+                        <li>To add someone, click <strong>+ Add New User</strong>, fill in username, role, department and an initial password, then click <strong>Create User</strong>.</li>
+                        <li>To reset a password, click <strong>Password</strong> on the user's row → <strong>Reset password</strong>, then <strong>Copy</strong> the temporary password and give it to the user securely.</li>
+                        <li>The user must choose a new password at their next sign-in.</li>
+                    </ol>
+                </div>
+            </details>
+            {% endif %}
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="tips">
+            <h2><span class="hp-num">5</span>Tips &amp; Best Practices</h2>
+            <div class="hp-grid-2">
+                <div class="hp-card">
+                    <h4>Naming documents</h4>
+                    <ul>
+                        <li>Use a consistent pattern, e.g. <code>Project – Area – BOM</code>.</li>
+                        <li>Include the building or floor so documents are easy to find later.</li>
+                        <li>Names must be unique. Rename on MCE Pricing if needed.</li>
+                    </ul>
+                </div>
+                <div class="hp-card">
+                    <h4>Accurate totals</h4>
+                    <ul>
+                        <li>Enter quantities as numbers only; put the unit (pcs, m, lot) in the Unit column.</li>
+                        <li>Delete empty rows and unused sections before saving.</li>
+                        <li>Double-check the Grand Total before sending to MCE.</li>
+                    </ul>
+                </div>
+                <div class="hp-card">
+                    <h4>Working efficiently</h4>
+                    <ul>
+                        <li>Use search and the summary cards to jump to the documents you need.</li>
+                        <li>Use <strong>Preview</strong> to check a document without risking changes.</li>
+                        <li>Press <strong>Refresh</strong> on workflow pages to see the latest updates from other users.</li>
+                    </ul>
+                </div>
+                <div class="hp-card">
+                    <h4>Staying safe</h4>
+                    <ul>
+                        <li>Never share your password. Each action is logged under your name.</li>
+                        <li>Sign out on shared computers.</li>
+                        <li>Approve only after viewing the full document; approval locks it.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="hp-section" id="troubleshooting">
+            <h2><span class="hp-num">6</span>Troubleshooting</h2>
+
+            <details class="hp-task">
+                <summary>I can't see a page in the sidebar</summary>
+                <div class="hp-task-body"><p>Pages are shown according to your role and department (see <a href="#roles">Roles &amp; permissions</a>). If you need access, ask an Administrator to update your account. Opening a restricted page directly sends you back to the Dashboard.</p></div>
+            </details>
+            <details class="hp-task">
+                <summary>The Edit, MCE or Delete button is greyed out</summary>
+                <div class="hp-task-body">
+                    <ul>
+                        <li>The document is <span class="hp-status approved">Approved</span> and locked. Only an Administrator can change it.</li>
+                        <li>Or you are in the Purchasing department, which has view-only access to saved documents.</li>
+                        <li>Or you are signed in as a Guest (read-only).</li>
+                    </ul>
+                    <p>Hover over the button to see the exact reason.</p>
+                </div>
+            </details>
+            <details class="hp-task">
+                <summary>I'm asked to change my password every time I sign in</summary>
+                <div class="hp-task-body"><p>Your new password probably didn't meet the rules: at least 8 characters, one letter and one number, and different from your username. Make sure both password fields match, then submit again.</p></div>
+            </details>
+            <details class="hp-task">
+                <summary>I don't see my document in Saved Documents</summary>
+                <div class="hp-task-body">
+                    <ul>
+                        <li>Click <strong>Clear filters</strong>; a tab, search or department filter may be hiding it.</li>
+                        <li>Click <strong>Refresh</strong> to reload the list.</li>
+                        <li>You only see documents from your own department (Administrators see everything).</li>
+                    </ul>
+                </div>
+            </details>
+            <details class="hp-task">
+                <summary>Preview or Print does nothing</summary>
+                <div class="hp-task-body"><p>Your browser is probably blocking pop-ups. Allow pop-ups for this site (look for the blocked pop-up icon in the address bar), then try again.</p></div>
+            </details>
+            <details class="hp-task">
+                <summary>My file upload was rejected</summary>
+                <div class="hp-task-body"><p>Only <strong>PDF, JPG and PNG</strong> files up to <strong>10 MB</strong> are accepted, and the file content must match its extension. Convert other formats to PDF, or compress large scans, and try again.</p></div>
+            </details>
+            <details class="hp-task">
+                <summary>"A document named … already exists"</summary>
+                <div class="hp-task-body"><p>Document names must be unique. Add a project, area or date to make the name different.</p></div>
+            </details>
+            <details class="hp-task">
+                <summary>Lists won't load, or I see "API key" or "401/403" errors</summary>
+                <div class="hp-task-body">
+                    <ol>
+                        <li>Refresh the page. If that fails, sign out and sign in again.</li>
+                        <li>If the whole department is affected, the department's API key may have been deactivated. Contact an Administrator, who can reactivate it on the API Keys page.</li>
+                    </ol>
+                </div>
+            </details>
+            <details class="hp-task">
+                <summary>I was signed out unexpectedly</summary>
+                <div class="hp-task-body"><p>Sessions expire after a period of time, and changing or resetting your password signs out your other sessions. Simply sign in again; saved work is not lost.</p></div>
+            </details>
+
+            <div class="hp-callout tip">
+                {{ icon('help', 18) }}
+                <p><strong>Still stuck?</strong> Contact your system Administrator. Note the page, the document name and the exact message you saw. Administrators can trace the issue in the Audit Logs.</p>
+            </div>
+        </section>
+
+        <div class="hp-empty" id="hpEmpty">No topics match your search. Try a different word, e.g. <em>approve</em>, <em>print</em> or <em>password</em>.</div>
+
+        <p class="hp-footer">BOM / BOQ Studio Pro &middot; User Manual</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const tocLinks = Array.from(document.querySelectorAll('#hpToc a'));
+    const targets = tocLinks
+        .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+        .filter(Boolean);
+
+    // Highlight the TOC entry for the section in view
+    if ('IntersectionObserver' in window) {
+        const visible = new Map();
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => visible.set(e.target.id, e.isIntersecting ? e.boundingClientRect.top : null));
+            let current = null, best = Infinity;
+            visible.forEach((top, id) => { if (top !== null && Math.abs(top) < best) { best = Math.abs(top); current = id; } });
+            if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
+        }, { rootMargin: '-80px 0px -60% 0px' });
+        targets.forEach(t => observer.observe(t));
+    }
+
+    // Open a task when its link is followed (e.g. #task-password)
+    function openFromHash() {
+        const el = location.hash && document.getElementById(location.hash.slice(1));
+        if (el && el.tagName === 'DETAILS') el.open = true;
+    }
+    window.addEventListener('hashchange', openFromHash);
+    openFromHash();
+
+    // Search: show only matching sections / tasks, and highlight matches
+    const input = document.getElementById('hpSearch');
+    const hint = document.getElementById('hpSearchHint');
+    const empty = document.getElementById('hpEmpty');
+    const sections = Array.from(document.querySelectorAll('.hp-section'));
+
+    function clearMarks() {
+        document.querySelectorAll('mark.hp-hl').forEach(m => m.replaceWith(document.createTextNode(m.textContent)));
+        sections.forEach(s => s.normalize());
+    }
+
+    function markText(root, term) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: n => n.nodeValue.toLowerCase().includes(term) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+        });
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const text = node.nodeValue, lower = text.toLowerCase(), frag = document.createDocumentFragment();
+            let i = 0, idx;
+            while ((idx = lower.indexOf(term, i)) !== -1) {
+                frag.appendChild(document.createTextNode(text.slice(i, idx)));
+                const m = document.createElement('mark'); m.className = 'hp-hl'; m.textContent = text.slice(idx, idx + term.length);
+                frag.appendChild(m); i = idx + term.length;
+            }
+            frag.appendChild(document.createTextNode(text.slice(i)));
+            node.replaceWith(frag);
+        });
+    }
+
+    let timer;
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            const term = input.value.trim().toLowerCase();
+            clearMarks();
+            let shown = 0;
+            sections.forEach(section => {
+                if (!term) {
+                    section.hidden = false;
+                    section.querySelectorAll('details.hp-task').forEach(d => { d.hidden = false; d.open = false; });
+                    return;
+                }
+                const match = section.textContent.toLowerCase().includes(term);
+                section.hidden = !match;
+                if (match) {
+                    shown++;
+                    section.querySelectorAll('details.hp-task').forEach(d => {
+                        const hit = d.textContent.toLowerCase().includes(term);
+                        d.open = hit;
+                    });
+                    if (term.length >= 2) markText(section, term);
+                }
+            });
+            empty.classList.toggle('show', !!term && shown === 0);
+            hint.textContent = term ? (shown ? `${shown} section${shown === 1 ? '' : 's'} match "${input.value.trim()}".` : 'No matches.') : 'Type to filter topics.';
+        }, 150);
+    });
+})();
+</script>
+{% endblock %}

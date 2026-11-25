@@ -278,6 +278,22 @@ def estimate_page(
         context={"user": user, "active_page": "estimate"}
     )
 
+@router.get("/help", response_class=HTMLResponse)
+def help_page(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user_optional)
+):
+    """User manual, available to every signed-in user."""
+    auth_redirect = _require_auth(user)
+    if auth_redirect:
+        return auth_redirect
+
+    return templates.TemplateResponse(
+        request=request,
+        name="help.html",
+        context={"user": user, "active_page": "help"}
+    )
+
 @router.get("/user_logs", response_class=HTMLResponse)
 @router.get("/user_logs.php", response_class=HTMLResponse)
 def user_logs_page(
