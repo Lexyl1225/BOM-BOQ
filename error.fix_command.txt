@@ -1,0 +1,11 @@
+# ##########################################################
+# Fix the error:
+# bom  | exec /app/entrypoint.sh: no such file or directory
+# bom-v2  | exec /app/entrypoint.sh: no such file or directory
+# bom-v2  | exec /app/entrypoint.sh: no such file or dirctory
+# bom-v2 exited with code 255 (restarting)
+# ###########################################################
+# Cause: Windows CRLF line endings
+# ###########################################################
+sed -i 's/\r$//' entrypoint.sh
+chmod +x entrypoint.sh
