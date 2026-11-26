@@ -37,8 +37,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source code (runtime DB and uploads live strictly in the mounted /app/data volume)
 COPY app/ /app/app/
 COPY run.py /app/run.py
+
 # API key generator (the app loads generate_api_key() from it)
 COPY api-key-gen.py /app/api-key-gen.py
+
 # Command-line tool to create or recover an Administrator account
 COPY create-admin.py /app/create-admin.py
 
