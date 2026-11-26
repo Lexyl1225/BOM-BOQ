@@ -1,0 +1,193 @@
+#!/bin/bash
+# ==============================================================================
+# Entrypoint Script for BOM / BOQ Studio Pro Container with Tailscale
+# Use this in production server remove the exisiting entrypoint.sh
+# Rename this file to entrypoint.sh 'sudo rm entrypoint.sh && mv entrypoint.sh-Production-server entrypoint.sh'
+# Make it executable chmod +x entrypoint.sh
+# ==============================================================================
+
+set -e
+
+# If custom command is provided to container, execute directly
+if [ "$#" -gt 0 ] && [ "$1" != "start" ]; then
+    exec "$@"
+fi
+
+echo "=================================================="
+echo "🚀 Initializing BOM / BOQ Studio Pro Container"
+echo "=================================================="
+
+# 1. Verify Persistent Data Mount (/app/data)
+# Never overwrites an existing database; takes an automatic pre-startup snapshot
+DATA_DIR="${DATA_DIR:-/app/data}"
+DB_FILE="${DATA_DIR}/bom_system.db"
+PRE_START_BACKUP_DIR="${DATA_DIR}/backups/pre_start"
+
+echo "[1/4] Checking persistent data mount at ${DATA_DIR}..."
+mkdir -p "${DATA_DIR}/uploads" "${PRE_START_BACKUP_DIR}"
+
+if [ -f "${DB_FILE}" ]; then
+    echo " -> Existing database found at ${DB_FILE} (preserving data)."
+    # Create a safe online SQLite snapshot before Uvicorn starts (keeps last 10)
+    python3 - "${DB_FILE}" "${PRE_START_BACKUP_DIR}" <<'PYEOF'
+import os, sqlite3, sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+db_path, backup_dir = sys.argv[1], Path(sys.argv[2])
+stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+dst_path = backup_dir / f"pre_start_{stamp}.db"
+tmp_path = backup_dir / f".pre_start_{stamp}.db.tmp"
+
+try:
+    src = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=30)
+    dst = sqlite3.connect(str(tmp_path))
+    with dst:
+        src.backup(dst)
+    src.close()
+    dst.close()
+    os.replace(tmp_path, dst_path)
+    print(f" -> Pre-startup safety backup saved: {dst_path}")
+
+    # Prune old pre-startup snapshots beyond the latest 10
+    snaps = sorted(backup_dir.glob("pre_start_*.db"))
+    for old in snaps[:-10]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+except Exception as exc:
+    print(f" -> Warning: pre-startup backup skipped ({exc})", file=sys.stderr)
+    if tmp_path.exists():
+        tmp_path.unlink(missing_ok=True)
+PYEOF
+else
+    if [ "${AUTO_SEED:-false}" = "true" ]; then
+        echo " -> No database found at ${DB_FILE}; AUTO_SEED=true, initializing fresh database on startup..."
+    else
+        echo "==================================================" >&2
+        echo "❌ ERROR: Persistent database not found at ${DB_FILE}" >&2
+        echo "   Refusing to start with an empty database to protect against" >&2
+        echo "   misconfigured volume mounts." >&2
+        echo "   - Verify BOM_DATA_DIR in .env / docker-compose.yml." >&2
+        echo "   - To restore a backup, copy it to ${DB_FILE}." >&2
+        echo "   - For a brand-new empty install, set AUTO_SEED=true once." >&2
+        echo "==================================================" >&2
+        exit 1
+    fi
+fi
+
+# 2. Configure TUN Device for Tailscale
+echo "[2/4] Configuring network TUN device..."
+if [ ! -c /dev/net/tun ]; then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200 2>/dev/null || true
+fi
+
+# 3. Start Tailscale Daemon
+echo "[3/4] Starting Tailscale daemon (hostname: ${TS_HOSTNAME:-bom})..."
+mkdir -p /var/lib/tailscale /var/run/tailscale
+
+tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock >/tmp/tailscaled.log 2>&1 &
+TAILSCALED_PID=$!
+
+# Wait for tailscaled socket to become available
+for i in $(seq 1 30); do
+    if tailscale --socket=/var/run/tailscale/tailscaled.sock status >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Connect to Tailscale network
+TS_HOST="${TS_HOSTNAME:-bom}"
+
+if [ -n "${TS_AUTHKEY}" ]; then
+    echo " -> Authenticating Tailscale with provided TS_AUTHKEY..."
+    tailscale up --hostname="${TS_HOST}" --auth-key="${TS_AUTHKEY}" --accept-routes ${TS_EXTRA_ARGS} || true
+else
+    echo " -> Connecting Tailscale (using persisted state or generating auth link)..."
+    # Use 5s timeout so web server boots immediately without waiting indefinitely on interactive auth
+    tailscale up --hostname="${TS_HOST}" --accept-routes --timeout=5s ${TS_EXTRA_ARGS} || true
+fi
+
+# Show Tailscale connection info
+TS_TAILNET_NAME="${TS_TAILNET:-ratfish-regulus.ts.net}"
+FUNNEL_PUBLIC_URL="https://${TS_HOST}.${TS_TAILNET_NAME}"
+
+if tailscale ip -4 >/dev/null 2>&1; then
+    TS_IP=$(tailscale ip -4 2>/dev/null || echo "not yet assigned")
+    echo " -> Tailscale connected successfully!"
+    echo " -> Hostname     : ${TS_HOST}"
+    echo " -> Tailscale IP : ${TS_IP}"
+    echo " -> Tailnet URL  : http://${TS_HOST}:${PORT:-8000}"
+    echo " -> Funnel URL   : ${FUNNEL_PUBLIC_URL}"
+else
+    echo " -> Tailscale background service active."
+    echo " -> If not yet authenticated, run: docker compose exec bom tailscale up"
+fi
+
+# 4. Start FastAPI Application
+echo "[4/4] Starting BOM / BOQ Studio Pro FastAPI Application..."
+echo "=================================================="
+echo "📡 Server listening on port ${PORT:-8000}"
+echo "🌐 Local Access     : http://localhost:${PORT:-8000}"
+echo "🔒 Tailnet Access   : http://${TS_HOST}:${PORT:-8000}"
+echo "🌍 Public Funnel    : ${FUNNEL_PUBLIC_URL}"
+echo "=================================================="
+
+# Export paths for FastAPI application (respecting pre-configured DATABASE_URL if set)
+export DATA_DIR="${DATA_DIR}"
+export DATABASE_URL="${DATABASE_URL:-sqlite:///${DATA_DIR}/bom_system.db}"
+export UPLOAD_DIR="${UPLOAD_DIR:-${DATA_DIR}/uploads}"
+export TS_HOSTNAME="${TS_HOST}"
+export TS_TAILNET="${TS_TAILNET_NAME}"
+export FUNNEL_URL="${FUNNEL_PUBLIC_URL}"
+
+# Launch Uvicorn in background with proxy headers for TLS termination
+uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips='*' &
+UVICORN_PID=$!
+
+# 5. Tailscale Funnel Background Worker (Activates funnel once tailnet is connected)
+activate_funnel_worker() {
+    if [ "${TS_FUNNEL:-true}" != "true" ]; then
+        return 0
+    fi
+    for i in $(seq 1 60); do
+        if tailscale ip -4 >/dev/null 2>&1; then
+            sleep 2
+            echo " -> Activating Tailscale Funnel for port ${PORT:-8000}..."
+            if tailscale funnel --bg --yes "${PORT:-8000}" >/tmp/funnel.log 2>&1; then
+                echo "=================================================="
+                echo "🎉 Tailscale Funnel is LIVE & PUBLICLY ACCESSIBLE!"
+                echo "🌐 Public URL: ${FUNNEL_PUBLIC_URL}"
+                echo "=================================================="
+            else
+                ERR=$(cat /tmp/funnel.log 2>/dev/null || echo "Check Funnel ACL")
+                echo "⚠️ Tailscale Funnel notice: ${ERR}"
+                echo "   If Funnel requires ACL permission, see DEPLOYMENT.md"
+            fi
+            return 0
+        fi
+        sleep 2
+    done
+}
+activate_funnel_worker &
+FUNNEL_PID=$!
+
+# Trap signals for graceful shutdown
+cleanup() {
+    echo ""
+    echo "⚠️ Shutting down container services..."
+    kill -TERM "$FUNNEL_PID" 2>/dev/null || true
+    kill -TERM "$UVICORN_PID" 2>/dev/null || true
+    kill -TERM "$TAILSCALED_PID" 2>/dev/null || true
+    wait "$UVICORN_PID" 2>/dev/null || true
+    echo "✓ Clean shutdown complete."
+    exit 0
+}
+
+trap cleanup SIGTERM SIGINT
+
+# Keep entrypoint alive
+wait "$UVICORN_PID"
